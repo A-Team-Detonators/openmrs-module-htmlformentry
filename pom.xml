@@ -5,7 +5,7 @@
 	<artifactId>htmlformentry</artifactId>
 	<version>3.10.0</version>
 	<packaging>pom</packaging>
-	<name>HTML Form Entry 1</name>
+	<name>HTML Form Entry</name>
 	<description>Parent project for HTML Form Entry</description>
 
 	<url>http://openmrs.org</url>
