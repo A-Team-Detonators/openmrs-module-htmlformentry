@@ -1,0 +1,117 @@
+name: Build, Docker and SBOM
+
+on:
+  push:
+    branches:
+      - main
+      - dev
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+  security-events: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      #
+      # Checkout source
+      #
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      #
+      # Setup Java for legacy OpenMRS module build
+      #
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '8'
+          cache: maven
+
+      #
+      # Build Maven multi-module project
+      #
+      - name: Build Maven project
+        run: mvn -B clean package -DskipTests
+
+      #
+      # Setup Docker Buildx
+      #
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      #
+      # Build Docker image
+      #
+      - name: Build Docker image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: false
+          tags: htmlformentry:${{ github.sha }}
+          load: true
+
+      #
+      # Ensure docs directory exists
+      #
+      - name: Create docs directory
+        run: mkdir -p docs
+
+      #
+      # Generate GitHub SBOM (CycloneDX JSON)
+      # and submit dependencies to GitHub Dependency Graph
+      #
+      - name: Generate repository SBOM
+        uses: advanced-security/sbom-action@v1
+        with:
+          format: cyclonedx-json
+          dependency-graph-submit: true
+
+      #
+      # Generate Docker image SBOM
+      #
+      - name: Generate container SBOM
+        uses: anchore/sbom-action@v0
+        with:
+          image: htmlformentry:${{ github.sha }}
+          format: cyclonedx-json
+          output-file: docs/sbom.cdx.json
+
+      #
+      # Upload SBOM artifact
+      #
+      - name: Upload SBOM artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: cyclonedx-sbom
+          path: docs/sbom.cdx.json
+          if-no-files-found: error
+          retention-days: 30
+
+      #
+      # Analyse SBOM with Trivy (SCA)
+      #
+      - name: Run Trivy SBOM scan
+        uses: aquasecurity/trivy-action@0.24.0
+        with:
+          scan-type: sbom
+          scan-ref: docs/sbom.cdx.json
+          format: sarif
+          output: docs/trivy-results.sarif
+          severity: CRITICAL,HIGH
+          exit-code: '1'           # fail the build on critical/high findings
+
+      #
+      # Upload results to GitHub Security tab
+      #
+      - name: Upload Trivy results to GitHub Security
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()               # upload even when the scan step fails
+        with:
+          sarif_file: docs/trivy-results.sarif
