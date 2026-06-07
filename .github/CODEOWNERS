@@ -5,14 +5,14 @@
 # de genoemde eigenaar(s) als verplichte reviewer.
 
 # Standaard: alles vereist het platform-team
-*                           @jouw-org/platform-team
+*                           @A-Team-Detonators/A-Team
 
 # CI/CD pipelines: extra goedkeuring security-team
-.github/                    @jouw-org/security-team @jouw-org/platform-team
+.github/                    @A-Team-Detonators/A-Team
 
 # Productieconfiguratie: security + lead
 environments/production/    @jouw-org/security-team @jouw-org/tech-leads
 docker/docker-compose.production.yml  @jouw-org/security-team
 
 # Scripts die rechten instellen
-scripts/                    @jouw-org/security-team
+scripts/                    @A-Team-Detonators/A-Team
