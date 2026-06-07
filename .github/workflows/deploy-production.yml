@@ -34,7 +34,7 @@ jobs:
 
       # Valideer dat alle CI-checks geslaagd zijn vóór deploy
       - name: Controleer CI-status
-        uses: actions/github-script@v7
+        uses: actions/github-script@v9
         with:
           script: |
             const sha = context.sha;
@@ -68,7 +68,7 @@ jobs:
             https://openmrs.example.com/openmrs/health || exit 1
 
       - name: Maak GitHub Deployment aan (audit trail)
-        uses: actions/github-script@v7
+        uses: actions/github-script@v9
         with:
           script: |
             await github.rest.repos.createDeployment({
