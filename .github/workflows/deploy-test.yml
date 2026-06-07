@@ -1,0 +1,58 @@
+name: Deploy — Test
+
+on:
+  push:
+    branches: ["dev"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write   # OIDC voor cloudprovider (optioneel)
+
+jobs:
+  deploy-test:
+    name: Deploy naar Test
+    runs-on: ubuntu-latest
+    environment:
+      name: test
+      url: https://test.openmrs.example.com
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download build artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: build-artifact
+          path: target/
+        continue-on-error: true   # artifact kan al vervallen zijn; herbuilden indien nodig
+
+      - name: Build indien artifact ontbreekt
+        run: |
+          if [ ! -f target/*.war ]; then
+            mvn -B package --no-transfer-progress -DskipTests
+          fi
+
+      - name: Deploy naar test via Docker Compose
+        env:
+          DB_PASSWORD: ${{ secrets.DB_PASSWORD_TEST }}
+          OPENMRS_ADMIN_PASSWORD: ${{ secrets.OPENMRS_ADMIN_PASSWORD_TEST }}
+          APP_VERSION: ${{ github.sha }}
+        run: |
+          docker compose -f docker/docker-compose.test.yml pull
+          docker compose -f docker/docker-compose.test.yml up -d --force-recreate
+
+      - name: Health check test
+        run: |
+          echo "Wachten op applicatie..."
+          sleep 30
+          curl --fail --retry 5 --retry-delay 10 \
+            https://test.openmrs.example.com/openmrs/health || exit 1
+
+      - name: Upload deployment log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: deploy-log-test-${{ github.run_number }}
+          path: /tmp/deploy.log
+          retention-days: 30

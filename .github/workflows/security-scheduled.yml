@@ -1,0 +1,59 @@
+name: Periodieke Beveiligingsscan
+
+on:
+  schedule:
+    - cron: "0 3 * * 1"   # Elke maandag om 03:00 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  security-events: write
+
+jobs:
+  scheduled-codeql:
+    name: Geplande CodeQL Scan
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        language: ["java"]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v3
+        with:
+          languages: ${{ matrix.language }}
+
+      - name: Build
+        run: mvn -B package --no-transfer-progress -DskipTests
+
+      - name: Analyse
+        uses: github/codeql-action/analyze@v3
+
+  scheduled-sbom:
+    name: Geplande SBOM & SCA
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          java-version: "17"
+          distribution: "temurin"
+          cache: maven
+
+      - name: Genereer CycloneDX SBOM
+        run: mvn -B org.cyclonedx:cyclonedx-maven-plugin:makeAggregateBom --no-transfer-progress
+
+      - name: SCA met OSV Scanner
+        uses: google/osv-scanner-action@v1
+        with:
+          scan-args: |-
+            --sbom=target/bom.json
+
+      - name: Upload wekelijkse SBOM
+        uses: actions/upload-artifact@v4
+        with:
+          name: sbom-weekly-${{ github.run_number }}
+          path: target/bom.json
+          retention-days: 365   # NEN-7510: jaarlijkse bewaarplicht
