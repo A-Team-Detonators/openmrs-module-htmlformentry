@@ -15,3 +15,22 @@ omod/target/*
 *.idea
 *.ipr
 *.iws
+
+environments/**/.env
+**/.env.local
+**/.env.production
+**/.env.test
+ 
+# Build output
+*.war
+*.jar
+ 
+# IDE
+.vscode/
+ 
+# OS
+.DS_Store
+Thumbs.db
+ 
+# Docker lokale volumes
+docker/volumes/
