@@ -1,117 +1,107 @@
-name: Build, Docker and SBOM
+name: CI — Build, Test & Security
 
 on:
   push:
-    branches:
-      - main
-      - dev
+    branches: ["main", "dev", "test", "acceptation"]
   pull_request:
-  workflow_dispatch:
+    branches: ["main", "dev", "test", "acceptation"]
 
 permissions:
   contents: read
-  actions: read
   security-events: write
 
 jobs:
+
+  # ─────────────────────────────
+  # 1. BUILD
+  # ─────────────────────────────
   build:
+    name: Build
     runs-on: ubuntu-latest
 
     steps:
-      #
-      # Checkout source
-      #
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      #
-      # Setup Java for legacy OpenMRS module build
-      #
-      - name: Set up Java
+      - name: Set up Java 8
         uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: '8'
+          java-version: "8"
           cache: maven
 
-      #
-      # Build Maven multi-module project
-      #
-      - name: Build Maven project
+      - name: Build with Maven
         run: mvn -B clean package -DskipTests
 
-      #
-      # Setup Docker Buildx
-      #
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
-      #
-      # Build Docker image
-      #
-      - name: Build Docker image
-        uses: docker/build-push-action@v6
-        with:
-          context: .
-          push: false
-          tags: htmlformentry:${{ github.sha }}
-          load: true
-
-      #
-      # Ensure docs directory exists
-      #
-      - name: Create docs directory
-        run: mkdir -p docs
-
-      #
-      # Generate GitHub SBOM (CycloneDX JSON)
-      # and submit dependencies to GitHub Dependency Graph
-      #
-      - name: Generate repository SBOM
-        uses: advanced-security/sbom-action@v1
-        with:
-          format: cyclonedx-json
-          dependency-graph-submit: true
-
-      #
-      # Generate Docker image SBOM
-      #
-      - name: Generate container SBOM
-        uses: anchore/sbom-action@v0
-        with:
-          image: htmlformentry:${{ github.sha }}
-          format: cyclonedx-json
-          output-file: docs/sbom.cdx.json
-
-      #
-      # Upload SBOM artifact
-      #
-      - name: Upload SBOM artifact
+      - name: Upload artifact (.omod)
         uses: actions/upload-artifact@v4
         with:
-          name: cyclonedx-sbom
-          path: docs/sbom.cdx.json
-          if-no-files-found: error
+          name: build-artifact
+          path: "**/target/*.omod"
           retention-days: 30
 
-      #
-      # Analyse SBOM with Trivy (SCA)
-      #
-      - name: Run Trivy SBOM scan
-        uses: aquasecurity/trivy-action@0.24.0
-        with:
-          scan-type: sbom
-          scan-ref: docs/sbom.cdx.json
-          format: sarif
-          output: docs/trivy-results.sarif
-          severity: CRITICAL,HIGH
-          exit-code: '1'           # fail the build on critical/high findings
 
-      #
-      # Upload results to GitHub Security tab
-      #
-      - name: Upload Trivy results to GitHub Security
-        uses: github/codeql-action/upload-sarif@v3
-        if: always()               # upload even when the scan step fails
+  # ─────────────────────────────
+  # 2. TESTS
+  # ─────────────────────────────
+  test:
+    name: Tests
+    runs-on: ubuntu-latest
+    needs: build
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Java 8
+        uses: actions/setup-java@v4
         with:
-          sarif_file: docs/trivy-results.sarif
+          distribution: temurin
+          java-version: "8"
+          cache: maven
+
+      - name: Run tests
+        run: mvn -B test
+
+      - name: Upload test reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-reports
+          path: "**/target/surefire-reports/**"
+          retention-days: 30
+
+
+  # ─────────────────────────────
+  # 3. SECURITY (SAST + SCA + SBOM)
+  # ─────────────────────────────
+  security:
+    name: Security scans
+    runs-on: ubuntu-latest
+    needs: build
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Java 8
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "8"
+          cache: maven
+
+      # ───────── SBOM (CycloneDX) ─────────
+      - name: Generate SBOM (CycloneDX)
+        run: mvn -B org.cyclonedx:cyclonedx-maven-plugin:makeAggregateBom
+
+      - name: Upload SBOM
+        uses: actions/upload-artifact@v4
+        with:
+          name: sbom
+          path: "**/target/bom.json"
+          retention-days: 90
+
+      # ───────── SCA (dependency scan) ─────────
+      - name: OSV vulnerability scan
+        uses: google/osv-scanner-action@v1
+        with:
+          scan-args: .
