@@ -29,18 +29,17 @@ jobs:
           cache: maven
 
       - name: Build with Maven
-        run: mvn -B package --no-transfer-progress -DskipTests
+        run: mvn clean package -DskipTests --no-transfer-progress
 
       - name: Upload build artifact
         uses: actions/upload-artifact@v4
         with:
           name: build-artifact
-          path: |
-            **/target/*.omod
+          path: "**/target/*.omod"
           retention-days: 30   # NEN-7510: bewaarplicht CI-artefacten
 
   # ──────────────────────────────────────────────
-  # 2. UNIT- EN INTEGRATIETESTS
+  # 2. TESTS
   # ──────────────────────────────────────────────
   test:
     name: Tests
@@ -57,19 +56,18 @@ jobs:
           cache: maven
 
       - name: Run tests
-        run: mvn -B test --no-transfer-progress
+        run: mvn clean test --no-transfer-progress
 
       - name: Upload test report
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: test-report
-          path: |
-            **/target/surefire-reports/**
+          path: "**/target/surefire-reports/**"
           retention-days: 30
 
   # ──────────────────────────────────────────────
-  # 3. CODEQL — SAST
+  # 3. CODEQL — SAST (Java 8 safe mode)
   # ──────────────────────────────────────────────
   codeql:
     name: CodeQL SAST
@@ -99,7 +97,7 @@ jobs:
           languages: ${{ matrix.language }}
 
       - name: Build for CodeQL
-        run: mvn -B package --no-transfer-progress -DskipTests
+        run: mvn clean package -DskipTests --no-transfer-progress
 
       - name: Perform CodeQL Analysis
         uses: github/codeql-action/analyze@v3
@@ -131,7 +129,7 @@ jobs:
           deny-licenses: GPL-3.0, AGPL-3.0
 
   # ──────────────────────────────────────────────
-  # 5. SBOM GENEREREN (CycloneDX)
+  # 5. SBOM GENEREREN
   # ──────────────────────────────────────────────
   sbom:
     name: Generate SBOM
@@ -140,21 +138,17 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Set up Java 8
-        uses: actions/setup-java@v4
+      - name: Generate SBOM (no build dependency)
+        uses: anchore/sbom-action@v0
         with:
-          java-version: "8"
-          distribution: "temurin"
-          cache: maven
-
-      - name: Generate CycloneDX SBOM
-        run: mvn -B org.cyclonedx:cyclonedx-maven-plugin:makeAggregateBom --no-transfer-progress
+          format: cyclonedx-json
+          output-file: sbom.cyclonedx.json
 
       - name: Upload SBOM
         uses: actions/upload-artifact@v4
         with:
-          name: sbom-cyclonedx
-          path: target/bom.json
+          name: sbom
+          path: sbom.cyclonedx.json
           retention-days: 90   # NEN-7510: bewaarplicht beveiligingsartefacten
 
       - name: Analyse SBOM met OSV-scanner (SCA)
