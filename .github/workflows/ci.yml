@@ -14,10 +14,11 @@ permissions:
 jobs:
   # ──────────────────────────────────────────────
   # 1. BUILD
-  # De `omod`-module gebruikt maven-openmrs-plugin
-  # via de OpenMRS Nexus repo. We bouwen hier alleen
-  # de api-modules; de omod is niet nodig voor CI.
-  # Flag: -pl !omod sluit de omod-module uit.
+  # Gebruikt het Maven-profiel `ci` (gedefinieerd in pom.xml).
+  # Dat profiel overschrijft <modules> en laat de omod weg.
+  # Reden: de omod heeft maven-openmrs-plugin als build-extension;
+  # Maven laadt extensions al tijdens POM-parsing (vóór -pl),
+  # waardoor de build faalt als de OpenMRS Nexus-repo onbereikbaar is.
   # ──────────────────────────────────────────────
   build:
     name: Build
@@ -32,20 +33,15 @@ jobs:
           distribution: "temurin"
           cache: maven
 
-      - name: Build api-modules (zonder omod)
-        run: |
-          mvn clean package \
-            --no-transfer-progress \
-            -DskipTests \
-            -pl api,api-1.9,api-1.10,api-2.0,api-2.2,api-tests \
-            -am
+      - name: Build (profiel ci — zonder omod)
+        run: mvn clean package --no-transfer-progress -DskipTests -P ci
 
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4
         with:
           name: build-artifacts
           path: "**/target/*.jar"
-          retention-days: 30   # NEN-7510: bewaarplicht CI-artefacten
+          retention-days: 30
 
   # ──────────────────────────────────────────────
   # 2. TESTS

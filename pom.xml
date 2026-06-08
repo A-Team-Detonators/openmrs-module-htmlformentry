@@ -337,6 +337,27 @@
 			</modules>
 		</profile>
 
+		<!--
+		  CI-profiel: sluit de omod-module uit.
+		  De omod vereist maven-openmrs-plugin als build-extension,
+		  opgehaald via de OpenMRS Nexus-repo. Maven laadt build-extensions
+		  al tijdens POM-parsing, vóór de -pl selectie, waardoor de hele
+		  multi-module build faalt als de repo onbereikbaar is.
+		  Dit profiel overschrijft <modules> zonder omod.
+		  Gebruik in CI: mvn clean package -P ci
+		-->
+		<profile>
+			<id>ci</id>
+			<modules>
+				<module>api</module>
+				<module>api-1.9</module>
+				<module>api-1.10</module>
+				<module>api-2.0</module>
+				<module>api-2.2</module>
+				<module>api-tests</module>
+			</modules>
+		</profile>
+
 	</profiles>
 
 </project>
