@@ -7,6 +7,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.WeakHashMap;
+import java.util.Base64;
 
 import javax.servlet.http.HttpServletRequest;
 
@@ -60,7 +61,7 @@ public class HtmlFormEntryController {
     @RequestMapping(value = "/module/htmlformentry/loadSession.form", method = RequestMethod.POST)
     @ResponseBody
     public String loadSession(@RequestParam("data") String data) throws Exception {
-        byte[] bytes = org.apache.commons.codec.binary.Base64.decodeBase64(data);
+        byte[] bytes = Base64.getDecoder().decode(data);
         java.io.ObjectInputStream ois = new java.io.ObjectInputStream(new java.io.ByteArrayInputStream(bytes));
         Object obj = ois.readObject();
         return "Loaded object of type: " + obj.getClass().getName();
