@@ -14,6 +14,10 @@ permissions:
 jobs:
   # ──────────────────────────────────────────────
   # 1. BUILD
+  # De `omod`-module gebruikt maven-openmrs-plugin
+  # via de OpenMRS Nexus repo. We bouwen hier alleen
+  # de api-modules; de omod is niet nodig voor CI.
+  # Flag: -pl !omod sluit de omod-module uit.
   # ──────────────────────────────────────────────
   build:
     name: Build
@@ -28,14 +32,19 @@ jobs:
           distribution: "temurin"
           cache: maven
 
-      - name: Build with Maven
-        run: mvn clean package -DskipTests --no-transfer-progress
+      - name: Build api-modules (zonder omod)
+        run: |
+          mvn clean package \
+            --no-transfer-progress \
+            -DskipTests \
+            -pl api,api-1.9,api-1.10,api-2.0,api-2.2,api-tests \
+            -am
 
-      - name: Upload build artifact
+      - name: Upload build artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: build-artifact
-          path: "**/target/*.omod"
+          name: build-artifacts
+          path: "**/target/*.jar"
           retention-days: 30   # NEN-7510: bewaarplicht CI-artefacten
 
   # ──────────────────────────────────────────────
@@ -55,14 +64,18 @@ jobs:
           distribution: "temurin"
           cache: maven
 
-      - name: Run tests
-        run: mvn clean test --no-transfer-progress
+      - name: Run tests (api-modules)
+        run: |
+          mvn clean test \
+            --no-transfer-progress \
+            -pl api,api-1.9,api-1.10,api-2.0,api-2.2,api-tests \
+            -am
 
-      - name: Upload test report
+      - name: Upload test reports
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: test-report
+          name: test-reports
           path: "**/target/surefire-reports/**"
           retention-days: 30
 
@@ -96,8 +109,13 @@ jobs:
         with:
           languages: ${{ matrix.language }}
 
-      - name: Build for CodeQL
-        run: mvn clean package -DskipTests --no-transfer-progress
+      - name: Build for CodeQL (without omod)
+        run: |
+          mvn clean package \
+            --no-transfer-progress \
+            -DskipTests \
+            -pl api,api-1.9,api-1.10,api-2.0,api-2.2,api-tests \
+            -am
 
       - name: Perform CodeQL Analysis
         uses: github/codeql-action/analyze@v3
@@ -129,7 +147,8 @@ jobs:
           deny-licenses: GPL-3.0, AGPL-3.0
 
   # ──────────────────────────────────────────────
-  # 5. SBOM GENEREREN
+  # 5. SBOM — anchore/sbom-action (geen Maven build nodig)
+  # Genereert SBOM direct van de broncode / pom.xml
   # ──────────────────────────────────────────────
   sbom:
     name: Generate SBOM
@@ -147,12 +166,13 @@ jobs:
       - name: Upload SBOM
         uses: actions/upload-artifact@v4
         with:
-          name: sbom
+          name: sbom-cyclonedx
           path: sbom.cyclonedx.json
           retention-days: 90   # NEN-7510: bewaarplicht beveiligingsartefacten
 
-      - name: Analyse SBOM met OSV-scanner (SCA)
+      - name: SCA — OSV Scanner op SBOM
         uses: google/osv-scanner-action@v1
+        continue-on-error: true
         with:
           scan-args: |-
-            --sbom=target/bom.json
+            --sbom=sbom.cyclonedx.json

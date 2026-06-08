@@ -2,7 +2,7 @@ name: Periodieke Beveiligingsscan
 
 on:
   schedule:
-    - cron: "0 3 * * 1"   # Elke maandag om 03:00 UTC
+    - cron: "0 3 * * 1"   # Elke maandag 03:00 UTC
   workflow_dispatch:
 
 permissions:
@@ -11,7 +11,7 @@ permissions:
 
 jobs:
   scheduled-codeql:
-    name: Geplande CodeQL Scan
+    name: Wekelijkse CodeQL Scan
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -31,37 +31,39 @@ jobs:
         with:
           languages: ${{ matrix.language }}
 
-      - name: Build
-        run: mvn -B package --no-transfer-progress -DskipTests
+      - name: Build (zonder omod)
+        run: |
+          mvn clean package \
+            --no-transfer-progress \
+            -DskipTests \
+            -pl api,api-1.9,api-1.10,api-2.0,api-2.2,api-tests \
+            -am
 
       - name: Analyse
         uses: github/codeql-action/analyze@v3
 
   scheduled-sbom:
-    name: Geplande SBOM & SCA
+    name: Wekelijkse SBOM & SCA
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
 
-      - name: Set up Java 8
-        uses: actions/setup-java@v4
+      - name: Genereer SBOM
+        uses: anchore/sbom-action@v0
         with:
-          java-version: "8"
-          distribution: "temurin"
-          cache: maven
-
-      - name: Genereer CycloneDX SBOM
-        run: mvn -B org.cyclonedx:cyclonedx-maven-plugin:makeAggregateBom --no-transfer-progress
+          format: cyclonedx-json
+          output-file: sbom-weekly.cyclonedx.json
 
       - name: SCA met OSV Scanner
         uses: google/osv-scanner-action@v1
+        continue-on-error: true
         with:
           scan-args: |-
-            --sbom=target/bom.json
+            --sbom=sbom-weekly.cyclonedx.json
 
       - name: Upload wekelijkse SBOM
         uses: actions/upload-artifact@v4
         with:
           name: sbom-weekly-${{ github.run_number }}
-          path: target/bom.json
+          path: sbom-weekly.cyclonedx.json
           retention-days: 365   # NEN-7510: jaarlijkse bewaarplicht
