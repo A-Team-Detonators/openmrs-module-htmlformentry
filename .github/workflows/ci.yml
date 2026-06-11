@@ -144,7 +144,7 @@ jobs:
           retention-days: 90   # NEN-7510: bewaarplicht beveiligingsartefacten
 
       - name: SCA — OSV Scanner op SBOM
-        uses: google/osv-scanner-action@v2
+        uses: google/osv-scanner-action/.github/workflows/osv-scanner-reusable.yml@v2.3.8
         continue-on-error: true
         with:
           scan-args: |-
