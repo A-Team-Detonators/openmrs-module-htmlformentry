@@ -14,11 +14,6 @@ permissions:
 jobs:
   # ──────────────────────────────────────────────
   # 1. BUILD
-  # Gebruikt het Maven-profiel `ci` (gedefinieerd in pom.xml).
-  # Dat profiel overschrijft <modules> en laat de omod weg.
-  # Reden: de omod heeft maven-openmrs-plugin als build-extension;
-  # Maven laadt extensions al tijdens POM-parsing (vóór -pl),
-  # waardoor de build faalt als de OpenMRS Nexus-repo onbereikbaar is.
   # ──────────────────────────────────────────────
   build:
     name: Build
@@ -31,11 +26,33 @@ jobs:
         with:
           java-version: "8"
           distribution: "temurin"
-          maven-version: "3.6.3" # <--- Dwingt een versie af zonder http-blocker
+          maven-version: "3.6.3"
           cache: maven
 
-      - name: Build (profiel ci — zonder omod)
-        run: mvn clean package --no-transfer-progress -DskipTests -P ci
+      - name: Configure Maven settings
+        run: |
+          mkdir -p ~/.m2
+          cat > ~/.m2/settings.xml << 'EOF'
+          <settings>
+            <profiles>
+              <profile>
+                <id>openmrs</id>
+                <pluginRepositories>
+                  <pluginRepository>
+                    <id>openmrs-repo</id>
+                    <url>https://mavenrepo.openmrs.org/public</url>
+                  </pluginRepository>
+                </pluginRepositories>
+              </profile>
+            </profiles>
+            <activeProfiles>
+              <activeProfile>openmrs</activeProfile>
+            </activeProfiles>
+          </settings>
+          EOF
+
+      - name: Build
+        run: mvn clean package --no-transfer-progress -DskipTests
 
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4
