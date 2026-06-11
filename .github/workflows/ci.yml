@@ -31,11 +31,12 @@ jobs:
         with:
           java-version: "8"
           distribution: "temurin"
+          maven-version: "3.6.3" # <--- Dwingt een versie af zonder http-blocker
           cache: maven
 
       - name: Build (profiel ci — zonder omod)
-        run: mvn clean package --no-transfer-progress -DskipTests -P ci -D"maven.default.http.blocker.skip"=true
-        
+        run: mvn clean package --no-transfer-progress -DskipTests -P ci
+
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4
         with:
