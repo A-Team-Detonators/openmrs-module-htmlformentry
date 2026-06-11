@@ -1,0 +1,37 @@
+name: Setup Java & Maven
+description: Checkout, set up Java 8 and configure Maven settings for OpenMRS
+
+runs:
+  using: composite
+  steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Java 8
+      uses: actions/setup-java@v4
+      with:
+        java-version: "8"
+        distribution: "temurin"
+        cache: maven
+
+    - name: Configure Maven settings
+      shell: bash
+      run: |
+        mkdir -p ~/.m2
+        cat > ~/.m2/settings.xml << 'EOF'
+        <settings>
+          <profiles>
+            <profile>
+              <id>openmrs</id>
+              <pluginRepositories>
+                <pluginRepository>
+                  <id>openmrs-repo</id>
+                  <url>https://mavenrepo.openmrs.org/public</url>
+                </pluginRepository>
+              </pluginRepositories>
+            </profile>
+          </profiles>
+          <activeProfiles>
+            <activeProfile>openmrs</activeProfile>
+          </activeProfiles>
+        </settings>
+        EOF
