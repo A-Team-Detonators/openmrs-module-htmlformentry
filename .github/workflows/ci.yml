@@ -208,7 +208,7 @@ jobs:
         id: cpr
         uses: peter-evans/create-pull-request@v6
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}
+          token: ${{ steps.app-token.outputs.token }}
           commit-message: "chore: update SBOM [skip ci]"
           title: "chore: update SBOM"
           body: "Automatisch gegenereerde SBOM-update door de CI-pipeline."
