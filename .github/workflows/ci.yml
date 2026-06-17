@@ -59,6 +59,16 @@ jobs:
             cp -r "$dir" "coverage-reports/$module"
           done
 
+      - name: Debug — zoek jacoco bestanden
+        if: always()
+        run: |
+          echo "=== .exec bestanden ==="
+          find . -name "*.exec"
+          echo "=== jacoco mappen ==="
+          find . -name "jacoco" -type d
+          echo "=== index.html ==="
+          find . -name "index.html"
+
       - name: Upload coverage rapport
         if: always()
         uses: actions/upload-artifact@v4
