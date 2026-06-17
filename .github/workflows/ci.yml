@@ -210,14 +210,14 @@ jobs:
         with:
           fetch-depth: 0
 
-      - uses: ./.github/actions/setup-java-maven   # Java 8 + OpenMRS settings.xml
+      - uses: ./.github/actions/setup-java-maven
 
       - name: Build (compile classes for Sonar)
         run: |
           mvn clean package \
             --no-transfer-progress \
             -DskipTests \
-            -pl .,api,api-1.9,api-1.10,api-2.0,api-2.2,api-tests \
+            -pl api,api-1.9,api-1.10,api-2.0,api-2.2,api-tests \
             -am
 
       - name: Override to JDK 17 for Sonar
