@@ -237,37 +237,31 @@ jobs:
 
       - uses: ./.github/actions/setup-openmrs-maven
 
-      - name: Debug Java versions
-        run: |
-          echo "JAVA_HOME=$JAVA_HOME"
-          echo "JAVA_HOME_8_X64=$JAVA_HOME_8_X64"
-          echo "JAVA_HOME_17_X64=$JAVA_HOME_17_X64"
-          $JAVA_HOME_8_X64/bin/javac -version
-          $JAVA_HOME_17_X64/bin/javac -version
-          mvn -version
-
-      - name: Download compiled classes
-        uses: actions/download-artifact@v4
-        with:
-          name: compiled-classes
-          path: .
-
       - name: Download coverage reports
         uses: actions/download-artifact@v4
         with:
           name: coverage-report
           path: coverage-reports/
 
-      - name: SonarQube Scan
+      - name: Build & verify with Java 8
         env:
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          JAVA_HOME: ${{ env.JAVA_HOME_8_X64 }}
         run: |
-          mvn verify sonar:sonar \
+          mvn verify \
             --no-transfer-progress \
             -pl api,api-1.9,api-1.10,api-2.0,api-2.2,api-tests \
             -am -P ci \
-            -DskipTests \
-            -Dmaven.compiler.executable=${JAVA_HOME_8_X64}/bin/javac \
+            -DskipTests
+
+      - name: SonarQube Scan with Java 17
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          JAVA_HOME: ${{ env.JAVA_HOME_17_X64 }}
+        run: |
+          mvn sonar:sonar \
+            --no-transfer-progress \
+            -pl api,api-1.9,api-1.10,api-2.0,api-2.2,api-tests \
+            -am -P ci \
             -Dsonar.projectKey=${{ secrets.PROJECT_KEY }} \
             -Dsonar.organization=${{ secrets.ORGANIZATION_KEY }} \
             -Dsonar.host.url=${{ secrets.SONAR_HOST_URL }} \
