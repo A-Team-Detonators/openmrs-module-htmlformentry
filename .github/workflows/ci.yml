@@ -252,6 +252,9 @@ jobs:
             -pl api,api-1.9,api-1.10,api-2.0,api-2.2,api-tests \
             -am -P ci \
             -DskipTests
+      
+      - name: Verify compiled classes exist
+        run: find . -path "*/target/classes" -type d
 
       - name: SonarQube Scan with Java 17
         env:
@@ -266,5 +269,5 @@ jobs:
             -Dsonar.organization=${{ secrets.ORGANIZATION_KEY }} \
             -Dsonar.host.url=${{ secrets.SONAR_HOST_URL }} \
             -Dsonar.java.source=8 \
-            -Dsonar.java.binaries=**/target/classes \
+            -Dsonar.java.binaries=api/target/classes,api-1.9/target/classes,api-1.10/target/classes,api-2.0/target/classes,api-2.2/target/classes \
             -Dsonar.coverage.jacoco.xmlReportPaths=**/target/site/jacoco/jacoco.xml
