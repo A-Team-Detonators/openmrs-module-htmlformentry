@@ -23,14 +23,14 @@ jobs:
       - uses: ./.github/actions/setup-java-maven
 
       - name: Build
-        run: mvn clean package --no-transfer-progress -DskipTests
+        run: mvn clean package --no-transfer-progress -DskipTests -P ci
 
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4
         with:
           name: build-artifacts
           path: "**/target/*.jar"
-          retention-days: 30
+          retention-days: 90   # NEN-7510: beveiligingsrapporten langer bewaren
 
   # ──────────────────────────────────────────────
   # 2. TESTS
@@ -42,21 +42,48 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: ./.github/actions/setup-java-maven
-
-      - name: Run tests
+ 
+      - name: Run tests & genereer coverage rapport
         run: |
-          mvn clean test \
+          mvn verify jacoco:report \
             --no-transfer-progress \
             -pl api,api-1.9,api-1.10,api-2.0,api-2.2,api-tests \
-            -am
+            -am -P ci
+ 
+      - name: Verzamel coverage rapporten
+        if: always()
+        run: |
+          mkdir -p coverage-reports
+          find . -path "*/target/site/jacoco" -type d | while read dir; do
+            module=$(echo "$dir" | cut -d/ -f2)
+            cp -r "$dir" "coverage-reports/$module"
+          done
 
+      - name: Debug — zoek jacoco bestanden
+        if: always()
+        run: |
+          echo "=== .exec bestanden ==="
+          find . -name "*.exec"
+          echo "=== jacoco mappen ==="  
+          find . -name "jacoco" -type d
+          echo "=== index.html ==="
+          find . -name "index.html"
+
+      - name: Upload coverage rapport
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: coverage-reports/
+          retention-days: 90
+ 
       - name: Upload test reports
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: test-reports
           path: "**/target/surefire-reports/**"
-          retention-days: 30
+          retention-days: 90   # NEN-7510: beveiligingsrapporten langer bewaren
 
   # ──────────────────────────────────────────────
   # 3. CODEQL — SAST (Java 8 safe mode)
