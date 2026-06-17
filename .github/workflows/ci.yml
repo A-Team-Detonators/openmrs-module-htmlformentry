@@ -179,14 +179,15 @@ jobs:
         with:
           format: cyclonedx-json
           output-file: sbom.cyclonedx.json
+          upload-artifact: false
 
-      - name: Upload SBOM
+      - name: Upload SBOM (anchore-action output)
         uses: actions/upload-artifact@v4
         with:
-          name: sbom-cyclonedx
+          name: sbom-cyclonedx-anchore
           path: sbom.cyclonedx.json
-          retention-days: 90   # NEN-7510: bewaarplicht beveiligingsartefacten
-      
+          retention-days: 90
+
       - name: Commit SBOM to repository
         if: github.event_name == 'push'
         run: |
@@ -203,13 +204,14 @@ jobs:
   # ──────────────────────────────────────────────
   osv-scan:
     name: OSV Scanner
-    needs: build
+    needs: sbom
     permissions:
       actions: read
       contents: read
       security-events: write
     uses: google/osv-scanner-action/.github/workflows/osv-scanner-reusable.yml@v2.3.8
     with:
+      download-artifact: sbom-cyclonedx-anchore
       scan-args: |-
         --sbom=sbom.cyclonedx.json
 
@@ -252,9 +254,6 @@ jobs:
             -pl api,api-1.9,api-1.10,api-2.0,api-2.2,api-tests \
             -am -P ci \
             -DskipTests
-      
-      - name: Verify compiled classes exist
-        run: find . -path "*/target/classes" -type d
 
       - name: SonarQube Scan with Java 17
         env:
