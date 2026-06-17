@@ -226,15 +226,25 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Set up Java 17
+      - name: Set up Java 8 (compile) and Java 17 (sonar)
         uses: actions/setup-java@v4
         with:
-          java-version: "17"
           distribution: "temurin"
+          java-version: |
+            8
+            17
           cache: maven
 
       - uses: ./.github/actions/setup-openmrs-maven
-      - run: cat ~/.m2/settings.xml
+
+      - name: Debug Java versions
+        run: |
+          echo "JAVA_HOME=$JAVA_HOME"
+          echo "JAVA_HOME_8_X64=$JAVA_HOME_8_X64"
+          echo "JAVA_HOME_17_X64=$JAVA_HOME_17_X64"
+          $JAVA_HOME_8_X64/bin/javac -version
+          $JAVA_HOME_17_X64/bin/javac -version
+          mvn -version
 
       - name: Download compiled classes
         uses: actions/download-artifact@v4
@@ -248,10 +258,6 @@ jobs:
           name: coverage-report
           path: coverage-reports/
 
-      - name: Check compiled classes
-        run: |
-          find . -path "*/target/classes" -type d
-
       - name: SonarQube Scan
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
@@ -261,6 +267,7 @@ jobs:
             -pl api,api-1.9,api-1.10,api-2.0,api-2.2,api-tests \
             -am -P ci \
             -DskipTests \
+            -Dmaven.compiler.executable=${JAVA_HOME_8_X64}/bin/javac \
             -Dsonar.projectKey=${{ secrets.PROJECT_KEY }} \
             -Dsonar.organization=${{ secrets.ORGANIZATION_KEY }} \
             -Dsonar.host.url=${{ secrets.SONAR_HOST_URL }} \
