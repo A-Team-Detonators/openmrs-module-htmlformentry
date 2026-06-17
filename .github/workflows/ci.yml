@@ -269,5 +269,5 @@ jobs:
             -Dsonar.organization=${{ secrets.ORGANIZATION_KEY }} \
             -Dsonar.host.url=${{ secrets.SONAR_HOST_URL }} \
             -Dsonar.java.source=8 \
-            -Dsonar.java.binaries=api/target/classes,api-1.9/target/classes,api-1.10/target/classes,api-2.0/target/classes,api-2.2/target/classes \
+            -Dsonar.java.binaries=target/classes \
             -Dsonar.coverage.jacoco.xmlReportPaths=**/target/site/jacoco/jacoco.xml
