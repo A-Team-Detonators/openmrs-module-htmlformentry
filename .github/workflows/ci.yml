@@ -5,6 +5,8 @@ on:
     branches: ["main", "production", "acceptation", "test", "dev"]
   pull_request:
     branches: ["main", "production", "acceptation", "test", "dev"]
+    paths-ignore:
+      - docs/sbom/**
 
 permissions:
   contents: read
@@ -222,19 +224,29 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Enable auto-merge for SBOM PR
+      - name: Enable auto-merge only when checks are ready
         if: github.event_name == 'push' && steps.cpr.outputs.pull-request-number
         run: |
           PR=${{ steps.cpr.outputs.pull-request-number }}
 
-          STATE=$(gh pr view "$PR" --json autoMergeRequest --jq '.autoMergeRequest')
+          echo "Waiting for PR to become mergeable..."
 
-          if [ "$STATE" = "null" ]; then
-            echo "Enabling auto-merge..."
-            gh pr merge "$PR" --auto --squash
-          else
-            echo "Auto-merge already enabled"
-          fi
+          for i in {1..30}; do
+            STATE=$(gh pr view "$PR" --json mergeStateStatus --jq '.mergeStateStatus')
+
+            echo "Attempt $i - state: $STATE"
+
+            if [ "$STATE" = "CLEAN" ]; then
+              echo "PR is clean, enabling auto-merge..."
+              gh pr merge "$PR" --auto --squash
+              exit 0
+            fi
+
+            sleep 10
+          done
+
+          echo "PR not ready for auto-merge yet"
+          exit 0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
