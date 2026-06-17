@@ -231,7 +231,7 @@
 					<version>2.11</version>
 					<configuration>
 						<failIfNoTests>false</failIfNoTests>
-						<forkMode>never</forkMode>
+						<forkMode>once</forkMode>
 						<!-- @{argLine} wordt door JaCoCo ingevuld met de agent-parameter -->
 						<argLine>@{argLine} -Djdk.net.URLClassPath.disableClassPathURLCheck=true</argLine>
 					</configuration>
