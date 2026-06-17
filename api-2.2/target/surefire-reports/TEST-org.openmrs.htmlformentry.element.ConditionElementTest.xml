@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" ?>
-<testsuite tests="7" failures="0" name="org.openmrs.htmlformentry.element.ConditionElementTest" time="0.722" errors="0" skipped="0">
+<testsuite tests="7" failures="0" name="org.openmrs.htmlformentry.element.ConditionElementTest" time="0.742" errors="0" skipped="0">
   <properties>
     <property name="java.runtime.name" value="Java(TM) SE Runtime Environment"/>
     <property name="sun.boot.library.path" value="C:\Program Files\Java\jdk1.8.0_481\jre\bin"/>
@@ -71,11 +71,11 @@
     <property name="sun.desktop" value="windows"/>
     <property name="sun.cpu.isalist" value="amd64"/>
   </properties>
-  <testcase classname="org.openmrs.htmlformentry.element.ConditionElementTest" name="handleSubmission_shouldCreateNewCondition" time="0.414"/>
-  <testcase classname="org.openmrs.htmlformentry.element.ConditionElementTest" name="handleSubmission_shouldCreateInactiveCondition" time="0.002"/>
-  <testcase classname="org.openmrs.htmlformentry.element.ConditionElementTest" name="handleSubmission_shouldSupportNoneCodedConceptValues" time="0.006"/>
-  <testcase classname="org.openmrs.htmlformentry.element.ConditionElementTest" name="handleSubmission_shouldNotCreateConditionInViewMode" time="0.002"/>
-  <testcase classname="org.openmrs.htmlformentry.element.ConditionElementTest" name="handleSubmission_shouldNotAttemptSavingWhenNoConditionWasGivenAndIsNotRequired" time="0.001"/>
+  <testcase classname="org.openmrs.htmlformentry.element.ConditionElementTest" name="validateSubmission_shouldFailValidationWhenConditionIsNotGivenAndIsRequired" time="0.42"/>
   <testcase classname="org.openmrs.htmlformentry.element.ConditionElementTest" name="validateSubmission_shouldFailValidationWhenOnsetDateIsGreaterThanEnddate" time="0.002"/>
-  <testcase classname="org.openmrs.htmlformentry.element.ConditionElementTest" name="validateSubmission_shouldFailValidationWhenConditionIsNotGivenAndIsRequired" time="0.002"/>
+  <testcase classname="org.openmrs.htmlformentry.element.ConditionElementTest" name="handleSubmission_shouldNotAttemptSavingWhenNoConditionWasGivenAndIsNotRequired" time="0.009"/>
+  <testcase classname="org.openmrs.htmlformentry.element.ConditionElementTest" name="handleSubmission_shouldCreateNewCondition" time="0.005"/>
+  <testcase classname="org.openmrs.htmlformentry.element.ConditionElementTest" name="handleSubmission_shouldCreateInactiveCondition" time="0.001"/>
+  <testcase classname="org.openmrs.htmlformentry.element.ConditionElementTest" name="handleSubmission_shouldSupportNoneCodedConceptValues" time="0.002"/>
+  <testcase classname="org.openmrs.htmlformentry.element.ConditionElementTest" name="handleSubmission_shouldNotCreateConditionInViewMode" time="0.002"/>
 </testsuite>
