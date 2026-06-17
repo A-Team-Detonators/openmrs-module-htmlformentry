@@ -208,7 +208,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          fetch-depth: 0   # volledige git history voor SonarQube analyse
+          fetch-depth: 0
       - uses: ./.github/actions/setup-java-maven
 
       - name: SonarQube Scan
@@ -217,4 +217,5 @@ jobs:
         run: |
           mvn sonar:sonar \
             -Dsonar.projectKey=${{ secrets.PROJECT_KEY }} \
-            -Dsonar.organization=${{ secrets.ORGANIZATION_KEY }}
+            -Dsonar.organization=${{ secrets.ORGANIZATION_KEY }} \
+            -Dsonar.host.url=${{ secrets.SONAR_HOST_URL }}
