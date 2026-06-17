@@ -232,15 +232,21 @@ jobs:
           name: coverage-report
           path: coverage-reports/
 
+      - name: Debug Maven settings
+        run: |
+          echo "===== settings.xml ====="
+          cat ~/.m2/settings.xml || true
+
+          echo ""
+          echo "===== Effective settings ====="
+          mvn help:effective-settings
+
       - name: SonarQube Scan
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         run: |
-          mvn sonar:sonar \
+          mvn verify sonar:sonar \
             -Dsonar.projectKey=${{ secrets.PROJECT_KEY }} \
             -Dsonar.organization=${{ secrets.ORGANIZATION_KEY }} \
             -Dsonar.host.url=${{ secrets.SONAR_HOST_URL }} \
-            -Dsonar.java.source=8 \
-            -Dsonar.java.binaries=**/target/classes \
-            -Dsonar.coverage.jacoco.xmlReportPaths=**/target/site/jacoco/jacoco.xml \
             -P ci
