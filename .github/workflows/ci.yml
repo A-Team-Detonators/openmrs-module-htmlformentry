@@ -210,48 +210,27 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Set up JDK 17
+      - uses: ./.github/actions/setup-java-maven   # Java 8 + OpenMRS settings.xml
+
+      - name: Build (compile classes for Sonar)
+        run: |
+          mvn clean package \
+            --no-transfer-progress \
+            -DskipTests \
+            -pl .,api,api-1.9,api-1.10,api-2.0,api-2.2,api-tests \
+            -am
+
+      - name: Override to JDK 17 for Sonar
         uses: actions/setup-java@v4
         with:
           java-version: '17'
           distribution: 'temurin'
 
-      - name: Cache Maven packages
-        uses: actions/cache@v4
+      - name: Download coverage reports
+        uses: actions/download-artifact@v4
         with:
-          path: ~/.m2
-          key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
-          restore-keys: ${{ runner.os }}-m2
-
-      - name: Configure Maven settings (OpenMRS repo)
-        run: |
-          mkdir -p ~/.m2
-          cat > ~/.m2/settings.xml <<'EOF'
-          <settings>
-            <profiles>
-              <profile>
-                <id>openmrs</id>
-                <repositories>
-                  <repository>
-                    <id>openmrs-repo</id>
-                    <name>OpenMRS Nexus Repository</name>
-                    <url>https://mavenrepo.openmrs.org/public</url>
-                  </repository>
-                </repositories>
-                <pluginRepositories>
-                  <pluginRepository>
-                    <id>openmrs-repo</id>
-                    <name>OpenMRS Nexus Repository</name>
-                    <url>https://mavenrepo.openmrs.org/public</url>
-                  </pluginRepository>
-                </pluginRepositories>
-              </profile>
-            </profiles>
-            <activeProfiles>
-              <activeProfile>openmrs</activeProfile>
-            </activeProfiles>
-          </settings>
-          EOF
+          name: coverage-report
+          path: coverage-reports/
 
       - name: SonarQube Scan
         env:
@@ -261,4 +240,6 @@ jobs:
             -Dsonar.projectKey=${{ secrets.PROJECT_KEY }} \
             -Dsonar.organization=${{ secrets.ORGANIZATION_KEY }} \
             -Dsonar.host.url=${{ secrets.SONAR_HOST_URL }} \
-            -Dsonar.java.source=8
+            -Dsonar.java.source=8 \
+            -Dsonar.java.binaries=**/target/classes \
+            -Dsonar.coverage.jacoco.xmlReportPaths=**/target/site/jacoco/jacoco.xml
