@@ -222,9 +222,19 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Enable auto-merge
+      - name: Enable auto-merge for SBOM PR
         if: github.event_name == 'push' && steps.cpr.outputs.pull-request-number
-        run: gh pr merge --auto --squash "${{ steps.cpr.outputs.pull-request-number }}"
+        run: |
+          PR=${{ steps.cpr.outputs.pull-request-number }}
+
+          STATE=$(gh pr view "$PR" --json autoMergeRequest --jq '.autoMergeRequest')
+
+          if [ "$STATE" = "null" ]; then
+            echo "Enabling auto-merge..."
+            gh pr merge "$PR" --auto --squash
+          else
+            echo "Auto-merge already enabled"
+          fi
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
