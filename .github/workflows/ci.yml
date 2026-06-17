@@ -220,7 +220,7 @@ jobs:
         if: github.event_name == 'push' && steps.cpr.outputs.pull-request-number
         run: gh pr review --approve "${{ steps.cpr.outputs.pull-request-number }}"
         env:
-          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Enable auto-merge
         if: github.event_name == 'push' && steps.cpr.outputs.pull-request-number
