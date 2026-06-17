@@ -52,7 +52,7 @@ jobs:
  
       - name: Genereer coverage rapport & controleer drempel
         run: |
-          mvn verify \
+          mvn jacoco:report verify \
             --no-transfer-progress \
             -pl api,api-1.9,api-1.10,api-2.0,api-2.2,api-tests \
             -am -P ci \
