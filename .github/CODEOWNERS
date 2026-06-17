@@ -1,18 +1,15 @@
 # CODEOWNERS — verplichte reviewers per pad
-# Syntaxis: <patroon>  <@gebruiker of @org/team>
-#
-# Elke PR die bestanden raakt die matchen krijgt automatisch
-# de genoemde eigenaar(s) als verplichte reviewer.
+# Alle wijzigingen vallen onder het C4-Detonators team
 
-# Standaard: alles vereist het platform-team
-*                           @A-Team-Detonators/A-Team
+# Standaard: alles vereist review van C4-Detonators
+* @A-Team-Detonators/C4-Detonators
 
-# CI/CD pipelines: extra goedkeuring security-team
-.github/                    @A-Team-Detonators/A-Team
+# CI/CD en GitHub configuratie
+.github/ @A-Team-Detonators/C4-Detonators
 
-# Productieconfiguratie: security + lead
-environments/production/    @jouw-org/security-team @jouw-org/tech-leads
-docker/docker-compose.production.yml  @jouw-org/security-team
+# Productieconfiguratie
+environments/production/ @A-Team-Detonators/C4-Detonators
+docker/docker-compose.production.yml @A-Team-Detonators/C4-Detonators
 
-# Scripts die rechten instellen
-scripts/                    @A-Team-Detonators/A-Team
+# Scripts met systeemimpact
+scripts/ @A-Team-Detonators/C4-Detonators
