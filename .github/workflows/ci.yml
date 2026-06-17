@@ -2,9 +2,9 @@ name: CI — Build, Test & Security
 
 on:
   push:
-    branches: ["main", "production", "acceptation", "test"]
+    branches: ["main", "production", "acceptation", "test", "dev"]
   pull_request:
-    branches: ["main", "production", "acceptation", "test"]
+    branches: ["main", "production", "acceptation", "test", "dev"]
 
 permissions:
   contents: read
