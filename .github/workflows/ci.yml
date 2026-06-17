@@ -43,28 +43,29 @@ jobs:
       - uses: actions/checkout@v4
       - uses: ./.github/actions/setup-java-maven
  
-      - name: Run tests
+      - name: Run tests & genereer coverage rapport
         run: |
-          mvn clean test \
+          mvn verify jacoco:report \
             --no-transfer-progress \
             -pl api,api-1.9,api-1.10,api-2.0,api-2.2,api-tests \
-            -am
+            -am -P ci
  
-      - name: Genereer coverage rapport & controleer drempel
+      - name: Verzamel coverage rapporten
+        if: always()
         run: |
-          mvn jacoco:report verify \
-            --no-transfer-progress \
-            -pl api,api-1.9,api-1.10,api-2.0,api-2.2,api-tests \
-            -am -P ci \
-            -DskipTests
- 
+          mkdir -p coverage-reports
+          find . -path "*/target/site/jacoco" -type d | while read dir; do
+            module=$(echo "$dir" | cut -d/ -f2)
+            cp -r "$dir" "coverage-reports/$module"
+          done
+
       - name: Upload coverage rapport
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: coverage-report
-          path: "**/target/site/jacoco/"
-          retention-days: 90   # NEN-7510: beveiligingsrapporten langer bewaren
+          path: coverage-reports/
+          retention-days: 90
  
       - name: Upload test reports
         if: always()
