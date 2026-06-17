@@ -228,6 +228,14 @@ jobs:
 
       - uses: ./.github/actions/setup-openmrs-maven
 
+      - name: Build (compile classes for Sonar)
+        run: |
+          mvn clean package \
+            --no-transfer-progress \
+            -DskipTests \
+            -pl api,api-1.9,api-1.10,api-2.0,api-2.2,api-tests \
+            -am
+
       - name: Download coverage reports
         uses: actions/download-artifact@v4
         with:
