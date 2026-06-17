@@ -36,27 +36,51 @@ jobs:
   # 2. TESTS
   # ──────────────────────────────────────────────
   test:
-    name: Tests
-    runs-on: ubuntu-latest
-    needs: build
-    steps:
-      - uses: actions/checkout@v4
-      - uses: ./.github/actions/setup-java-maven
+      name: Tests & Coverage
+      runs-on: ubuntu-latest
+      needs: build
+      steps:
+        - uses: actions/checkout@v4
+        - uses: ./.github/actions/setup-java-maven
 
-      - name: Run tests
-        run: |
-          mvn clean test \
-            --no-transfer-progress \
-            -pl api,api-1.9,api-1.10,api-2.0,api-2.2,api-tests \
-            -am
+        - name: Run tests
+          run: mvn clean test --no-transfer-progress -P ci
 
-      - name: Upload test reports
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: test-reports
-          path: "**/target/surefire-reports/**"
-          retention-days: 30
+        - name: Genereer coverage rapport & controleer drempel
+          # jacoco:report  → HTML/XML naar target/site/jacoco/
+          # jacoco:check   → blokkeert build als coverage < 60%
+          run: mvn jacoco:report jacoco:check --no-transfer-progress -P ci
+
+        - name: Upload coverage rapporten (HTML)
+          if: always()
+          uses: actions/upload-artifact@v4
+          with:
+            name: coverage-report
+            path: "**/target/site/jacoco/"
+            retention-days: 30   # NEN-7510: testartefacten bewaren
+
+        - name: Upload test rapporten (Surefire XML)
+          if: always()
+          uses: actions/upload-artifact@v4
+          with:
+            name: test-reports
+            path: "**/target/surefire-reports/**"
+            retention-days: 30
+
+        # Samenvattingsregel in de PR — toont coverage % direct in de check
+        - name: Coverage samenvatting in job-summary
+          if: always()
+          run: |
+            echo "## 📊 Code Coverage Samenvatting" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "| Module | Rapport |" >> $GITHUB_STEP_SUMMARY
+            echo "|--------|---------|" >> $GITHUB_STEP_SUMMARY
+            for f in $(find . -path "*/target/site/jacoco/index.html" | sort); do
+              module=$(echo "$f" | cut -d/ -f2)
+              echo "| $module | \`$f\` |" >> $GITHUB_STEP_SUMMARY
+            done
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "> Drempel: **60% instruction coverage** (geblokkeerd door \`jacoco:check\` in pom.xml, profiel \`ci\`)" >> $GITHUB_STEP_SUMMARY
 
   # ──────────────────────────────────────────────
   # 3. CODEQL — SAST (Java 8 safe mode)
