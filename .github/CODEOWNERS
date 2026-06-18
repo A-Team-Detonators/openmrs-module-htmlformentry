@@ -13,3 +13,7 @@ docker/docker-compose.production.yml @A-Team-Detonators/C4-Detonators
 
 # Scripts met systeemimpact
 scripts/ @A-Team-Detonators/C4-Detonators
+
+# SBOM wordt automatisch gegenereerd door de CI-pipeline
+# Geen handmatige review vereist
+docs/sbom/
