@@ -197,4 +197,10 @@ De OSV Scanner- en SBOM GitHub Actions zijn vastgezet op een specifieke commit-S
 
 Hierdoor worden onbedoelde wijzigingen aan de Action-implementatie voorkomen en wordt het risico op supply-chain-aanvallen binnen de CI/CD-pijplijn verkleind.
 
+## Eval Cross-Site Scripting 
 
+Binnen de legacy-omgeving van OpenMRS 1.9 gebruikt de htmlformentry-module eval() om dynamische formulierlogica (zoals het tonen of verbergen van velden) te verwerken. Hoewel automatische scanners dit markeren als een theoretisch Cross-Site Scripting (XSS) risico, is dit in de praktijk effectief afgedekt: 
+
+Geen reëel misbruikscenario: De invoer voor deze functie komt uitsluitend uit de XML-formuliesjablonen in de database. De rechten om deze formulieren te beheren (Manage HTML Forms) zijn strikt voorbehouden aan geautoriseerde beheerders. Reguliere gebruikers of externe actoren hebben hier geen toegang toe. 
+
+Operationele stabiliteit: Het aanpassen van deze legacy-code biedt geen extra veiligheid, maar brengt wel een groot risico op regressie-bugs met zich mee. Dit kan de dagelijkse klinische zorgregistratie verstoren omdat alle bestaande formuliersjablonen dan handmatig herschreven en getest moeten worden. 
