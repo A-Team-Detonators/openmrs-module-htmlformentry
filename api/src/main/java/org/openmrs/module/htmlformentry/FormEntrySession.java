@@ -142,14 +142,11 @@ public class FormEntrySession {
         this.httpSession = httpSession;
         this.patient = patient;
 
-        // Audit logging for HIPAA compliance — records patient access with identifying information
-        log.info("FormEntrySession created: user="
-        + (Context.getAuthenticatedUser() != null
-                ? Context.getAuthenticatedUser().getUsername()
-                : "anonymous")
-        + ", patientId="
-        + (patient != null ? patient.getPatientId() : null));
-
+        // AUDIT | NEN-7510 8.15 — formulier geopend, toegang tot patiëntgegevens
+        log.info("AUDIT | action=FORM_OPEN"
+                + " | userId=" + (Context.getAuthenticatedUser() != null ? Context.getAuthenticatedUser().getId() : "anonymous")
+                + " | patientId=" + (patient != null ? patient.getPatientId() : "null")
+                + " | mode=" + mode.name());
         context.setupExistingData(patient);
         velocityEngine = new VelocityEngine();
 
@@ -574,6 +571,12 @@ public class FormEntrySession {
                         e.setEncounterType(form.getEncounterType());
                 }
                 Context.getEncounterService().saveEncounter(encounter);
+                // AUDIT | NEN-7510 8.15 — nieuwe encounter opgeslagen
+                log.info("AUDIT | action=ENCOUNTER_CREATE"
+                        + " | userId=" + (Context.getAuthenticatedUser() != null ? Context.getAuthenticatedUser().getId() : "anonymous")
+                        + " | patientId=" + (patient != null ? patient.getPatientId() : "null")
+                        + " | encounterId=" + encounter.getId()
+                        + " | formId=" + (htmlForm != null ? htmlForm.getId() : "null"));
             }
         }
 
@@ -675,11 +678,28 @@ public class FormEntrySession {
                 if (voidEncounter) {
                     try {
                         HtmlFormEntryUtil.voidEncounter(encounter, htmlForm, "voided via htmlformentry form submission");
+                        // AUDIT | NEN-7510 8.15 — encounter gevoided (verwijderd via formulier)
+                        log.info("AUDIT | action=ENCOUNTER_VOID"
+                                + " | userId=" + (Context.getAuthenticatedUser() != null ? Context.getAuthenticatedUser().getId() : "anonymous")
+                                + " | patientId=" + (patient != null ? patient.getPatientId() : "null")
+                                + " | encounterId=" + encounter.getId());
                     } catch (Exception ex) {
+                        // AUDIT | NEN-7510 8.15 — poging tot void van encounter mislukt
+                        log.warn("AUDIT | action=ENCOUNTER_VOID_FAILED"
+                                + " | userId=" + (Context.getAuthenticatedUser() != null ? Context.getAuthenticatedUser().getId() : "anonymous")
+                                + " | patientId=" + (patient != null ? patient.getPatientId() : "null")
+                                + " | encounterId=" + encounter.getId()
+                                + " | error=" + ex.getMessage());
                         throw new RuntimeException("Unable to void encounter.", ex);
                     }
                 }
                 Context.getEncounterService().saveEncounter(encounter);
+                // AUDIT | NEN-7510 8.15 — bestaande encounter bijgewerkt (EDIT)
+                log.info("AUDIT | action=ENCOUNTER_EDIT"
+                        + " | userId=" + (Context.getAuthenticatedUser() != null ? Context.getAuthenticatedUser().getId() : "anonymous")
+                        + " | patientId=" + (patient != null ? patient.getPatientId() : "null")
+                        + " | encounterId=" + encounter.getId()
+                        + " | formId=" + (htmlForm != null ? htmlForm.getId() : "null"));
             } else if (submissionActions.getObsToCreate() != null) {
                 // this may not work right due to savehandlers (similar error to HTML-135) but this branch is
                 // unreachable until html forms are allowed to edit data without an encounter

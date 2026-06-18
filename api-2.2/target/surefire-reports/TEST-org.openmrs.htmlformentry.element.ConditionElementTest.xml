@@ -4,7 +4,6 @@
     <property name="java.runtime.name" value="Java(TM) SE Runtime Environment"/>
     <property name="sun.boot.library.path" value="C:\Program Files\Java\jdk1.8.0_481\jre\bin"/>
     <property name="java.vm.version" value="25.481-b10"/>
-    <property name="user.country.format" value="NL"/>
     <property name="java.vm.vendor" value="Oracle Corporation"/>
     <property name="maven.multiModuleProjectDirectory" value="C:\School\Jaar2\Periode4\LU2\openmrs-module-htmlformentry"/>
     <property name="java.vendor.url" value="https://java.oracle.com/"/>
