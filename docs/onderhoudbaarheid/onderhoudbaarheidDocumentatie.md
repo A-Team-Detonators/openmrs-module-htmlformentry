@@ -81,6 +81,7 @@ Zoals te zien in deze screenshots was Expression deprecated, dit hebben we opgel
 #### 3. remove this expression which always evaluates to `true`
 ![CodeSmellExpressionTrue](images/CodeSmells3FormEntryGenerator.png)
 ![CodeSmellExpressionTrueFix](images/CodeSmellExpressionTrueFix.png)
+Zoals je kunt zien hebben we in de if statement de '!=null' weggehaald omdat die overbodig was.
 
 #### 4. Remove this unnecessary cast to `List`
 ![CodeSmellUnnecessaryListCast](images/CodeSmells2.png)
@@ -88,6 +89,7 @@ Zoals te zien in deze screenshots was Expression deprecated, dit hebben we opgel
 ![CodeSmellUnnecessaryListCastFix](images/CodeSmellUnnecessaryListCastFix2.png)
 ![CodeSmellUnnecessaryListCastFix](images/CodeSmellUnnecessaryListCastFix3.png)
 ![CodeSmellUnnecessaryListCastFix](images/CodeSmellUnnecessaryListCastFix4.png)
+Zoals je kunt zien hebben we bij alle code waar zo'n Unnecessary cast gebruikt was omgeschreven zodat er geen cast meer wordt gedaan.
 
 #### 5. Remove this unused import `org.hibernate.SessionFactory`
 ![CodeSmellUnnecessaryListCast](images/CodeSmells1.png)
@@ -97,6 +99,7 @@ Zoals je kan zien was er 1 ongebruikte dependency voordat we gingen refactoren, 
 #### 6. Reduce the total number of break and continue statements in this loop to use at most one
 ![CodeSmellBreakStatements](images/CodeSmells1FormEntryGenerator.png)
 ![CodeSmellBreakStatementsFix](images/CodeSmellBreakStatementsFix.png)
+Zoals je kunt zien hebben we de While statement aangepast zodat er nog maar 1 break in de code staat.
 
 #### 7. Replace the type specification in this constructor call with the diamond operator (`<>`)
 ![CodeSmellBreakStatements](images/CodeSmells2FormEntryGenerator.png)
@@ -116,7 +119,9 @@ AI tooling is gebruik als ondersteuning op onze werkzaamheden, het beter begrijp
 
 ## 6. Validatie verbeteringen
 Na de wijzigingen is opnieuw een SonarQube-analyse uitgevoerd.
-
+![Sonar](images/SonarQubeResultAfterRefactor.png)
+![logsTesten](images/SonarQubeCloudResultAfterRefactor.png)
+Zoals je hier kunt zien staan er nu geen Issues meer open in SonarQube.
 
 Daarnaast zijn dezelfde tests opnieuw uitgevoerd:
 
@@ -125,3 +130,7 @@ mvn test
 ```
 
 Resultaat:
+![logsTesten](images/LogsTestsNaCodeAanpassingen.png)
+![logsTesten](images/LogsTestsNaCodeAanpassingenTests.png)
+![logsTesten](images/testresultatenNaCodeAanpassing.png)
+Zoals je kunt zien zijn de testen nog steeds geslaagd.
