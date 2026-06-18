@@ -2,9 +2,9 @@ name: CI — Build, Test & Security
 
 on:
   push:
-    branches: ["main", "production", "acceptation", "test"]
+    branches: ["main", "production", "acceptation", "test", "dev"]
   pull_request:
-    branches: ["main", "production", "acceptation", "test"]
+    branches: ["main", "production", "acceptation", "test", "dev"]
 
 permissions:
   contents: read
@@ -20,17 +20,23 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: ./.github/actions/setup-java-maven
+      - uses: actions/setup-java@v4
+        with:
+          java-version: "8"
+          distribution: "temurin"
+          cache: maven
+
+      - uses: ./.github/actions/setup-openmrs-maven
 
       - name: Build
-        run: mvn clean package --no-transfer-progress -DskipTests
+        run: mvn clean package --no-transfer-progress -DskipTests -P ci
 
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4
         with:
           name: build-artifacts
           path: "**/target/*.jar"
-          retention-days: 30
+          retention-days: 90   # NEN-7510: beveiligingsrapporten langer bewaren
 
   # ──────────────────────────────────────────────
   # 2. TESTS
@@ -41,28 +47,51 @@ jobs:
     needs: build
     steps:
       - uses: actions/checkout@v4
-      - uses: ./.github/actions/setup-java-maven
+      - uses: actions/setup-java@v4
+        with:
+          java-version: "8"
+          distribution: "temurin"
+          cache: maven
 
-      - name: Run tests
+      - uses: ./.github/actions/setup-openmrs-maven
+ 
+      - name: Run tests & genereer coverage rapport
         run: |
-          mvn clean test \
+          mvn verify jacoco:report \
             --no-transfer-progress \
             -pl api,api-1.9,api-1.10,api-2.0,api-2.2,api-tests \
-            -am
+            -am -P ci
+ 
+      - name: Verzamel coverage rapporten
+        if: always()
+        run: |
+          mkdir -p coverage-reports
+          find . -path "*/target/site/jacoco" -type d | while read dir; do
+            module=$(echo "$dir" | cut -d/ -f2)
+            cp -r "$dir" "coverage-reports/$module"
+          done
 
+      - name: Upload coverage rapport
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: coverage-reports/
+          retention-days: 90
+ 
       - name: Upload test reports
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: test-reports
           path: "**/target/surefire-reports/**"
-          retention-days: 30
+          retention-days: 90   # NEN-7510: beveiligingsrapporten langer bewaren
 
   # ──────────────────────────────────────────────
   # 3. CODEQL — SAST (Java 8 safe mode)
   # ──────────────────────────────────────────────
   codeql:
-    name: CodeQL SAST
+    name: CodeQL
     runs-on: ubuntu-latest
     needs: build
     permissions:
@@ -75,7 +104,13 @@ jobs:
         language: ["java"]
     steps:
       - uses: actions/checkout@v4
-      - uses: ./.github/actions/setup-java-maven
+      - uses: actions/setup-java@v4
+        with:
+          java-version: "8"
+          distribution: "temurin"
+          cache: maven
+
+      - uses: ./.github/actions/setup-openmrs-maven
 
       - name: Initialize CodeQL
         uses: github/codeql-action/init@v3
@@ -103,6 +138,13 @@ jobs:
           name: codeql-sarif
           path: codeql-results/
           retention-days: 90   # NEN-7510: beveiligingsrapporten langer bewaren
+      
+      - name: Upload compiled classes
+        uses: actions/upload-artifact@v4
+        with:
+          name: compiled-classes
+          path: |
+            **/target/classes/**
 
   # ──────────────────────────────────────────────
   # 4. DEPENDENCY REVIEW (alleen op PR)
@@ -131,22 +173,25 @@ jobs:
       contents: write
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref }}   # checkout de PR-branch
 
-      - name: Generate SBOM (no build dependency)
-        uses: anchore/sbom-action@v0
+      - name: Generate SBOM
+        uses: anchore/sbom-action@e22c389904149dbc22b58101806040fa8d37a610
         with:
           format: cyclonedx-json
           output-file: sbom.cyclonedx.json
+          upload-artifact: false
 
-      - name: Upload SBOM
+      - name: Upload SBOM als artifact
         uses: actions/upload-artifact@v4
         with:
-          name: sbom-cyclonedx
+          name: sbom-cyclonedx-anchore
           path: sbom.cyclonedx.json
-          retention-days: 90   # NEN-7510: bewaarplicht beveiligingsartefacten
-      
-      - name: Commit SBOM to repository
-        if: github.event_name == 'push'
+          retention-days: 90
+
+      - name: Commit SBOM naar PR-branch
+        if: github.event_name == 'pull_request'
         run: |
           mkdir -p docs/sbom
           cp sbom.cyclonedx.json docs/sbom/sbom.cyclonedx.json
@@ -161,12 +206,69 @@ jobs:
   # ──────────────────────────────────────────────
   osv-scan:
     name: OSV Scanner
-    needs: build
+    needs: sbom
     permissions:
       actions: read
       contents: read
       security-events: write
     uses: google/osv-scanner-action/.github/workflows/osv-scanner-reusable.yml@v2.3.8
     with:
+      download-artifact: sbom-cyclonedx-anchore
       scan-args: |-
         --sbom=sbom.cyclonedx.json
+
+  # ──────────────────────────────────────────────
+  # 7. SONARQUBE SCAN
+  # ──────────────────────────────────────────────
+  sonar:
+    name: SonarQube Scan
+    runs-on: ubuntu-latest
+    needs: test
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Java 8 (compile) and Java 17 (sonar)
+        uses: actions/setup-java@v4
+        with:
+          distribution: "temurin"
+          java-version: |
+            8
+            17
+          cache: maven
+
+      - uses: ./.github/actions/setup-openmrs-maven
+
+      - name: Download coverage reports
+        uses: actions/download-artifact@v4
+        with:
+          name: coverage-report
+          path: coverage-reports/
+
+      - name: Build & verify with Java 8
+        env:
+          JAVA_HOME: ${{ env.JAVA_HOME_8_X64 }}
+        run: |
+          mvn verify \
+            --no-transfer-progress \
+            -pl api,api-1.9,api-1.10,api-2.0,api-2.2,api-tests \
+            -am -P ci \
+            -DskipTests
+
+      - name: SonarQube Scan with Java 17
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          JAVA_HOME: ${{ env.JAVA_HOME_17_X64 }}
+        run: |
+          mvn sonar:sonar \
+            --no-transfer-progress \
+            -pl api,api-1.9,api-1.10,api-2.0,api-2.2,api-tests \
+            -am -P ci \
+            -Dsonar.projectKey=${{ secrets.PROJECT_KEY }} \
+            -Dsonar.organization=${{ secrets.ORGANIZATION_KEY }} \
+            -Dsonar.host.url=${{ secrets.SONAR_HOST_URL }} \
+            -Dsonar.java.source=8 \
+            -Dsonar.java.binaries=target/classes \
+            -Dsonar.coverage.jacoco.xmlReportPaths=**/target/site/jacoco/jacoco.xml
