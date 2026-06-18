@@ -88,7 +88,7 @@ public class HibernateHtmlFormEntryDAO implements HtmlFormEntryDAO {
 			query += " and ur.role = :roleName "; 
 		query += " order by familyName ";
 		
-		org.hibernate.Query q = sessionFactory.getCurrentSession().createSQLQuery(query); 
+		org.hibernate.SQLQuery q = sessionFactory.getCurrentSession().createSQLQuery(query); 
 		if (roleName != null)
 			q.setString("roleName", roleName); 
 
@@ -152,7 +152,7 @@ public class HibernateHtmlFormEntryDAO implements HtmlFormEntryDAO {
 		String query =  "select distinct(pa.person_id) from person_attribute pa, person_attribute_type pat where pa.person_attribute_type_id = pat.person_attribute_type_id and pat.name=:attribute"; // Changed from '" + attribute + "' to :attribute
 		if(attributeValue != null)
 		{
-			query = query + " and value=:attributeValue";
+			query = query + " and value=:attributeValue"; 
 		}
 		
 		org.hibernate.Query q = sessionFactory.getCurrentSession().createSQLQuery(query); 
