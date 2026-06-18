@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.regex.Pattern;
 
 import org.openmrs.Cohort;
 import org.openmrs.Patient;
@@ -22,7 +23,8 @@ import org.springframework.web.bind.annotation.RequestParam;
 
 @Controller
 public class PopupWidgetController {
-                      
+    private static final Pattern DIGIT_PATTERN = Pattern.compile("\\d");
+       
 	@RequestMapping("/module/htmlformentry/personSearch")
 	public void patientSearch(ModelMap model) throws Exception {
 		
@@ -56,7 +58,7 @@ public class PopupWidgetController {
 		}
 		
 		// also search on patient identifier if the query contains a number
-		if (searchPhrase.matches(".*\\d+.*")) {
+		if (searchPhrase != null && DIGIT_PATTERN.matcher(searchPhrase).find()) {
 			patientService = Context.getPatientService();
 			for (Patient p : patientService.getPatients(null, searchPhrase, null, false)) {
 				if(!personId.contains(p.getId()))

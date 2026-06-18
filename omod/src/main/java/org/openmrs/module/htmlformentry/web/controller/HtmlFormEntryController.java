@@ -40,8 +40,6 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.view.RedirectView;
 
-import org.springframework.web.bind.annotation.ResponseBody;
-
 /**
  * The controller for entering/viewing a form.
  * <p/>
@@ -57,15 +55,6 @@ public class HtmlFormEntryController {
     public final static String FORM_IN_PROGRESS_KEY = "HTML_FORM_IN_PROGRESS_KEY";
     public final static String FORM_IN_PROGRESS_VALUE = "HTML_FORM_IN_PROGRESS_VALUE";
     public final static String FORM_PATH = "/module/htmlformentry/htmlFormEntry";
-
-    @RequestMapping(value = "/module/htmlformentry/loadSession.form", method = RequestMethod.POST)
-    @ResponseBody
-    public String loadSession(@RequestParam("data") String data) throws Exception {
-        byte[] bytes = Base64.getDecoder().decode(data);
-        java.io.ObjectInputStream ois = new java.io.ObjectInputStream(new java.io.ByteArrayInputStream(bytes));
-        Object obj = ois.readObject();
-        return "Loaded object of type: " + obj.getClass().getName();
-    }
    
     // A place to store data that will persist longer than a session, but won't
  	// persist beyond application restart
