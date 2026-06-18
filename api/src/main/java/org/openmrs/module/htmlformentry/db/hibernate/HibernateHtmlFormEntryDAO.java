@@ -100,7 +100,7 @@ public class HibernateHtmlFormEntryDAO implements HtmlFormEntryDAO {
     public OpenmrsObject getItemByUuid(Class<? extends OpenmrsObject> type, String uuid) {
 		try {
 			Criteria criteria = sessionFactory.getCurrentSession().createCriteria(type);
-			criteria.add(Expression.eq("uuid", uuid));
+			criteria.add(Restrictions.eq("uuid", uuid));
 			OpenmrsObject result = (OpenmrsObject) criteria.uniqueResult();
 			return result;
 		}
@@ -116,7 +116,7 @@ public class HibernateHtmlFormEntryDAO implements HtmlFormEntryDAO {
     	 try {
 	    	 String idProperty = sessionFactory.getHibernateSessionFactory().getClassMetadata(type).getIdentifierPropertyName();
 		 	 Criteria criteria = sessionFactory.getCurrentSession().createCriteria(type);
-		 	 criteria.add(Expression.eq(idProperty, id));
+		 	 criteria.add(Restrictions.eq(idProperty, id));
 		 	 OpenmrsObject result = (OpenmrsObject) criteria.uniqueResult();
 		 	 return result;
     	 }
@@ -131,7 +131,7 @@ public class HibernateHtmlFormEntryDAO implements HtmlFormEntryDAO {
     	// we use a try/catch here to handle oddities like "Role" which don't have a directly-referenceable name property
     	try {
     		Criteria criteria = sessionFactory.getCurrentSession().createCriteria(type);
-    		criteria.add(Expression.eq("name", name));
+    		criteria.add(Restrictions.eq("name", name));
     		OpenmrsObject result = (OpenmrsObject) criteria.uniqueResult();
     		return result;
     	}
