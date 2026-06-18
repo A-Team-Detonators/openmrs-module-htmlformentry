@@ -23,6 +23,12 @@ De eerste SonarQube-analyse gaf de volgende resultaten:
 | Code smells            | Meerdere gevonden |
 
 De Quality Gate faalde omdat de nieuwe code geen test coverage had en de maintainability rating onder de vereiste waarde zat.
+![SonarQubeErrors](images/SonarQubeErrors1.png)
+![SonarQubeErrors](images/SonarQubeErrors2.png)
+![SonarQubeErrors](images/SonarQubeErrors3.png)
+![SonarQubeErrors](images/SonarQubeErrors4.png)
+![SonarQubeErrors](images/SonarQubeErrors5.png)
+
 
 
 ## 2. Testopzet en testresultaten
