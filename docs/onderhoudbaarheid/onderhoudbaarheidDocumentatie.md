@@ -55,11 +55,55 @@ Conclusie:
 De bestaande functionaliteit werkt correct. Hierdoor kan de refactor uitgevoerd worden zonder dat bestaande problemen worden verward met nieuwe fouten.
 ## 3. Verbeteringen (prioritering en onderbouwing)
 
-Op basis van de analyse zijn verbeteringen gekozen.
+Op basis van de analyse is gekozen om de problemen op te lossen in deze volgorde:
+
+| Rank | Issue                                                                                     |
+|------|-------------------------------------------------------------------------------------------|
+| 1    | Use static access with `org.hibernate.criterion.Restrictions` for `eq`.                   |
+| 2    | Remove this use of `Expression`; it is deprecated.                                        |
+| 3    | Remove this expression which always evaluates to `true`.                                  |
+| 4    | Remove this unnecessary cast to `List`.                                                   |
+| 5    | Remove this unused import `org.hibernate.SessionFactory`.                                 |
+| 6    | Reduce the total number of break and continue statements in this loop to use at most one. |
+| 7    | Replace the type specification in this constructor call with the diamond operator (`<>`). |
 
 ## 4. Aangepast ontwerp
 
 ## 5. Realisatie (PoC) & verantwoording
+
+### Uitwerkingen Issues
+#### 1 en 2. Use static access with `org.hibernate.criterion.Restrictions` for `eq`,  Remove this use of `Expression`; it is deprecated.
+![CodeSmellRestrictions](images/RestrictionsHighCodeSmell.png)
+![CodeSmellExpression](images/ExpressionsDeprecatedCodeSmell.png)
+![CodeSmellRestrictionsFix](images/RestrictionsHighCodeSmellFix.png)
+Zoals te zien in deze screenshots was Expression deprecated, dit hebben we opgelosd door Restrictions te gebruiken, het doet hetzelfde alleen Restrictions is de vernieuwde versie. Nadat we dat hebben gedaan hebben we de oude import verwijdert
+
+#### 3. remove this expression which always evaluates to `true`
+![CodeSmellExpressionTrue](images/CodeSmells3FormEntryGenerator.png)
+![CodeSmellExpressionTrueFix](images/CodeSmellExpressionTrueFix.png)
+
+#### 4. Remove this unnecessary cast to `List`
+![CodeSmellUnnecessaryListCast](images/CodeSmells2.png)
+![CodeSmellUnnecessaryListCastFix](images/CodeSmellUnnecessaryListCastFix1.png)
+![CodeSmellUnnecessaryListCastFix](images/CodeSmellUnnecessaryListCastFix2.png)
+![CodeSmellUnnecessaryListCastFix](images/CodeSmellUnnecessaryListCastFix3.png)
+![CodeSmellUnnecessaryListCastFix](images/CodeSmellUnnecessaryListCastFix4.png)
+
+#### 5. Remove this unused import `org.hibernate.SessionFactory`
+![CodeSmellUnnecessaryListCast](images/CodeSmells1.png)
+![CodeSmellImportFix](images/CodeSmellImportFix.png)
+Zoals je kan zien was er 1 ongebruikte dependency voordat we gingen refactoren, die hebben we verwijdert en uiteindelijk was natuurlijk ook de dependency van de expression niet meer in gebruik, dus die kon ook weg
+
+#### 6. Reduce the total number of break and continue statements in this loop to use at most one
+![CodeSmellBreakStatements](images/CodeSmells1FormEntryGenerator.png)
+![CodeSmellBreakStatementsFix](images/CodeSmellBreakStatementsFix.png)
+
+#### 7. Replace the type specification in this constructor call with the diamond operator (`<>`)
+![CodeSmellBreakStatements](images/CodeSmells2FormEntryGenerator.png)
+![CodeSmellDiamondOperatorFix](images/CodeSmellDiamondOperatorFix1.png)
+![CodeSmellDiamondOperatorFix](images/CodeSmellDiamondOperatorFix2.png)
+![CodeSmellDiamondOperatorFix](images/CodeSmellDiamondOperatorFix3.png)
+Zoals je kunt zien in de screenshots waren er een heleboel type specifications die verandert konden worden naar de diamond operator (`<>`)
 
 ### Tooling
 
@@ -72,6 +116,7 @@ AI tooling is gebruik als ondersteuning op onze werkzaamheden, het beter begrijp
 
 ## 6. Validatie verbeteringen
 Na de wijzigingen is opnieuw een SonarQube-analyse uitgevoerd.
+
 
 Daarnaast zijn dezelfde tests opnieuw uitgevoerd:
 

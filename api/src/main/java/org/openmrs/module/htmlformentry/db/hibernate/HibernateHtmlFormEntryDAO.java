@@ -65,12 +65,12 @@ public class HibernateHtmlFormEntryDAO implements HtmlFormEntryDAO {
         Criteria crit = sessionFactory.getCurrentSession().createCriteria(HtmlForm.class);
         crit.add(Restrictions.eq("form", form));
         crit.addOrder(Order.desc("dateCreated"));
-        List list = crit.list();
-        List<HtmlForm> FormList = (List<HtmlForm>) list;
-        if (list.size() >= 1)
-            return FormList.get(0);
-        else
+        List<HtmlForm> formList = crit.list();
+        if (!formList.isEmpty()) {
+            return formList.get(0);
+        } else {
             return null;
+        }
     }
 
 	@Override
