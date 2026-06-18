@@ -2,7 +2,7 @@ name: CI — Build, Test & Security
 
 on:
   push:
-    branches: ["main", "production", "acceptation", "test", "dev", "chore/update-sbom"]
+    branches: ["main", "production", "acceptation", "test", "dev"]
   pull_request:
     branches: ["main", "production", "acceptation", "test", "dev"]
     paths-ignore:
