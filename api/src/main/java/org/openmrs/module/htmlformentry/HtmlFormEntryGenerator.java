@@ -294,8 +294,8 @@ public class HtmlFormEntryGenerator implements TagHandler {
         return xml;
     }
 
-    /**
-     * Takes an xml string, searches for 'comments'   in the string using RegEx and filters out
+   /**
+     * Takes an xml string, searches for 'comments' in the string using RegEx and filters out
      * the comments from the input string
      *
      * @param xml input string
@@ -307,23 +307,22 @@ public class HtmlFormEntryGenerator implements TagHandler {
         StringBuilder result = new StringBuilder();
 
         int pos = 0;
-        while (true) {
-            int start = xml.indexOf("<!--", pos);
-            if (start < 0) {
-                result.append(xml.substring(pos));
-                break;
-            }
-
+        int start = xml.indexOf("<!--", pos);
+        while (start >= 0) {
             result.append(xml, pos, start);
 
             int end = xml.indexOf("-->", start + 4);
             if (end < 0) {
-                // malformed comment: stop processing or append remainder
+                // malformed comment: stop processing, treat rest as already appended below
+                pos = xml.length();
                 break;
             }
 
             pos = end + 3;
+            start = xml.indexOf("<!--", pos);
         }
+
+        result.append(xml.substring(pos));
 
         return result.toString();
     }
