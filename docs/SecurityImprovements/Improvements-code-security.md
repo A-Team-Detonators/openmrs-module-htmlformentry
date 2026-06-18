@@ -204,3 +204,10 @@ Binnen de legacy-omgeving van OpenMRS 1.9 gebruikt de htmlformentry-module eval(
 Geen reëel misbruikscenario: De invoer voor deze functie komt uitsluitend uit de XML-formuliesjablonen in de database. De rechten om deze formulieren te beheren (Manage HTML Forms) zijn strikt voorbehouden aan geautoriseerde beheerders. Reguliere gebruikers of externe actoren hebben hier geen toegang toe. 
 
 Operationele stabiliteit: Het aanpassen van deze legacy-code biedt geen extra veiligheid, maar brengt wel een groot risico op regressie-bugs met zich mee. Dit kan de dagelijkse klinische zorgregistratie verstoren omdat alle bestaande formuliersjablonen dan handmatig herschreven en getest moeten worden. 
+
+## SQL-injectie via database-queries
+
+![](images/Afbeelding15.png)
+![](images/Afbeelding16.png)
+
+SQL-queries in de backend werden voorheen opgebouwd via directe string-concatenatie, wat een risico op SQL-injectie met zich meebracht. Dit is aangepast door gebruik te maken van parameterized queries (via q.setString()) met unieke placeholders (:roleName, :attribute). Hierdoor verwerkt de database invoerbestanden strikt als data en niet als uitvoerbare code, wat het risico op ongeautoriseerde database-manipulatie volledig elimineert.
