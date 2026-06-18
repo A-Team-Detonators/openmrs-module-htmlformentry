@@ -6,8 +6,6 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.hibernate.Criteria;
 import org.hibernate.Query;
-import org.hibernate.SessionFactory;
-import org.hibernate.criterion.Expression;
 import org.hibernate.criterion.Order;
 import org.hibernate.criterion.Restrictions;
 import org.hibernate.transform.Transformers;
@@ -58,7 +56,7 @@ public class HibernateHtmlFormEntryDAO implements HtmlFormEntryDAO {
     @SuppressWarnings("unchecked")
     public List<HtmlForm> getAllHtmlForms() {
     	Query query = sessionFactory.getCurrentSession().createQuery("from HtmlForm order by form.name asc");
-    	return (List<HtmlForm>) query.list();
+    	return query.list();
     }
 
     @Override
@@ -67,9 +65,10 @@ public class HibernateHtmlFormEntryDAO implements HtmlFormEntryDAO {
         Criteria crit = sessionFactory.getCurrentSession().createCriteria(HtmlForm.class);
         crit.add(Restrictions.eq("form", form));
         crit.addOrder(Order.desc("dateCreated"));
-        List<HtmlForm> list = (List<HtmlForm>) crit.list();
+        List list = crit.list();
+        List<HtmlForm> FormList = (List<HtmlForm>) list;
         if (list.size() >= 1)
-            return list.get(0);
+            return FormList.get(0);
         else
             return null;
     }
@@ -92,7 +91,7 @@ public class HibernateHtmlFormEntryDAO implements HtmlFormEntryDAO {
 		if (roleName != null)
 			q.setString("roleName", roleName); 
 
-		return (List<PersonStub>) q
+		return q
 		.addScalar("id")
 		.addScalar("givenName")
 		.addScalar("familyName")
@@ -162,6 +161,6 @@ public class HibernateHtmlFormEntryDAO implements HtmlFormEntryDAO {
 			q.setString("attributeValue", attributeValue); 
 		}
 		
-		return (List<Integer>)q.list();
+		return q.list();
 	}
 }
