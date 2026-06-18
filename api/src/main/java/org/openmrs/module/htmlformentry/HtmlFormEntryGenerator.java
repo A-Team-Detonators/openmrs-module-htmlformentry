@@ -337,7 +337,7 @@ public class HtmlFormEntryGenerator implements TagHandler {
      * <strong>Should</strong> return correct xml after replacing special characters with their ascii code
      */
     public String substituteCharacterCodesWithAsciiCodes(String xml) throws Exception {
-        HashMap<String, String> encodings = new HashMap<String, String>();
+        HashMap<String, String> encodings = new HashMap<>();
         encodings.put("&nbsp;", "&#160;");
         for (String key : encodings.keySet()) {
             Pattern pattern = Pattern.compile(key);
@@ -435,8 +435,7 @@ public class HtmlFormEntryGenerator implements TagHandler {
         // We are doing this as follows since I can't seem to get the XML node cloning to work right.
         // We can refactor later as needed if we can get it to work properly, or replace the xml library
         // First we need to parse the document to get the node attributes for repeating elements
-        List<List<Map<String, String>>> renderMaps = new ArrayList<List<Map<String, String>>>();
-
+        List<List<Map<String, String>>> renderMaps = new ArrayList<>();
         loadRenderElementsForEachRepeatElement(content, renderMaps);
 
         // Now we are just going to use String replacements to explode the repeat tags properly
@@ -475,7 +474,7 @@ public class HtmlFormEntryGenerator implements TagHandler {
                 if (templateNode == null) {
                     throw new IllegalArgumentException("All <repeat> elements must contain a child <template> element.");
                 }
-                List<Map<String, String>> l = new ArrayList<Map<String, String>>();
+                List<Map<String, String>> l = new ArrayList<>();
                 NodeList repeatNodes = n.getChildNodes();
                 for (int j = 0; j < repeatNodes.getLength(); j++) {
                     Node renderNode = repeatNodes.item(j);
@@ -562,7 +561,7 @@ public class HtmlFormEntryGenerator implements TagHandler {
      */
     private List<List<String>> getSubstitutionSets(String val) {
 
-        List<List<String>> substitutionSet = new ArrayList<List<String>>();
+        List<List<String>> substitutionSet = new ArrayList<>();
 
         // first, strip off the leading and trailing brackets
         val = val.replaceFirst("\\s*\\[\\s*", "");
@@ -571,7 +570,7 @@ public class HtmlFormEntryGenerator implements TagHandler {
         // split on " ] , [ "
         for (String subVal : val.split("\\s*\\]\\s*\\,\\s*\\[\\s*")) {
 
-            List<String> set= new ArrayList<String>();
+            List<String> set= new ArrayList<>();
 
             // trim off the leading quote and trailing quote
             subVal = subVal.replaceFirst("\\s*\\'", "");
@@ -620,33 +619,34 @@ public class HtmlFormEntryGenerator implements TagHandler {
     }
 
     private void applyTagsHelper(FormEntrySession session, PrintWriter out, Node parent, Node node,
-                                 Map<String, TagHandler> tagHandlerCache) {
-        if (tagHandlerCache == null)
-            tagHandlerCache = new HashMap<String, TagHandler>();
+                              Map<String, TagHandler> tagHandlerCache) {
+        if (tagHandlerCache == null) {
+            tagHandlerCache = new HashMap<>();
+        }
+
         TagHandler handler = null;
         // Find the handler for this node
-        {
-            String name = node.getNodeName();
-            if (name != null) {
-                if (tagHandlerCache.containsKey(name)) {
-                    // we've looked this up before (though it could be null)
-                    handler = tagHandlerCache.get(name);
-                } else {
-                    handler = HtmlFormEntryUtil.getService().getHandlerByTagName(name);
-                    tagHandlerCache.put(name, handler);
-                }
+        String name = node.getNodeName();
+        if (name != null) {
+            if (tagHandlerCache.containsKey(name)) {
+                // we've looked this up before (though it could be null)
+                handler = tagHandlerCache.get(name);
+            } else {
+                handler = HtmlFormEntryUtil.getService().getHandlerByTagName(name);
+                tagHandlerCache.put(name, handler);
             }
         }
 
-        if (handler == null)
+        if (handler == null) {
             handler = this; // do default actions
+        }
 
         try {
             boolean handleContents = handler.doStartTag(session, out, parent, node);
 
             // Unless the handler told us to skip them, then iterate over any children
             if (handleContents) {
-                if (handler != null && handler instanceof IteratingTagHandler) {
+                if (handler instanceof IteratingTagHandler) {
                     // recurse as many times as the tag wants
                     IteratingTagHandler iteratingHandler = (IteratingTagHandler) handler;
                     while (iteratingHandler.shouldRunAgain(session, out, parent, node)) {
@@ -655,7 +655,6 @@ public class HtmlFormEntryGenerator implements TagHandler {
                             applyTagsHelper(session, out, node, list.item(i), tagHandlerCache);
                         }
                     }
-
                 } else { // recurse to contents once
                     NodeList list = node.getChildNodes();
                     for (int i = 0; i < list.getLength(); ++i) {
@@ -670,7 +669,6 @@ public class HtmlFormEntryGenerator implements TagHandler {
             e.printStackTrace(out);
             out.print("</pre></div>");
         }
-
     }
 
     /**
