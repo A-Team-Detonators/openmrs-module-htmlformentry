@@ -103,7 +103,7 @@ Platformafhankelijkheid die upstream opgelost moet worden of verdere analyse ver
 
 ## Building a command line with string concatenation #19
 
-![](Afbeelding1.png)
+![](images/Afbeelding1.png)
 
 De bevinding lijkt een false positive of een laag-risico issue te zijn. De gebruikte waarden zijn afkomstig van JVM-systeemeigenschappen binnen de testinfrastructuur en niet van externe gebruikersinvoer. Daarnaast wordt Runtime.exec() direct aangeroepen en niet via een shell, waardoor command injection aanzienlijk wordt beperkt.
 
@@ -111,7 +111,7 @@ Desondanks is de code aangepast naar Runtime.exec(String\[\]) om aan de CodeQL-r
 
 ## Failure to use HTTPS or SFTP URL in Maven artifact upload/download #5, #6, #7
 
-![](Afbeelding2.png)
+![](images/Afbeelding2.png)
 
 De bevinding is geldig omdat de POM een Maven-repository via HTTP benaderde.
 
@@ -121,10 +121,10 @@ Deze bevinding is opgelost door de repository-URL te wijzigen naar HTTPS.
 
 **Uncontrolled data used in path expression #9, #10, #11, #12**
 
-![](Afbeelding3.png)
-![](Afbeelding4.png)
-![](Afbeelding5.png)
-![](Afbeelding6.png)
+![](images/Afbeelding3.png)
+![](images/Afbeelding4.png)
+![](images/Afbeelding5.png)
+![](images/Afbeelding6.png)
 
 Deze kwetsbaarheid maakte het mogelijk om bestanden op het OpenMRS-serverbestandssysteem te lezen via een gebruikersgestuurd bestandspad.
 
@@ -140,8 +140,8 @@ Omdat er al een uploadfunctie bestaat voor externe bestanden, beperkt deze wijzi
 
 ## Polynomial regular expression used on uncontrolled data #3, #4
 
-![](Afbeelding7.png)
-![](Afbeelding8.png)
+![](images/Afbeelding7.png)
+![](images/Afbeelding8.png)
 
 Deze bevinding werd veroorzaakt door het gebruik van een reguliere expressie op gebruikersgestuurde invoer. CodeQL markeerde dit als een mogelijk ReDoS-risico (java/polynomial-redos) vanwege overmatige backtracking.
 
@@ -151,7 +151,7 @@ Hierdoor verdwijnt het potentiële prestatieprobleem zonder wijziging van het be
 
 ## Deserialization of user-controlled data #8
 
-![](Afbeelding9.png)
+![](images/Afbeelding9.png)
 
 Deze endpoint maakte geen deel uit van de gedocumenteerde HTML Form Entry-workflow en voerde onveilige deserialisatie uit op gebruikersgestuurde data.
 
@@ -161,8 +161,8 @@ Het betrof een overblijfsel van een eerder project dat uiteindelijk niet is opge
 
 ## Log Injection #15, #16, #17, #18
 
-![](Afbeelding10.png)
-![](Afbeelding11.png)
+![](images/Afbeelding10.png)
+![](images/Afbeelding11.png)
 
 drugId is een Integer en startDate is een sterk getypeerde datumwaarde.
 
@@ -172,7 +172,7 @@ De bevinding wordt daarom beschouwd als een false positive.
 
 ## Local information disclosure in a temporary directory #14
 
-![](Afbeelding12.png)
+![](images/Afbeelding12.png)
 
 Het geüploade formulier werd voorheen opgeslagen onder een voorspelbare bestandsnaam in de systeem-tempdirectory.
 
@@ -190,8 +190,8 @@ Omdat het bestand alleen wordt gebruikt binnen een gecontroleerde testomgeving v
 
 ## Unpinned tag for a non-immutable Action in workflow or composite action #1, #2
 
-![](Afbeelding13.png)
-![](Afbeelding14.png)
+![](images/Afbeelding13.png)
+![](images/Afbeelding14.png)
 
 De OSV Scanner- en SBOM GitHub Actions zijn vastgezet op een specifieke commit-SHA in plaats van een wijzigbare versie-tag.
 
