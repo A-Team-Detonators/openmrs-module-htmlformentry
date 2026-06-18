@@ -60,18 +60,18 @@ public class HibernateHtmlFormEntryDAO implements HtmlFormEntryDAO {
     }
 
     @Override
-    @SuppressWarnings("unchecked")
-    public HtmlForm getHtmlFormByForm(Form form) {
-        Criteria crit = sessionFactory.getCurrentSession().createCriteria(HtmlForm.class);
-        crit.add(Restrictions.eq("form", form));
-        crit.addOrder(Order.desc("dateCreated"));
-        List list = crit.list();
-        List<HtmlForm> FormList = (List<HtmlForm>) list;
-        if (list.size() >= 1)
-            return FormList.get(0);
-        else
-            return null;
-    }
+	@SuppressWarnings("unchecked")
+	public HtmlForm getHtmlFormByForm(Form form) {
+		Criteria crit = sessionFactory.getCurrentSession().createCriteria(HtmlForm.class);
+		crit.add(Restrictions.eq("form", form));
+		crit.addOrder(Order.desc("dateCreated"));
+		List<HtmlForm> formList = (List<HtmlForm>) crit.list();
+		if (formList.size() >= 1) {
+			return formList.get(0);
+		} else {
+			return null;
+		}
+	}
 
 	@Override
     public boolean needsNameAndDescriptionMigration() {
