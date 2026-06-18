@@ -83,6 +83,12 @@ public class FormSubmissionController {
                 lastSubmissionErrors.addAll(errs);
             }
         }
+        if (!lastSubmissionErrors.isEmpty()) {
+            // AUDIT | NEN-7510 8.15 — formulierindiening mislukt door validatiefouten
+            log.warn("AUDIT | action=FORM_SUBMIT_FAILED"
+                    + " | userId=" + (Context.getAuthenticatedUser() != null ? Context.getAuthenticatedUser().getId() : "anonymous")
+                    + " | errorCount=" + lastSubmissionErrors.size());
+        }
         return lastSubmissionErrors;
     }
     
