@@ -303,16 +303,29 @@ public class HtmlFormEntryGenerator implements TagHandler {
      * @throws Exception
      * <strong>Should</strong> return correct xml after filtering out comments
      */
-    public String stripComments(String xml) throws Exception {
+    public String stripComments(String xml) {
+        StringBuilder result = new StringBuilder();
 
-        String regex = "<!\\s*--.*?--\\s*>";    // this is the regEx for html comment tag <!-- .* -->
-        Pattern pattern = Pattern.compile(regex,
-                Pattern.CASE_INSENSITIVE | Pattern.MULTILINE);
+        int pos = 0;
+        while (true) {
+            int start = xml.indexOf("<!--", pos);
+            if (start < 0) {
+                result.append(xml.substring(pos));
+                break;
+            }
 
-        Matcher matcher = pattern.matcher(xml);
-        xml = matcher.replaceAll("");
+            result.append(xml, pos, start);
 
-        return xml;
+            int end = xml.indexOf("-->", start + 4);
+            if (end < 0) {
+                // malformed comment: stop processing or append remainder
+                break;
+            }
+
+            pos = end + 3;
+        }
+
+        return result.toString();
     }
 
     /**
