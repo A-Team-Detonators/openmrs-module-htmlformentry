@@ -60,8 +60,9 @@ public class HtmlFormFromFileController {
 				MultipartFile multipartFile = multipartRequest.getFile("htmlFormFile");
 				if (multipartFile != null) {
 					//use the same file for the logged in user
-					f = new File(SystemUtils.JAVA_IO_TMPDIR, TEMP_HTML_FORM_FILE_PREFIX
-					        + Context.getAuthenticatedUser().getSystemId());
+					f = File.createTempFile(
+					TEMP_HTML_FORM_FILE_PREFIX + Context.getAuthenticatedUser().getSystemId(),
+					".xml");
 					if (!f.exists())
 						f.createNewFile();
 					
