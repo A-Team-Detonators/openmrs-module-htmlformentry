@@ -12,13 +12,13 @@
 
 ## Inhoudsopgave
 
-1. Executive Summary
-2. Scope en Context
-3. Audit Methodologie
-4. Risico-analyse en Bevindingen
-5. SBOM en Supply Chain Security
-6. Conclusie en Advies
-7. Bijlagen
+1. [Executive Summary](#1-executive-summary)
+2. [Scope en Context](#2-scope-en-context)
+3. [Audit Methodologie](#3-audit-methodologie)
+4. [Risico-analyse en Bevindingen](#4-risico-analyse-en-bevindingen)
+5. [SBOM en Supply Chain Security](#5-sbom-en-supply-chain-security)
+6. [Conclusie en Advies](#6-conclusie-en-advies)
+7. [Bijlagen](#7-bijlagen)
 
 ---
 
@@ -37,7 +37,7 @@ De HTML Form Entry-module van OpenMRS is onderzocht op naleving van NEN-7510:202
 **Geprioriteerde roadmap**
 
 | Prioriteit      | Actie                                                                                                                       | Termijn           |
-|-----------------|-----------------------------------------------------------------------------------------------------------------------------|-------------------|
+| --------------- | --------------------------------------------------------------------------------------------------------------------------- | ----------------- |
 | **Nu**          | Resterende SAST-aandachtspunten (null-checks, resource leaks) beoordelen en triagen                                         | Direct            |
 | **Deze sprint** | Inputvalidatie en autorisatiecontroles centraal en aantoonbaar maken; testdekking van de hoofdmodule verhogen               | Lopende sprint    |
 | **Later**       | Praktische penetratietest uitvoeren zodra een werkende testomgeving beschikbaar is; CRA-meldproces (ENISA) formeel beleggen | Volgende kwartaal |
@@ -51,7 +51,7 @@ De module toont een duidelijke positieve ontwikkeling: een eerdere gap-analyse o
 ### 2.1 Wat is beoordeeld
 
 | Onderdeel  | Beschrijving                                                |
-|------------|-------------------------------------------------------------|
+| ---------- | ----------------------------------------------------------- |
 | Module     | HTML Form Entry (`htmlformentry`)                           |
 | Versie     | 3.10.0                                                      |
 | Repository | `github.com/A-Team-Detonators/openmrs-module-htmlformentry` |
@@ -65,6 +65,7 @@ De audit bestrijkt het volledige projecttraject (workshops WS01 tot en met WS06)
 ### 2.3 Testomgeving
 
 De beoordeling is uitgevoerd op:
+
 - **Statische code-analyse:** rechtstreeks op de broncode in de `dev`-branch, los van een draaiende omgeving.
 - **CI/CD-pijplijn:** GitHub Actions binnen de organisatie A-Team-Detonators (Ontwikkel-fase van het OTAP-model: `dev` → `test` → `acceptation` → `production`).
 - **Dynamische test (pentest):** niet uitgevoerd — zie 2.5.
@@ -78,12 +79,12 @@ De beoordeling is uitgevoerd op:
 
 ### 2.5 Wat is niet getest, en waarom
 
-Er is een penetratietestplan opgesteld (zie Bijlage F) met zeven geplande testscenario's (autorisatie, formulierdefinitie-manipulatie, XSS, SQL-injectie, verouderde componenten, beschikbaarheid, integriteit). De daadwerkelijke uitvoering van deze tests is **niet gelukt**: bij het opzetten van een werkende OpenMRS + htmlformentry-testomgeving trad consistent een Liquibase-foutmelding op tijdens de database-migratie, ook na meerdere installatiepogingen met verschillende OpenMRS- en Java-versies (in totaal circa 1,5–2 dagen besteed). Na afstemming met de docent is besloten de beschikbare tijd in te zetten op codeanalyse in plaats van verdere troubleshooting. Dit betekent dat de bevindingen in dit rapport zijn gebaseerd op **statische analyse (SAST/SCA/code review)**, niet op dynamisch geverifieerd aanvallers gedrag. Dit is een erkende beperking van de huidige auditcyclus (zie Conclusie en Advies).
+Er is een penetratietestplan opgesteld [(zie Bijlage F)](#7-bijlagen) met zeven geplande testscenario's (autorisatie, formulierdefinitie-manipulatie, XSS, SQL-injectie, verouderde componenten, beschikbaarheid, integriteit). De daadwerkelijke uitvoering van deze tests is **niet gelukt**: bij het opzetten van een werkende OpenMRS + htmlformentry-testomgeving trad consistent een Liquibase-foutmelding op tijdens de database-migratie, ook na meerdere installatiepogingen met verschillende OpenMRS- en Java-versies (in totaal circa 1,5–2 dagen besteed). Na afstemming met de docent is besloten de beschikbare tijd in te zetten op codeanalyse in plaats van verdere troubleshooting. Dit betekent dat de bevindingen in dit rapport zijn gebaseerd op **statische analyse (SAST/SCA/code review)**, niet op dynamisch geverifieerd aanvallers gedrag. Dit is een erkende beperking van de huidige auditcyclus (zie Conclusie en Advies).
 
 ### 2.6 Normenkader en wetgeving
 
 | Kader                           | Toepassing                                                                                                                |
-|---------------------------------|---------------------------------------------------------------------------------------------------------------------------|
+| ------------------------------- | ------------------------------------------------------------------------------------------------------------------------- |
 | **NEN-7510:2024 Deel 2**        | Primair normenkader voor deze audit                                                                                       |
 | **AVG (GDPR)**                  | Relevant voor verwerking van medische persoonsgegevens en de verantwoordingsplicht (art. 30)                              |
 | **Cyber Resilience Act (CRA)**  | Aanvullend van toepassing omdat de module een "product met digitale elementen" is; zie sectie 5.4 voor de CRA-koppeling   |
@@ -99,18 +100,18 @@ De audit is uitgevoerd als zelfevaluatie door het projectteam, met als doel aan 
 
 ### 3.2 Gebruikte technieken en tools
 
-| Techniek                  | Tool                                                          | Wanneer                                                | Resultaat                              |
-|---------------------------|---------------------------------------------------------------|--------------------------------------------------------|----------------------------------------|
-| SAST                      | GitHub CodeQL (GitHub Actions)                                | Bij elke pull request + wekelijks gepland + eindmeting | SARIF-rapport, zie Bijlage C           |
-| SCA / dependency-scanning | Dependabot + Dependency Review Action + OSV-Scanner           | Wekelijks + bij elke CI-run + eindmeting               | Alerts/SARIF, zie Bijlage C            |
-| SBOM-generatie            | CycloneDX (anchore/sbom-action)                               | Build-tijd, bij elke CI-run                            | `sbom.cyclonedx.json`, zie Bijlage B   |
-| Codekwaliteit             | SonarQube Cloud                                               | Bij elke CI-run                                        | Code smells, bugs, coverage-koppeling  |
-| Testdekking               | JaCoCo + Maven Surefire                                       | Bij elke CI-run                                        | Coverage-rapport, zie Bijlage C        |
-| Code review               | Handmatig (peer review via verplichte PR-reviews)             | Doorlopend, WS05                                       | PR-commentaar, CODEOWNERS-toewijzing   |
-| Risicoanalyse             | ISO 27005-methode (kans × impact, kwalitatief + kwantitatief) | WS03                                                   | Risicomatrix, zie Bijlage D            |
-| Threat modeling           | IriusRisk (C4-model: System Context, Container, Component)    | WS03                                                   | Threat model, zie Bijlage E            |
-| Bow-tie analyse           | Handmatig, gekoppeld aan NEN-7510-controls                    | WS03                                                   | Bow-tie diagrammen, zie Bijlage E      |
-| Penetratietest            | OWASP Web Security Testing Guide + OWASP Top 10 (gepland)     | Niet uitgevoerd — zie 2.5                              | Testplan + onderbouwing, zie Bijlage F |
+| Techniek                  | Tool                                                          | Wanneer                                                       | Resultaat                                             |
+| ------------------------- | ------------------------------------------------------------- | ------------------------------------------------------------- | ----------------------------------------------------- |
+| SAST                      | GitHub CodeQL (GitHub Actions)                                | Bij elke pull request + wekelijks gepland + eindmeting        | SARIF-rapport, zie [Bijlage C](#7-bijlagen)           |
+| SCA / dependency-scanning | Dependabot + Dependency Review Action + OSV-Scanner           | Wekelijks + bij elke CI-run + eindmeting                      | Alerts/SARIF, zie [Bijlage C](#7-bijlagen)            |
+| SBOM-generatie            | CycloneDX (anchore/sbom-action)                               | Build-tijd, bij elke CI-run                                   | `sbom.cyclonedx.json`, zie [Bijlage B](#7-bijlagen)   |
+| Codekwaliteit             | SonarQube Cloud                                               | Bij elke CI-run                                               | Code smells, bugs, coverage-koppeling                 |
+| Testdekking               | JaCoCo + Maven Surefire                                       | Bij elke CI-run                                               | Coverage-rapport, zie [Bijlage C](#7-bijlagen)        |
+| Code review               | Handmatig (peer review via verplichte PR-reviews)             | Doorlopend, WS05                                              | PR-commentaar, CODEOWNERS-toewijzing                  |
+| Risicoanalyse             | ISO 27005-methode (kans × impact, kwalitatief + kwantitatief) | WS03                                                          | Risicomatrix, zie [Bijlage D](#7-bijlagen)            |
+| Threat modeling           | IriusRisk (C4-model: System Context, Container, Component)    | WS03                                                          | Threat model, zie [Bijlage E](#7-bijlagen)            |
+| Bow-tie analyse           | Handmatig, gekoppeld aan NEN-7510-controls                    | WS03                                                          | Bow-tie diagrammen, zie [Bijlage E](#7-bijlagen)      |
+| Penetratietest            | OWASP Web Security Testing Guide + OWASP Top 10 (gepland)     | Niet uitgevoerd — zie [2.5](#25-wat-is-niet-getest-en-waarom) | Testplan + onderbouwing, zie [Bijlage F](#7-bijlagen) |
 
 ### 3.3 Toelichting CI/CD-inrichting
 
@@ -118,7 +119,7 @@ De CI/CD-pijplijn draait bij elke push en pull request op de branches `dev`, `te
 
 ### 3.4 Omgang met false positives
 
-Bevindingen van CodeQL en OSV-Scanner worden eerst handmatig geverifieerd in de context van het daadwerkelijke gebruik door de module, voordat ze als false positive worden gemarkeerd. Bevindingen worden nooit zonder onderbouwing genegeerd; zie Bijlage C voor de volledige onderbouwing per bevinding (bijvoorbeeld de CodeQL-meldingen over command-line constructie en log-injectie, die na analyse als laag risico of false positive zijn beoordeeld met expliciete motivatie).
+Bevindingen van CodeQL en OSV-Scanner worden eerst handmatig geverifieerd in de context van het daadwerkelijke gebruik door de module, voordat ze als false positive worden gemarkeerd. Bevindingen worden nooit zonder onderbouwing genegeerd; zie [Bijlage C](#7-bijlagen) voor de volledige onderbouwing per bevinding (bijvoorbeeld de CodeQL-meldingen over command-line constructie en log-injectie, die na analyse als laag risico of false positive zijn beoordeeld met expliciete motivatie).
 
 ---
 
@@ -127,7 +128,7 @@ Bevindingen van CodeQL en OSV-Scanner worden eerst handmatig geverifieerd in de 
 ### 4.1 Samenvatting bevindingen
 
 | #     | Bevinding                                                                 | Ernst                | NEN-7510                             | Status                                  |
-|-------|---------------------------------------------------------------------------|----------------------|--------------------------------------|-----------------------------------------|
+| ----- | ------------------------------------------------------------------------- | -------------------- | ------------------------------------ | --------------------------------------- |
 | B-001 | Ontbrekende audit-logging bij inzage/wijziging patiëntgegevens            | Hoog (contextueel)   | 8.15 Log-registratie                 | **Opgelost**                            |
 | B-002 | SQL-injectie via string-concatenatie in database query's                  | Kritiek              | 8.28 Veilig programmeren             | **Opgelost**                            |
 | B-003 | Pad manipulatie (path traversal) bij lezen van formulierbestanden         | Hoog                 | 8.28 Veilig programmeren             | **Opgelost**                            |
@@ -142,7 +143,7 @@ Hieronder worden de vier kernbevindingen (B-001 tot en met B-004) volgens het va
 ### Bevinding B-001 — Ontbrekende audit-logging bij inzage/wijziging patiëntgegevens
 
 | Veld                  | Waarde                                                                                               |
-|-----------------------|------------------------------------------------------------------------------------------------------|
+| --------------------- | ---------------------------------------------------------------------------------------------------- |
 | **Bevinding-ID**      | B-001                                                                                                |
 | **Titel**             | Ontbrekende audit-logging bij inzage en wijziging van patiëntdossiers                                |
 | **Datum gevonden**    | Gap-analyse logging, huidige projectfase                                                             |
@@ -185,7 +186,7 @@ Aanvullend zijn events toegevoegd voor `ENCOUNTER_CREATE`, `ENCOUNTER_EDIT`, `EN
   - `validateSubmission_withErrors_shouldLogSubmitFailed` — mislukte actie wordt gelogd
   - `validateSubmission_withoutErrors_shouldNotLogSubmitFailed` — geen valse meldingen bij succes
   - `auditLog_shouldContainUserIdNotUsername` — userId wél, gebruikersnaam niet in de log
-- Traceability matrix: zie Bijlage A
+- Traceability matrix: zie [Bijlage A](#7-bijlagen)
 
 **Restrisico en aanbeveling**
 
@@ -196,7 +197,7 @@ De huidige logging dekt formulier-gerelateerde acties. Authenticatie-events (suc
 ### Bevinding B-002 — SQL-injectie via string-concatenatie in databasequery's
 
 | Veld                 | Waarde                                                           |
-|----------------------|------------------------------------------------------------------|
+| -------------------- | ---------------------------------------------------------------- |
 | **Bevinding-ID**     | B-002                                                            |
 | **Titel**            | SQL-injectie door directe string-concatenatie in databasequery's |
 | **Status**           | **Opgelost**                                                     |
@@ -222,7 +223,7 @@ q.setString("attribute", attribute);
 **Bewijs van oplossing**
 
 - Code-aanpassing gedocumenteerd in `docs/SecurityImprovements/Improvements-code-security.md`
-- Herhaalde CodeQL-scan op de huidige `dev`-branch (eindmeting): **0 findings** in de java-analyse (zie Bijlage C, `codeql-sarif/java.sarif`)
+- Herhaalde CodeQL-scan op de huidige `dev`-branch (eindmeting): **0 findings** in de java-analyse (zie [Bijlage C](#7-bijlagen), `codeql-sarif/java.sarif`)
 
 **Restrisico en aanbeveling**
 
@@ -233,7 +234,7 @@ Geen aantoonbaar restrisico in de geanalyseerde bestanden. Aanbeveling: bij toek
 ### Bevinding B-003 — Padmanipulatie (path traversal) bij het lezen van formulierbestanden
 
 | Veld                 | Waarde                                                                                                     |
-|----------------------|------------------------------------------------------------------------------------------------------------|
+| -------------------- | ---------------------------------------------------------------------------------------------------------- |
 | **Bevinding-ID**     | B-003                                                                                                      |
 | **Titel**            | Uncontrolled data used in path expression — toegang tot bestanden buiten de bedoelde directory             |
 | **Status**           | **Opgelost**                                                                                               |
@@ -243,7 +244,7 @@ Geen aantoonbaar restrisico in de geanalyseerde bestanden. Aanbeveling: bij toek
 
 **Beschrijving**
 
-Een gebruikersgestuurd bestandspad werd gebruikt om bestanden op het OpenMRS-serverbestandssysteem te lezen, zonder validatie van het uiteindelijke pad. Hoewel toegang beperkt was tot gebruikers met het privilege *Manage Forms*, hadden deze gebruikers hierdoor potentieel toegang tot bestanden buiten de bedoelde formulierdirectory.
+Een gebruikersgestuurd bestandspad werd gebruikt om bestanden op het OpenMRS-serverbestandssysteem te lezen, zonder validatie van het uiteindelijke pad. Hoewel toegang beperkt was tot gebruikers met het privilege _Manage Forms_, hadden deze gebruikers hierdoor potentieel toegang tot bestanden buiten de bedoelde formulierdirectory.
 
 **Gecorrigeerde situatie (na)**
 
@@ -252,7 +253,7 @@ Bestandstoegang is beperkt tot de OpenMRS application data-directory waarin HTML
 **Bewijs van oplossing**
 
 - Beschrijving en screenshots: `docs/SecurityImprovements/Improvements-code-security.md`
-- Herhaalde CodeQL-scan: 0 findings in de eindmeting (Bijlage C)
+- Herhaalde CodeQL-scan: 0 findings in de eindmeting ([Bijlage C](#7-bijlagen))
 
 **Restrisico en aanbeveling**
 
@@ -263,7 +264,7 @@ Geen aantoonbaar restrisico. Aanbeveling: vergelijkbare canonical-path-validatie
 ### Bevinding B-004 — Kritieke kwetsbaarheden in afhankelijkheden (Supply chain)
 
 | Veld                 | Waarde                                                                                    |
-|----------------------|-------------------------------------------------------------------------------------------|
+| -------------------- | ----------------------------------------------------------------------------------------- |
 | **Bevinding-ID**     | B-004                                                                                     |
 | **Titel**            | Gebruik van componenten met bekende kritieke kwetsbaarheden in de softwareketen           |
 | **Status**           | **Deels opgelost / deels buiten scope van de module**                                     |
@@ -273,12 +274,12 @@ Geen aantoonbaar restrisico. Aanbeveling: vergelijkbare canonical-path-validatie
 
 **Beschrijving**
 
-Bij de dependency-analyse zijn meerdere kritieke en hoge kwetsbaarheden geïdentificeerd, onder andere deserialisatie-kwetsbaarheden in Log4j 1.x, SQL-injectie in Log4j 1.2.x, en path traversal/Zip Slip-kwetsbaarheden in `org.openmrs.web:openmrs-web`. Zie Bijlage B (SBOM) en Bijlage D (volledige bevindingenlijst) voor het complete overzicht.
+Bij de dependency-analyse zijn meerdere kritieke en hoge kwetsbaarheden geïdentificeerd, onder andere deserialisatie-kwetsbaarheden in Log4j 1.x, SQL-injectie in Log4j 1.2.x, en path traversal/Zip Slip-kwetsbaarheden in `org.openmrs.web:openmrs-web`. Zie [Bijlage B](#7-bijlagen) (SBOM) en [Bijlage D](#7-bijlagen) (volledige bevindingenlijst) voor het complete overzicht.
 
 **Analyse en classificatie**
 
 | Component                                                                                | Scope                                                         | Productierisico                                                             |
-|------------------------------------------------------------------------------------------|---------------------------------------------------------------|-----------------------------------------------------------------------------|
+| ---------------------------------------------------------------------------------------- | ------------------------------------------------------------- | --------------------------------------------------------------------------- |
 | `log4j:log4j`, `org.codehaus.groovy:groovy`, `mysql:mysql-connector-java`, `junit:junit` | Uitsluitend test-/release-test-scope (`release-tests`-module) | **Geen** — niet verpakt in het productieartefact                            |
 | `org.openmrs.web:openmrs-web` (Zip Slip, path traversal)                                 | OpenMRS-kernplatform                                          | **Niet oplosbaar binnen de module** — vereist upstream patch vanuit OpenMRS |
 | `org.codehaus.jackson:jackson-mapper-asl` (deserialisatie, XXE)                          | Geërfd via OpenMRS-platformstack                              | Vereist nadere analyse of de module deze API direct aanroept                |
@@ -287,12 +288,13 @@ Bij de dependency-analyse zijn meerdere kritieke en hoge kwetsbaarheden geïdent
 
 - `docs/SecurityImprovements/Improvements-code-security.md` (risicoclassificatie per dependency-groep)
 - `docs/overige/RiskAssesmentRapport.md` sectie 6 (volledige SCA-bevindingenlijst)
-- SBOM: `docs/sbom/sbom.cyclonedx.json` (Bijlage B)
-- Actuele OSV-scan (eindmeting): **0 findings** op de huidige dependency-set van de `dev`-branch (Bijlage C)
+- SBOM: `docs/sbom/sbom.cyclonedx.json` ([Bijlage B](#7-bijlagen))
+- Actuele OSV-scan (eindmeting): **0 findings** op de huidige dependency-set van de `dev`-branch ([Bijlage C](#7-bijlagen))
 
 **Restrisico en aanbeveling**
 
 Het residuele risico in de productiecode van de module is laag, omdat de kritieke kwetsbaarheden zich concentreren in test-scoped dependencies en in OpenMRS-kerncode die buiten de wijzigingsbevoegdheid van het projectteam valt. Aanbeveling:
+
 1. Test-/release-test-dependencies (Log4j 1.x, oude Groovy-versie) moderniseren zodra de testinfrastructuur wordt herzien — dit is geen productierisico, maar wel technische schuld.
 2. OpenMRS-platformupgrades volgen zodra een patch voor `openmrs-web` beschikbaar komt.
 3. Verifiëren of `jackson-mapper-asl` direct door de module wordt aangeroepen; zo niet, dit expliciet documenteren als geërfd platformrisico (reeds gedaan, zie bewijsdocument).
@@ -302,7 +304,7 @@ Het residuele risico in de productiecode van de module is laag, omdat de kritiek
 ### Aanvullende observatie B-005 — Lage testdekking in de hoofdmodule
 
 | Veld                 | Waarde                                       |
-|----------------------|----------------------------------------------|
+| -------------------- | -------------------------------------------- |
 | **Status**           | Open                                         |
 | **NEN-7510 control** | 8.29 Beveiligingstesten tijdens ontwikkeling |
 
@@ -311,11 +313,11 @@ De JaCoCo-coverage-rapportage van de eindmeting toont een instructiedekking van 
 ### Aanvullende observatie B-006 — Geen uitgevoerde penetratietest
 
 | Veld                 | Waarde                                                     |
-|----------------------|------------------------------------------------------------|
+| -------------------- | ---------------------------------------------------------- |
 | **Status**           | Open                                                       |
 | **NEN-7510 control** | 8.29 Beveiligingstesten tijdens ontwikkeling en acceptatie |
 
-Zoals toegelicht in sectie 2.5 kon de geplande penetratietest niet worden uitgevoerd door een blijvend installatieprobleem in de testomgeving. Dit betekent dat aannames als "payload wordt ge-escaped" (XSS) en "geen invloed op query-uitvoering" (SQLi) uit het testplan niet dynamisch zijn geverifieerd, ook al ondersteunt de statische analyse deze aannames. **Aanbeveling:** zodra een werkende OpenMRS-testomgeving beschikbaar is, het bestaande penetratietestplan (Bijlage F) alsnog uitvoeren, met prioriteit voor PT-03 (XSS) en PT-04 (SQL-injectie) ter dynamische bevestiging van B-002.
+Zoals toegelicht in sectie 2.5 kon de geplande penetratietest niet worden uitgevoerd door een blijvend installatieprobleem in de testomgeving. Dit betekent dat aannames als "payload wordt ge-escaped" (XSS) en "geen invloed op query-uitvoering" (SQLi) uit het testplan niet dynamisch zijn geverifieerd, ook al ondersteunt de statische analyse deze aannames. **Aanbeveling:** zodra een werkende OpenMRS-testomgeving beschikbaar is, het bestaande penetratietestplan ([Bijlage F](#7-bijlagen)) alsnog uitvoeren, met prioriteit voor PT-03 (XSS) en PT-04 (SQL-injectie) ter dynamische bevestiging van B-002.
 
 ---
 
@@ -328,7 +330,7 @@ De Software Bill of Materials (SBOM) vormt de basis voor kwetsbaarheidsbeheer (w
 ### 5.2 SBOM-kerngegevens
 
 | Eigenschap         | Waarde                                                             |
-|--------------------|--------------------------------------------------------------------|
+| ------------------ | ------------------------------------------------------------------ |
 | Formaat            | CycloneDX 1.6 (JSON)                                               |
 | Gegenereerd op     | 18 juni 2026                                                       |
 | Aantal componenten | 81 (inclusief 48 Maven-/Java-dependencies en GitHub Actions)       |
@@ -337,7 +339,7 @@ De Software Bill of Materials (SBOM) vormt de basis voor kwetsbaarheidsbeheer (w
 ### 5.3 Top dependencies op risico (hoogste CVSS-score, uit security-backlog-analyse)
 
 | Component                                 | Versie              | Licentie               | Bekende CVE('s)                                               | CVSS        | Status                                |
-|-------------------------------------------|---------------------|------------------------|---------------------------------------------------------------|-------------|---------------------------------------|
+| ----------------------------------------- | ------------------- | ---------------------- | ------------------------------------------------------------- | ----------- | ------------------------------------- |
 | `log4j:log4j` (test-scope)                | 1.2.x               | Apache-2.0             | Meerdere (deserialisatie, SQL-injectie, JMSAppender RCE, DoS) | tot 9.8     | Test-scope, geen productierisico      |
 | `org.openmrs.web:openmrs-web`             | div. (1.9.x–1.10.x) | OpenMRS Public License | Module Upload Path Traversal (Zip Slip)                       | Kritiek     | Upstream/OpenMRS-verantwoordelijkheid |
 | `org.openmrs.web:openmrs-web`             | div.                | OpenMRS Public License | ModuleResourcesServlet Path Traversal                         | Hoog        | Upstream/OpenMRS-verantwoordelijkheid |
@@ -346,16 +348,16 @@ De Software Bill of Materials (SBOM) vormt de basis voor kwetsbaarheidsbeheer (w
 | `org.codehaus.groovy:groovy` (test-scope) | 1.8.3               | Apache-2.0             | Deserialisatie, output-neutralisatie                          | Kritiek     | Test-scope, geen productierisico      |
 | `xalan:xalan`                             | 2.7.1               | Apache-2.0             | XSLT integer truncation, improper authorization               | Hoog        | Vereist analyse                       |
 
-> Voor het volledige overzicht van alle 29 gerapporteerde dependency-kwetsbaarheden: zie Bijlage D (Security backlog / RiskAssessmentRapport sectie 6) en Bijlage B (volledige SBOM JSON).
+> Voor het volledige overzicht van alle 29 gerapporteerde dependency-kwetsbaarheden: zie [Bijlage D](#7-bijlagen) (Security backlog / RiskAssessmentRapport sectie 6) en [Bijlage B](#7-bijlagen) (volledige SBOM JSON).
 
 ### 5.4 Resultaat eindmeting
 
-De meest recente OSV-Scanner run op de huidige `dev`-branch (zie Bijlage C) toont **0 actieve findings**. Dit bevestigt dat de dependency-set die daadwerkelijk in de huidige module-versie wordt meegeleverd, op het moment van deze audit geen door OSV-Scanner gedetecteerde bekende kwetsbaarheden bevat. De eerder genoemde kwetsbaarheden in tabel 5.3 zijn voor het merendeel afkomstig uit test-scoped dependencies of OpenMRS-kerncode buiten de productie-classpath van de module.
+De meest recente OSV-Scanner run op de huidige `dev`-branch (zie [Bijlage C](#7-bijlagen)) toont **0 actieve findings**. Dit bevestigt dat de dependency-set die daadwerkelijk in de huidige module-versie wordt meegeleverd, op het moment van deze audit geen door OSV-Scanner gedetecteerde bekende kwetsbaarheden bevat. De eerder genoemde kwetsbaarheden in tabel 5.3 zijn voor het merendeel afkomstig uit test-scoped dependencies of OpenMRS-kerncode buiten de productie-classpath van de module.
 
 ### 5.5 CRA-koppeling
 
 | CRA-verplichting                                       | NEN-7510:2024-2 control                                 | Status binnen dit project                                                                                                                       |
-|--------------------------------------------------------|---------------------------------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------|
+| ------------------------------------------------------ | ------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
 | Software leveren zonder bekende actieve kwetsbaarheden | 8.8 Beheer van technische kwetsbaarheden                | Grotendeels aangetoond; restpunten in tabel 5.3                                                                                                 |
 | SBOM beschikbaar stellen aan gebruikers                | 8.8 + 5.22 Monitoring leveranciers                      | SBOM wordt automatisch gegenereerd en bewaard                                                                                                   |
 | Beveiligingsupdates leveren gedurende de levensduur    | 8.8 Patch-management                                    | Dependabot actief; geen geautomatiseerd patch-beleid voor majeure versies                                                                       |
@@ -379,7 +381,7 @@ Twee structurele beperkingen blijven echter bestaan: de **lage testdekking** in 
 ### 6.2 Geprioriteerde aanbevelingen
 
 | Prioriteit      | Criterium                                   | Actie                                                                                                                                                               |
-|-----------------|---------------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| --------------- | ------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **Nu**          | Kritieke of hoge bevinding, nog open        | Geen kritieke bevindingen meer open in productiecode; wel: triage van resterende CodeQL-notes (null-checks, resource leaks) ter voorkoming van toekomstige bugs     |
 | **Deze sprint** | Gemiddelde bevinding, plan aanwezig         | Testdekking hoofdmodule verhogen richting de vastgestelde 60%-norm; logging van toegangsweigeringen en formulierdefinitie-wijzigingen toevoegen (SB-2, SB-3)        |
 | **Later**       | Lage bevinding of lange-termijn verbetering | Penetratietest alsnog uitvoeren zodra testomgeving werkt; CRA ENISA-meldproces beleggen; modernisering van test-scoped legacy-dependencies (Log4j 1.x, oude Groovy) |
@@ -393,7 +395,7 @@ Op basis van het beschikbare bewijs wordt de module beoordeeld als **🟠 Oranje
 ## 7. Bijlagen
 
 | Bijlage | Beschrijving                                            | Bestand / locatie                                                              |
-|---------|---------------------------------------------------------|--------------------------------------------------------------------------------|
+| ------- | ------------------------------------------------------- | ------------------------------------------------------------------------------ |
 | **A**   | Traceability matrix                                     | `Traceability-Matrix.md`                                                       |
 | **B**   | SBOM (CycloneDX JSON)                                   | `sbom.cyclonedx.json`                                                          |
 | **C**   | SAST-output (CodeQL) + SCA-output (OSV-Scanner)         | `codeql-java.sarif`, `osv-scanner-results.sarif`                               |
@@ -401,10 +403,10 @@ Op basis van het beschikbare bewijs wordt de module beoordeeld als **🟠 Oranje
 | **E**   | Bow-tie diagrammen / threat model                       | `Bow-Tie-*.png`, `ThreatModel.md`                                              |
 | **F**   | Penetratietestplan + onderbouwing niet-uitvoering       | `Pentest-Plan.md`, `Pentest-Onderbouwing.md`                                   |
 | **G**   | Gap-analyse logging en algemene gap-analyse             | `Gap-Analyse.md`                                                               |
-| **H**   | Overzicht AI-tooling verantwoording                     | *(zelf aan te vullen — zie sjabloon in Bijlagen-overzicht.md)*                 |
+| **H**   | Overzicht AI-tooling verantwoording                     | `Onderhoudbaarheid`                                                            |
 
-> Zie het bestand **`Bijlagen-overzicht.md`** voor een tabel met directe koppelingen waar je de definitieve bestanden aan kunt linken.
+> Zie het bestand **[Bijlagen-overzicht.md](Bijlagen-overzicht.md)** voor een tabel met directe koppelingen waar je de definitieve bestanden aan kunt linken.
 
 ---
 
-*Einde auditrapport.*
+_Einde auditrapport._
