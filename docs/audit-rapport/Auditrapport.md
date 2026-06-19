@@ -352,7 +352,7 @@ De Software Bill of Materials (SBOM) vormt de basis voor kwetsbaarheidsbeheer (w
 
 ### 5.4 Resultaat eindmeting
 
-De meest recente OSV-Scanner run op de huidige `dev`-branch (zie [Bijlage C](#7-bijlagen)) toont **0 actieve findings**. Dit bevestigt dat de dependency-set die daadwerkelijk in de huidige module-versie wordt meegeleverd, op het moment van deze audit geen door OSV-Scanner gedetecteerde bekende kwetsbaarheden bevat. De eerder genoemde kwetsbaarheden in tabel 5.3 zijn voor het merendeel afkomstig uit test-scoped dependencies of OpenMRS-kerncode buiten de productie-classpath van de module.
+De meest recente OSV-Scanner run op de huidige `dev`-branch (zie [Bijlage C](#7-bijlagen)) toont 0 actieve findings. Dit bevestigt dat de dependency-set die daadwerkelijk in de huidige module-versie wordt meegeleverd, op het moment van deze audit geen door OSV-Scanner gedetecteerde bekende kwetsbaarheden bevat. De eerder genoemde kwetsbaarheden in tabel 5.3 zijn voor het merendeel afkomstig uit test-scoped dependencies of OpenMRS-kerncode buiten de productie-classpath van de module.
 
 ### 5.5 CRA-koppeling
 
