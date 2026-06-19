@@ -93,7 +93,7 @@
 
 | Vereiste | Bestand/Link |
 |---|---|
-| AI-tooling verantwoordingsdocument | [AI-Tooling Verantwoording](../) |
+| AI-tooling verantwoordingsdocument | [AI-Tooling Verantwoording](../onderhoudbaarheid/onderhoudbaarheidDocumentatie.md) |
 
 ---
 
