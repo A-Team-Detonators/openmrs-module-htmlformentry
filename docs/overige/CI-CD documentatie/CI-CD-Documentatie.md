@@ -40,16 +40,26 @@ De inrichting van de CI/CD-pipeline ondersteunt verschillende beheersmaatregelen
 
 De CI/CD-pipeline is opgezet rond de OpenMRS htmlformentry module (versie 3.10.0), een Java 8-gebaseerd project. De pipeline draait automatisch bij elke push en pull request en is ingericht om build, test en security binnen één gecontroleerde ontwikkelstraat uit te voeren.
 
-1. **Build** — De code wordt gebouwd met Apache Maven. Hierbij wordt Java 8 gebruikt via Eclipse Temurin om compatibiliteit met de OpenMRS module te garanderen. Tijdens deze stap wordt een build-artifact gegenereerd (.omod bestand), dat later gebruikt kan worden voor deployment of analyse.
+1. **Build** — De code wordt gebouwd met Apache Maven. Hierbij wordt Java 8 gebruikt via Eclipse Temurin om compatibiliteit met de OpenMRS module te garanderen. De omod-module wordt uitgesloten van de CI-build via het Maven-profiel ci, omdat deze een build-extension vereist die niet bereikbaar is vanuit GitHub Actions. Tijdens deze stap worden .jar-artefacten gegenereerd die als artifact worden opgeslagen.
 
 2. **Tests** — Na de build worden unit- en integratietests uitgevoerd met Maven. De testresultaten worden opgeslagen als artifact zodat deze achteraf kunnen worden gecontroleerd en gebruikt voor debugging.
+3. **Code Coverage** - Voor het meten van de testdekking is JaCoCo geïntegreerd in het Maven buildproces. Tijdens het uitvoeren van de unit- en integratietests wordt automatisch een coverage rapport gegenereerd. Dit rapport wordt als artifact opgeslagen binnen de GitHub Actions pipeline zodat de resultaten achteraf kunnen worden geraadpleegd. Daarnaast blokkeert de pipeline automatisch bij onvoldoende dekking — de build faalt als de drempel niet gehaald wordt.
 
-3. **Security scanning** — Voor statische analyse wordt GitHub CodeQL gebruikt. Deze analyseert de code op potentiële kwetsbaarheden en draait los van de testfase om security expliciet te scheiden van functionaliteit.
+    Er is gekozen voor een minimale code coverage van 60%. De htmlformentry module betreft een bestaand OpenMRS-project met legacy code die niet volledig door het projectteam is ontwikkeld. Een coverage van 60% biedt daarom een realistische balans tussen testkwaliteit en haalbaarheid. Hiermee wordt een substantieel deel van de code automatisch getest, terwijl de focus van het project behouden blijft op security-analyse en CI/CD inrichting.
 
-4. **Dependency review** — Tijdens pull requests wordt gecontroleerd op kwetsbare of niet-toegestane dependencies. Hierbij wordt ook gekeken naar licenties om juridische en security-risico's te beperken.
+    Het gegenereerde rapport toont per klasse en methode in welke mate de code gedekt is door tests. JaCoCo markeert regels met kleurcodes: groen betekent dat de regel uitgevoerd is tijdens de tests, rood betekent dat de regel niet geraakt is en dus een blinde vlek vormt, en geel betekent dat de regel gedeeltelijk gedekt is — bijvoorbeeld een if-statement waarbij slechts één tak (true of false) getest is. In het voorbeeld is te zien dat de else if-tak op regel 512 gedeeltelijk gedekt is, terwijl de code op regels 513–516 volledig rood is. Dit betekent dat het scenario waarbij drugOrder.getAutoExpireDate() niet null is én de vervaldatum in het verleden ligt, niet door een test gedekt wordt. Dit zijn waardevolle signalen voor toekomstige testverbeteringen.
 
-5. **SBOM en vulnerability scanning** — Met CycloneDX wordt een SBOM gegenereerd. Vervolgens wordt deze geanalyseerd met OSV-Scanner om bekende kwetsbaarheden in dependencies te detecteren.
-![Pipeline](images/CI-CD-pipeline.png)
+    ![coverage-report-sample](images/coverage-report-sample.png)
+
+4. **Security scanning** — Voor statische analyse wordt GitHub CodeQL gebruikt. Deze analyseert de Java-code op potentiële kwetsbaarheden en draait los van de testfase om security expliciet te scheiden van functionaliteit. De resultaten worden als SARIF-rapport geüpload naar het Security-tabblad van de repository en bewaard als artifact gedurende 90 dagen conform de NEN-7510 bewaarplicht.
+
+5. **Dependency review** — Tijdens pull requests wordt gecontroleerd op kwetsbare of niet-toegestane dependencies via de GitHub Dependency Review Action. Hierbij wordt ook gekeken naar licenties — GPL-3.0 en AGPL-3.0 zijn expliciet uitgesloten — om juridische en security-risico's te beperken. De pipeline blokkeert bij dependencies met een hoge of kritieke kwetsbaarheid.
+
+6. **SBOM en vulnerability scanning** — Met de anchore/sbom-action wordt een Software Bill of Materials (SBOM) gegenereerd in CycloneDX JSON-formaat. De SBOM geeft een volledig overzicht van alle dependencies waarvan het project afhankelijk is. Vervolgens wordt de SBOM geanalyseerd met OSV-Scanner om bekende kwetsbaarheden uit de OSV-database te detecteren. De SBOM wordt als artifact opgeslagen gedurende 90 dagen conform de NEN-7510 bewaarplicht, zodat de samenstelling van het project per CI-run traceerbaar is.
+
+    ![Pipeline](images/CI-CD-pipeline.png)
+
+7. **Code kwaliteitsanalyse** - Voor aanvullende code kwaliteitsanalyse wordt SonarQube ingezet. Omdat SonarQube Java 17 vereist maar de module gebouwd wordt met Java 8, worden beide Java-versies naast elkaar geïnstalleerd in dezelfde job. De build- en verify-stap draait met Java 8, waarna de SonarQube-scan met Java 17 uitgevoerd wordt. De coverage-rapporten van JaCoCo worden meegegeven aan SonarQube zodat de bevindingen gecombineerd worden en een volledig beeld ontstaat van zowel de codekwaliteit als de testdekking.
 
 ### 2.2 Waarom we deze keuzes hebben gemaakt?
 

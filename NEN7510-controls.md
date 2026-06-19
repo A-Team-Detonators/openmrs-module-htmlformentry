@@ -1,6 +1,6 @@
 # NEN-7510 Controls — CI/CD Pipeline
 
-> **Doel**: Aantoonbaar voldoen aan NEN-7510 (informatiebeveiligingsnorm voor de Nederlandse zorgsector) voor de CI/CD-pipeline van de `openmrs-module-htmlformentry`.
+> **Doel**: Aantoonbaar voldoen aan NEN-7510 (informatiebeveiligingsnorm voor de Nederlandse zorgsector) voor de CI/CD-pipeline van de `openmrs-module-htmlformentry` binnen GitHub-organisatie **A-Team-Detonators**.
 
 ---
 
@@ -8,40 +8,33 @@
 
 | # | NEN-7510 Control | Maatregel | Status | Bewijs |
 |---|---|---|---|---|
-| 1 | **A.9.4** — Toegangsbeveiliging | Branch protection op `production` + PR-reviews verplicht | ✅ | `.github/CODEOWNERS`, branch-protection via GitHub Settings |
-| 2 | **A.12.1** — Operationele procedures | Gescheiden workflows per omgeving; OTAP-flow via `dev → test → production` | ✅ | `deploy-test.yml`, `deploy-production.yml` |
-| 3 | **A.12.6** — Technische kwetsbaarheden | Dependabot wekelijks, PR's geopend naar `dev` | ✅ | `.github/dependabot.yml` |
-| 4 | **A.14.2** — Beveiliging in ontwikkeling | CodeQL SAST bij elke push/PR + wekelijks gepland | ✅ | `ci.yml` job `codeql`, `security-scheduled.yml` |
-| 5 | **A.14.2** — Dependency-integriteit | Dependency Review Action op elke PR, blokkeert bij high/critical | ✅ | `ci.yml` job `dependency-review` |
-| 6 | **A.14.2** — Software-samenstelling | SBOM (CycloneDX via anchore/sbom-action) + OSV Scanner SCA | ✅ | `ci.yml` job `sbom`, `security-scheduled.yml` |
-| 7 | **A.18.1** — Geheimbeheer | Secrets uitsluitend via GitHub Environment Secrets; nooit in code | ✅ | Secrets-tabel hieronder |
-| 8 | **A.12.7** — Auditlogging | Alle pipeline-artefacten bewaard met retention-days | ✅ | `retention-days` in alle workflows |
-| 9 | **A.8.3** — Bescherming informatiedragers | Testdata nooit in productie (meerdere lagen isolatie) | ✅ | `docker-compose.production.yml`, `README.md` sectie 6 |
-| 10 | **A.12.2** — Bescherming tegen malware | Secret Scanning + CodeQL actief op alle branches | ✅ | GitHub Settings → Security |
-| 11 | **A.17.2** — Continuïteit | Rollback via `workflow_dispatch`, deployment-records als audit trail | ✅ | `deploy-production.yml` |
+| 1 | **5.3** — Scheiding van taken | Branch protection op `dev`, `test`, `acceptation` en `production`; PR-reviews verplicht; initiator mag niet zelf goedkeuren (prevent self-review) | ✅ | GitHub Settings → Branches, `.github/CODEOWNERS` |
+| 2 | **8.32** — Wijzigingsbeheer | Volledig OTAP-model `dev → test → acceptation → production`; alle wijzigingen via PR; force pushes geblokkeerd | ✅ | Branch protection rules, `.github/CODEOWNERS` |
+| 3 | **8.8** — Technische kwetsbaarheden (dependencies) | Dependabot wekelijks voor Maven en GitHub Actions; PR's automatisch naar `dev` | ✅ | `.github/dependabot.yml` |
+| 4 | **8.8** — Technische kwetsbaarheden (CVE-scanning) | Dependency Review blokkeert PR bij `high`/`critical` CVE's en verboden licenties (GPL-3.0, AGPL-3.0) | ✅ | `ci.yml` job `dependency-review`, `dependency-review.yml` |
+| 5 | **8.8** — Technische kwetsbaarheden (componenten) | SBOM (CycloneDX via anchore/sbom-action) + OSV Scanner SCA bij elke CI-run en wekelijks gepland | ✅ | `ci.yml` jobs `sbom`, `osv-scan`; `security-scheduled.yml` |
+| 6 | **8.28** — Veilig programmeren | CodeQL SAST bij elke push/PR op alle vijf branches + wekelijks gepland (maandag 03:00 UTC) | ✅ | `ci.yml` job `codeql`, `security-scheduled.yml` |
+| 7 | **8.28 / 8.29** — Codekwaliteit & beveiligingstesten | SonarQube Cloud analyseert codekwaliteit, code smells, bugs en beveiligingskwetsbaarheden bij elke CI-run; JaCoCo coverage als input | ✅ | `ci.yml` job `sonar` |
+| 8 | **8.29** — Beveiligingstesten tijdens ontwikkeling | JUnit-tests via Maven Surefire + JaCoCo coverage-rapportage per module | ✅ | `ci.yml` job `test` |
+| 9 | **5.17** — Authenticatie-informatie / geheimbeheer | Secrets uitsluitend via GitHub Repository Secrets; nooit in code of configuratiebestanden | ✅ | Secrets-tabel hieronder |
+| 10 | **8.15** — Logging / auditlogging | Alle pipeline-artefacten bewaard minimaal 90 dagen; GitHub Deployment-records als audit trail | ✅ | `retention-days: 90` in alle workflows |
+| 11 | **8.9** — Configuratiebeheer | SBOM biedt volledig inzicht in gebruikte componenten en versies; build-artifacts 90 dagen bewaard | ✅ | `ci.yml` jobs `build`, `sbom` |
+| 12 | **8.16** — Monitoringactiviteiten | Testrapporten (Surefire) en coverage-rapporten (JaCoCo) vastgelegd als artifact; wekelijkse scans voor continue monitoring | ✅ | `ci.yml`, `security-scheduled.yml` |
 
 ---
 
-## Secrets per omgeving
+## Secrets
 
-| Secret | `test` environment | `production` environment |
-|---|---|---|
-| `DB_PASSWORD` | `DB_PASSWORD_TEST` | `DB_PASSWORD_PROD` |
-| `OPENMRS_ADMIN_PASSWORD` | `OPENMRS_ADMIN_PASSWORD_TEST` | `OPENMRS_ADMIN_PASSWORD_PROD` |
-| `SENTRY_DSN` | — | `SENTRY_DSN_PROD` |
+### Repository secrets (beschikbaar in alle workflows)
 
-Een workflow in `test` heeft **geen toegang** tot `production`-secrets en vice versa.
+| Secret | Gebruik |
+|---|---|
+| `SONAR_TOKEN` | Authenticatie bij SonarQube Cloud |
+| `PROJECT_KEY` | SonarQube projectsleutel |
+| `ORGANIZATION_KEY` | SonarQube organisatiesleutel |
+| `SONAR_HOST_URL` | URL van de SonarQube-instantie |
 
----
-
-## Data-isolatiebeleid
-
-1. `SEED_TEST_DATA=true` staat **uitsluitend** in `docker-compose.test.yml`.
-2. `docker-compose.production.yml` bevat **geen** seed-script mount en heeft `SEED_TEST_DATA=false` hardcoded.
-3. Test- en productiecontainers draaien in gescheiden Docker-netwerken.
-4. `deploy-production.yml` controleert of alle CI-checks geslaagd zijn vóór elke deploy.
-5. Productiedeploy vereist handmatige goedkeuring via GitHub Environments.
-6. Testdata bestaat uitsluitend uit gesynthetiseerde (fictieve) patiëntrecords.
+> Er zijn momenteel geen geautomatiseerde deploy-workflows actief. De `docker/`-bestanden en `environments/`-configuraties in de repository dienen als referentiedocumentatie voor toekomstige deploymentinrichting. Deployment-secrets (database, applicatie) worden ingericht zodra geautomatiseerde deployments worden geactiveerd.
 
 ---
 
@@ -49,18 +42,43 @@ Een workflow in `test` heeft **geen toegang** tot `production`-secrets en vice v
 
 | Artefact | Bewaartermijn | Reden |
 |---|---|---|
-| Build-artefact (`.jar`) | 30 dagen | Reproduceerbaarheid |
-| Testrapporten (Surefire) | 30 dagen | Kwaliteitsaudit |
-| CodeQL SARIF | 90 dagen | Beveiligingsaudit NEN-7510 |
-| SBOM (CycloneDX JSON) | 90 dagen (dagelijks), 365 dagen (wekelijks) | Compliance / leveranciersaudit |
-| Deployment logs | 30 dagen (test), 90 dagen (productie) | Operationele audit |
+| Build-artefacten (`.jar`) | 90 dagen | Reproduceerbaarheid; beveiligingsaudit NEN-7510 |
+| Testrapporten (Surefire) | 90 dagen | Kwaliteitsaudit NEN-7510 |
+| Coverage-rapporten (JaCoCo) | 90 dagen | Kwaliteitsaudit; input voor SonarQube |
+| CodeQL SARIF (dagelijks CI) | 90 dagen | Beveiligingsaudit NEN-7510 |
+| Gecompileerde klassen (`compiled-classes`) | Sessieduur workflow | Doorgave tussen CI-jobs; geen bewaarplicht |
+| SBOM (CycloneDX JSON, dagelijks CI) | 90 dagen | Compliance en leveranciersaudit |
+| SBOM (CycloneDX JSON, wekelijkse scan) | 365 dagen | Langetermijn compliance NEN-7510 |
+
+> Alle retentieperioden zijn vastgelegd via `retention-days` in de workflow-definities en zijn daarmee aantoonbaar en auditeerbaar.
+
+---
+
+## NEN-7510 mapping CI/CD-maatregelen
+
+Gebaseerd op de CI/CD-documentatie (`docs/overige/CI-CD documentatie/CI-CD-Documentatie.md`):
+
+| CI/CD-maatregel | NEN-7510:2024-2 control | Toelichting |
+|---|---|---|
+| Branch protection + PR-reviews | 5.3, 8.32 | Wijzigingen verlopen gecontroleerd via PR; functiescheiding door verplichte review |
+| Approval gate productie (prevent self-review) | 5.3 | Vier-ogenprincipe; initiator mag niet zelf goedkeuren |
+| CODEOWNERS | 5.3, 8.32 | Automatische toewijzing van verantwoordelijke reviewers per bestandspad |
+| Deployment records + pipeline-logs | 8.15 | Alle CI-runs en deploys zijn traceerbaar en herleidbaar |
+| CodeQL SAST | 8.28 | Broncode wordt geanalyseerd op beveiligingsproblemen en onveilige patronen |
+| SonarQube | 8.28, 8.29 | Continue analyse van codekwaliteit en beveiligingskwetsbaarheden |
+| Maven Tests + JaCoCo | 8.29 | Aantoonbare testdekking; automatische controle op regressies |
+| Dependency Review | 8.8 | Nieuwe dependencies gecontroleerd op CVE's vóór merge |
+| SBOM + OSV Scanner | 8.8, 8.9 | Volledig inzicht in componenten en bekende kwetsbaarheden |
+| Dependabot | 8.8 | Automatische detectie en update van verouderde/kwetsbare dependencies |
+| Artefactbeheer (retention-days) | 8.9, 8.15 | Herleidbaarheid en auditbaarheid van builds en beveiligingsrapporten |
+| Secret Scanning + Push Protection | 5.17 | Voorkomt dat secrets per ongeluk in code terechtkomen |
 
 ---
 
 ## Bekende afwijking: omod-module uitgesloten van CI-build
 
-De `omod`-module vereist `maven-openmrs-plugin:1.0.1` via de OpenMRS Nexus-repository, die niet betrouwbaar bereikbaar is vanuit GitHub Actions. De `omod` is een packaging-wrapper zonder eigen logica.
+De `omod`-module vereist `maven-openmrs-plugin:1.0.1` van `mavenrepo.openmrs.org`, die niet betrouwbaar bereikbaar is vanuit GitHub Actions-runners. De composite action `.github/actions/setup-openmrs-maven` configureert Maven met de OpenMRS-repository-instellingen voor de overige modules, maar lost de `omod`-beperking niet volledig op.
 
-**Maatregel**: de `omod` wordt uitgesloten via `-pl api,api-1.9,...` in CI. Alle business-logica (in de `api`-modules) wordt wél gebuild, getest en geanalyseerd.
+**Maatregel:** de `omod` wordt in alle CI-stappen uitgesloten via `-pl api,api-1.9,api-1.10,api-2.0,api-2.2,api-tests -am`.
 
-**Risicobeoordeling**: laag — de `omod` bevat geen code die de beveiliging beïnvloedt.
+**Risicobeoordeling:** laag — de `omod` is uitsluitend een packaging-wrapper die de gecompileerde api-modules bundelt tot een `.omod`-bestand. Alle business-logica bevindt zich in de `api`-modules, die volledig worden gebuild, getest, door CodeQL geanalyseerd en door SonarQube gescand.

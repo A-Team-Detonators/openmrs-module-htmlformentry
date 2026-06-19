@@ -12,6 +12,8 @@ import org.openmrs.EncounterType;
 import org.openmrs.Form;
 import org.openmrs.Patient;
 import org.openmrs.api.context.Context;
+import org.openmrs.module.htmlformentry.AuditLoggingTest.AlwaysFailingSubmissionAction;
+import org.openmrs.module.htmlformentry.AuditLoggingTest.TestAppender;
 import org.openmrs.module.htmlformentry.FormEntryContext.Mode;
 import org.openmrs.test.BaseModuleContextSensitiveTest;
 import org.springframework.mock.web.MockHttpServletRequest;
@@ -20,6 +22,7 @@ import org.springframework.mock.web.MockHttpSession;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -151,7 +154,7 @@ public class AuditLoggingTest extends BaseModuleContextSensitiveTest {
 
     static class TestAppender extends AppenderSkeleton {
 
-        private final List<String> messages = new ArrayList<String>();
+        private final List<String> messages = new CopyOnWriteArrayList<String>();
 
         @Override
         protected void append(LoggingEvent event) {
