@@ -1,51 +1,66 @@
-[![Build Status](https://travis-ci.org/openmrs/openmrs-module-htmlformentry.svg?branch=master)](https://travis-ci.org/openmrs/openmrs-module-htmlformentry)
+# HTML Form Entry Module
 
-HTML Form Entry
-=========
+[![CI — Build, Test & Security](https://github.com/A-Team-Detonators/openmrs-module-htmlformentry/actions/workflows/ci.yml/badge.svg)](https://github.com/A-Team-Detonators/openmrs-module-htmlformentry/actions/workflows/ci.yml)
 
-Overview
---------
+## Overzicht
 
-The HTML Form Entry allows anyone with basic HTML programming skills and knowledge of the
-OpenMRS system to create forms. It is an alternative to the Infopath
-FormEntry module in many, (but not all) cases.
+De HTML Form Entry module stelt iedereen met basiskennis van HTML en OpenMRS in staat om formulieren te maken. Het is een alternatief voor de InfoPath FormEntry-module in veel (maar niet alle) gevallen.
 
-The key focus of writing forms with this module is that you only have
-to write HTML (with some special tags for things in the OpenMRS model)
-and the module will automatically "just know" what to do when the user
-clicks the submit button.
+Het kernidee is dat je alleen HTML hoeft te schrijven — met speciale tags voor OpenMRS-specifieke velden — en de module automatisch afhandelt wat er gebeurt wanneer de gebruiker op de submit-knop klikt.
 
-Currently, a form submission creates one encounter for one patient.
+Een formulierinzending maakt één encounter aan voor één patiënt.
 
-Requirements
-----------
-+ OpenMRS 1.9.9+, OpenMRS 1.10.2+ or OpenMRS 1.11.3+ 
+## Vereisten
 
-Instructions
----------
+- OpenMRS 1.9.9+, 1.10.2+ of 1.11.3+
+- Java 8
 
-+ Download the module from the repository and install it.
-+ Go to "Manage HTML Forms" under the administration page.
-+ Create a new form there (click "New HTML Form").
-+ Fill out the necessary information; including the Name, Description, Version, and select the Encounter Type from the list.  (When an HTML form is submitted, it will create this type of encounter.)
-+ Save the form.  Then it will open the page for editing the HTML Form.
-+ Customize the HTML form to your specifications. Recent versions of the HTML Form Entry Module include a basic form that can be customized. For additional documentation on the available HTML tags see the [HTML Reference][].
+## Installatie
 
+1. Download de module (`.omod`-bestand) vanuit de repository.
+2. Installeer de module via OpenMRS Administration → Manage Modules.
+3. Ga naar **Manage HTML Forms** onder de administatiepagina.
+4. Maak een nieuw formulier aan via **New HTML Form**.
+5. Vul naam, omschrijving, versie en encounter type in.
+6. Sla op en pas de HTML naar wens aan.
 
-Global Properties
-----------------
+Zie de [HTML Form Entry Module documentatie](https://wiki.openmrs.org/display/docs/HTML+Form+Entry+Module) voor een volledige referentie van beschikbare tags.
 
-+ *htmlformentry.dateFormat*: (added in HFE 1.9) lets you specify a date format (as defined in [Java's SimpleDateFormat][]) that will be used to display all dates in HTML Forms. This will hold for entering new forms and viewing/editing existing ones. (For example set the global property to "dd-MMM-yyyy" for an unambiguous date format like 31-Jan-2012.)
-+ *htmlformentry.showDateFormat*: (added in HFE 1.9) set to true if you want static text for the date format to be displayed, otherwise set to false. This text is displayed next to the date widgets as something like (dd/mm/yyyy)
+## Globale eigenschappen
 
-Project Resources
----------
+| Property | Beschrijving |
+|---|---|
+| `htmlformentry.dateFormat` | Datumnotatie voor alle datumvelden (bijv. `dd-MMM-yyyy`). Zie [Java SimpleDateFormat](http://docs.oracle.com/javase/6/docs/api/java/text/SimpleDateFormat.html). |
+| `htmlformentry.showDateFormat` | Stel in op `true` om de datumnotatie als statische tekst naast datumvelden te tonen. |
 
-[Wiki page][]: You can find screenshots, example HTML code, and flowsheets on this page
+## Lokaal bouwen
 
-[HTML Form Entry Module]: https://wiki.openmrs.org/display/docs/HTML+Form+Entry+Module
-[View/download source code for htmlformentry]: https://github.com/OpenMRS/openmrs-module-htmlformentry
-[Download the Htmlformentry module]: http://modules.openmrs.org/modules/view.jsp?module=htmlformentry
-[HTML Reference]: http://archive.openmrs.org/wiki/HTML_Form_Entry_Module_HTML_Reference
-[Wiki page]: https://wiki.openmrs.org/display/docs/HTML+Form+Entry+Module
-[Java's SimpleDateFormat]: http://docs.oracle.com/javase/6/docs/api/java/text/SimpleDateFormat.html
+```bash
+# Alleen api-modules (werkt altijd, ook zonder OpenMRS Nexus):
+mvn clean test -pl api,api-1.9,api-1.10,api-2.0,api-2.2,api-tests -am
+
+# Volledige build inclusief omod-packaging:
+mvn clean package
+```
+
+> **Let op:** de volledige build vereist netwerktoegang tot `mavenrepo.openmrs.org`. In CI wordt de `omod`-module uitgesloten vanwege een netwerklimitation op GitHub Actions-runners. Zie [README.md](README.md) sectie 3 voor details.
+
+## CI/CD & beveiliging
+
+Deze repository maakt gebruik van een volledige OTAP-branchstrategie (`dev` → `test` → `acceptation` → `production`) met een geautomatiseerde CI-pipeline die bij elke push en pull request draait.
+
+De pipeline omvat:
+- Maven build & JUnit tests met JaCoCo coverage
+- CodeQL statische beveiligingsanalyse (SAST)
+- Dependency Review (blokkeert bij high/critical CVE's)
+- SBOM-generatie (CycloneDX) + OSV Scanner
+- SonarQube codekwaliteits- en securityanalyse
+
+Zie [README.md](README.md) voor de volledige CI/CD- en beveiligingsdocumentatie.
+
+## Projectlinks
+
+- [OpenMRS Wiki — HTML Form Entry Module](https://wiki.openmrs.org/display/docs/HTML+Form+Entry+Module)
+- [HTML Tag Reference](http://archive.openmrs.org/wiki/HTML_Form_Entry_Module_HTML_Reference)
+- [Broncode op GitHub](https://github.com/OpenMRS/openmrs-module-htmlformentry)
+- [Module downloads](http://modules.openmrs.org/modules/view.jsp?module=htmlformentry)

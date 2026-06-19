@@ -6,8 +6,6 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.hibernate.Criteria;
 import org.hibernate.Query;
-import org.hibernate.SessionFactory;
-import org.hibernate.criterion.Expression;
 import org.hibernate.criterion.Order;
 import org.hibernate.criterion.Restrictions;
 import org.hibernate.transform.Transformers;
@@ -58,7 +56,7 @@ public class HibernateHtmlFormEntryDAO implements HtmlFormEntryDAO {
     @SuppressWarnings("unchecked")
     public List<HtmlForm> getAllHtmlForms() {
     	Query query = sessionFactory.getCurrentSession().createQuery("from HtmlForm order by form.name asc");
-    	return (List<HtmlForm>) query.list();
+    	return query.list();
     }
 
     @Override
@@ -67,11 +65,12 @@ public class HibernateHtmlFormEntryDAO implements HtmlFormEntryDAO {
         Criteria crit = sessionFactory.getCurrentSession().createCriteria(HtmlForm.class);
         crit.add(Restrictions.eq("form", form));
         crit.addOrder(Order.desc("dateCreated"));
-        List<HtmlForm> list = (List<HtmlForm>) crit.list();
-        if (list.size() >= 1)
-            return list.get(0);
-        else
+        List<HtmlForm> formList = crit.list();
+        if (!formList.isEmpty()) {
+            return formList.get(0);
+        } else {
             return null;
+        }
     }
 
 	@Override
@@ -92,7 +91,7 @@ public class HibernateHtmlFormEntryDAO implements HtmlFormEntryDAO {
 		if (roleName != null)
 			q.setString("roleName", roleName); 
 
-		return (List<PersonStub>) q
+		return q
 		.addScalar("id")
 		.addScalar("givenName")
 		.addScalar("familyName")
@@ -105,7 +104,7 @@ public class HibernateHtmlFormEntryDAO implements HtmlFormEntryDAO {
     public OpenmrsObject getItemByUuid(Class<? extends OpenmrsObject> type, String uuid) {
 		try {
 			Criteria criteria = sessionFactory.getCurrentSession().createCriteria(type);
-			criteria.add(Expression.eq("uuid", uuid));
+			criteria.add(Restrictions.eq("uuid", uuid));
 			OpenmrsObject result = (OpenmrsObject) criteria.uniqueResult();
 			return result;
 		}
@@ -121,7 +120,7 @@ public class HibernateHtmlFormEntryDAO implements HtmlFormEntryDAO {
     	 try {
 	    	 String idProperty = sessionFactory.getHibernateSessionFactory().getClassMetadata(type).getIdentifierPropertyName();
 		 	 Criteria criteria = sessionFactory.getCurrentSession().createCriteria(type);
-		 	 criteria.add(Expression.eq(idProperty, id));
+		 	 criteria.add(Restrictions.eq(idProperty, id));
 		 	 OpenmrsObject result = (OpenmrsObject) criteria.uniqueResult();
 		 	 return result;
     	 }
@@ -136,7 +135,7 @@ public class HibernateHtmlFormEntryDAO implements HtmlFormEntryDAO {
     	// we use a try/catch here to handle oddities like "Role" which don't have a directly-referenceable name property
     	try {
     		Criteria criteria = sessionFactory.getCurrentSession().createCriteria(type);
-    		criteria.add(Expression.eq("name", name));
+    		criteria.add(Restrictions.eq("name", name));
     		OpenmrsObject result = (OpenmrsObject) criteria.uniqueResult();
     		return result;
     	}
@@ -162,6 +161,6 @@ public class HibernateHtmlFormEntryDAO implements HtmlFormEntryDAO {
 			q.setString("attributeValue", attributeValue); 
 		}
 		
-		return (List<Integer>)q.list();
+		return q.list();
 	}
 }

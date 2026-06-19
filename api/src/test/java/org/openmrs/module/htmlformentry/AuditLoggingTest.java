@@ -151,7 +151,7 @@ public class AuditLoggingTest extends BaseModuleContextSensitiveTest {
 
     static class TestAppender extends AppenderSkeleton {
 
-        private final List<String> messages = new ArrayList<String>();
+        private final List<String> messages = new ArrayList<>();
 
         @Override
         protected void append(LoggingEvent event) {
