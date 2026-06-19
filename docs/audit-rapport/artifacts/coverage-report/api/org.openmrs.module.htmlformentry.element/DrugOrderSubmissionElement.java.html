@@ -1,0 +1,824 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>DrugOrderSubmissionElement.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">HTML Form Entry API</a> &gt; <a href="index.source.html" class="el_package">org.openmrs.module.htmlformentry.element</a> &gt; <span class="el_source">DrugOrderSubmissionElement.java</span></div><h1>DrugOrderSubmissionElement.java</h1><pre class="source lang-java linenums">package org.openmrs.module.htmlformentry.element;
+
+import org.apache.commons.lang.StringUtils;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+import org.openmrs.Concept;
+import org.openmrs.ConceptAnswer;
+import org.openmrs.Drug;
+import org.openmrs.DrugOrder;
+import org.openmrs.api.ConceptService;
+import org.openmrs.api.context.Context;
+import org.openmrs.messagesource.MessageSourceService;
+import org.openmrs.module.htmlformentry.FormEntryContext;
+import org.openmrs.module.htmlformentry.FormEntryContext.Mode;
+import org.openmrs.module.htmlformentry.FormEntrySession;
+import org.openmrs.module.htmlformentry.FormSubmissionError;
+import org.openmrs.module.htmlformentry.HtmlFormEntryUtil;
+import org.openmrs.module.htmlformentry.action.FormSubmissionControllerAction;
+import org.openmrs.module.htmlformentry.schema.DrugOrderAnswer;
+import org.openmrs.module.htmlformentry.schema.DrugOrderField;
+import org.openmrs.module.htmlformentry.schema.ObsFieldAnswer;
+import org.openmrs.module.htmlformentry.widget.CheckboxWidget;
+import org.openmrs.module.htmlformentry.widget.DateWidget;
+import org.openmrs.module.htmlformentry.widget.DropdownWidget;
+import org.openmrs.module.htmlformentry.widget.ErrorWidget;
+import org.openmrs.module.htmlformentry.widget.NumberFieldWidget;
+import org.openmrs.module.htmlformentry.widget.Option;
+import org.openmrs.module.htmlformentry.widget.TextFieldWidget;
+import org.openmrs.module.htmlformentry.widget.Widget;
+import org.openmrs.util.OpenmrsConstants;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Calendar;
+import java.util.Collection;
+import java.util.Date;
+import java.util.List;
+import java.util.Map;
+import java.util.StringTokenizer;
+import java.util.UUID;
+import javax.servlet.http.HttpServletRequest;
+
+/**
+ * Holds the widgets used to represent a specific drug order, and serves as both the HtmlGeneratorElement 
+ * and the FormSubmissionControllerAction for the drug order.
+ */
+public class DrugOrderSubmissionElement implements HtmlGeneratorElement,
+		FormSubmissionControllerAction, GettingExistingOrder {
+
+<span class="nc" id="L50">	protected final Log log = LogFactory.getLog(DrugOrderSubmissionElement.class);</span>
+
+	public static final String FIELD_DRUG_NAMES = &quot;drugNames&quot;;
+
+	public static final String FIELD_DOSE = &quot;dose&quot;;
+
+	public static final String FIELD_VALIDATE_DOSE = &quot;validateDose&quot;;
+
+	public static final String FIELD_UNITS = &quot;units&quot;;
+
+	public static final String FIELD_DISCONTINUED = &quot;discontinued&quot;;
+
+	public static final String FIELD_FREQUENCY = &quot;frequency&quot;;
+
+	public static final String FIELD_QUANTITY = &quot;quantity&quot;;
+
+	public static final String FIELD_DATE_CREATED = &quot;date_created&quot;;
+
+	public static final String FIELD_INSTRUCTIONS_LABEL = &quot;instructionsLabel&quot;;
+
+	public static final String FIELD_DRUG_LABELS = &quot;drugLabels&quot;;
+	
+	public static final String CONFIG_SHOW_DOSE = &quot;hideDose&quot;;
+
+	public static final String CONFIG_SHOW_DOSE_AND_FREQ = &quot;hideDoseAndFrequency&quot;;
+
+	public static final String FIELD_CHECKBOX = &quot;checkbox&quot;;
+
+	public static final String FIELD_DISCONTINUED_REASON=&quot;discontinuedReasonConceptId&quot;;
+
+	public static final String FIELD_DISCONTINUED_REASON_ANSWERS=&quot;discontinueReasonAnswers&quot;;
+
+	public static final String FIELD_DISCONTINUED_REASON_ANSWER_LABELS=&quot;discontinueReasonAnswerLabels&quot;;
+
+	public static final String FIELD_SHOW_ORDER_DURATION = &quot;showOrderDuration&quot;;
+
+	public static final String CONFIG_DEFAULT_DOSE = &quot;defaultDose&quot;;
+
+<span class="nc" id="L88">	private boolean validateDose = false;</span>
+
+	protected Widget drugWidget;
+	private ErrorWidget drugErrorWidget;
+	protected Widget doseWidget;
+	protected ErrorWidget doseErrorWidget;
+	protected DateWidget startDateWidget;
+	private ErrorWidget startDateErrorWidget;
+	protected DateWidget discontinuedDateWidget;
+	private ErrorWidget discontinuedDateErrorWidget;
+	protected DropdownWidget frequencyWidget;
+	protected ErrorWidget frequencyErrorWidget;
+	private DropdownWidget frequencyWeekWidget;
+	private ErrorWidget frequencyWeekErrorWidget;
+	private TextFieldWidget instructionsWidget;
+	private ErrorWidget instructionsErrorWidget;
+	private String instructionsLabel;
+	private List&lt;String&gt; drugLabels;
+<span class="nc" id="L106">	protected Boolean hideDose = false;</span>
+<span class="nc" id="L107">	protected Boolean hideDoseAndFrequency = false;</span>
+<span class="nc" id="L108">	private Boolean checkbox = false;</span>
+	protected DropdownWidget discontinuedReasonWidget;
+    private ErrorWidget discontinuedReasonErrorWidget;
+    private TextFieldWidget orderDurationWidget;
+    private ErrorWidget orderDurationErrorWidget;
+    private Double defaultDose;
+
+	protected DrugOrder existingOrder;
+	protected List&lt;Drug&gt; drugsUsedAsKey;
+
+
+<span class="nc" id="L119">	public DrugOrderSubmissionElement(FormEntryContext context, Map&lt;String, String&gt; parameters) {</span>
+<span class="nc" id="L120">		ConceptService conceptService = Context.getConceptService();</span>
+<span class="nc" id="L121">		MessageSourceService mss = Context.getMessageSourceService();</span>
+
+<span class="nc" id="L123">		Boolean usingDurationField = false;</span>
+<span class="nc" id="L124">		String orderDurationStr = parameters.get(FIELD_SHOW_ORDER_DURATION);</span>
+<span class="nc bnc" id="L125" title="All 4 branches missed.">		if (!StringUtils.isEmpty(orderDurationStr) &amp;&amp; orderDurationStr.equals(&quot;true&quot;))</span>
+<span class="nc" id="L126">		    usingDurationField = true;</span>
+		
+<span class="nc" id="L128">		String hideDoseStr = parameters.get(CONFIG_SHOW_DOSE);</span>
+			
+<span class="nc" id="L130">		String hideDoseAndFreqStr = parameters.get(CONFIG_SHOW_DOSE_AND_FREQ);</span>
+<span class="nc bnc" id="L131" title="All 4 branches missed.">		if (!StringUtils.isEmpty(hideDoseAndFreqStr) &amp;&amp; hideDoseAndFreqStr.equals(&quot;true&quot;))</span>
+<span class="nc" id="L132">		    hideDoseAndFrequency = true;</span>
+<span class="nc bnc" id="L133" title="All 4 branches missed.">		else if (!StringUtils.isEmpty(hideDoseStr) &amp;&amp; hideDoseStr.equals(&quot;true&quot;))</span>
+<span class="nc" id="L134">			hideDose = true;</span>
+
+<span class="nc" id="L136">		String checkboxStr = parameters.get(FIELD_CHECKBOX);</span>
+<span class="nc bnc" id="L137" title="All 4 branches missed.">        if (checkboxStr != null &amp;&amp; checkboxStr.equals(&quot;true&quot;))</span>
+<span class="nc" id="L138">            checkbox = true;</span>
+
+		// check URL
+<span class="nc" id="L141">		String drugNames = parameters.get(FIELD_DRUG_NAMES);</span>
+<span class="nc bnc" id="L142" title="All 4 branches missed.">		if (drugNames == null || drugNames.length() &lt; 1)</span>
+<span class="nc" id="L143">			throw new IllegalArgumentException(&quot;You must provide a valid drug name, or a valid ID or a valid UUID in &quot; + parameters);</span>
+
+<span class="nc" id="L145">		String fieldValidateDose = parameters.get(FIELD_VALIDATE_DOSE);</span>
+<span class="nc bnc" id="L146" title="All 4 branches missed.">		if (fieldValidateDose != null &amp;&amp; fieldValidateDose.length() &gt; 1)</span>
+<span class="nc" id="L147">			validateDose = Boolean.parseBoolean(fieldValidateDose);</span>
+
+<span class="nc bnc" id="L149" title="All 2 branches missed.">        if (parameters.get(FIELD_DRUG_LABELS) != null) {</span>
+<span class="nc" id="L150">            drugLabels = Arrays.asList(parameters.get(FIELD_DRUG_LABELS).split(&quot;,&quot;));</span>
+        }
+
+		// fill drop down with drug names from database
+<span class="nc" id="L154">		List&lt;Option&gt; options = new ArrayList&lt;Option&gt;();</span>
+<span class="nc" id="L155">		options.add(new Option(&quot;&quot;, &quot;&quot;, false));</span>
+
+		// drugNames is comma separated list which can contain ID, UUID or drugname
+<span class="nc" id="L158">		StringTokenizer tokenizer = new StringTokenizer(drugNames, &quot;,&quot;);</span>
+<span class="nc" id="L159">		int drugListIndexPos = 0;</span>
+<span class="nc" id="L160">        String displayText = &quot;&quot;;</span>
+<span class="nc" id="L161">        DrugOrderField dof = new DrugOrderField();</span>
+<span class="nc bnc" id="L162" title="All 2 branches missed.">		while (tokenizer.hasMoreElements()) {</span>
+<span class="nc" id="L163">			String drugName = (String) tokenizer.nextElement();</span>
+<span class="nc" id="L164">			Drug drug = null;</span>
+
+			// see if this is a uuid
+<span class="nc bnc" id="L167" title="All 2 branches missed.">			if (HtmlFormEntryUtil.isValidUuidFormat(drugName.trim())) {</span>
+<span class="nc" id="L168">				drug = conceptService.getDrugByUuid(drugName.trim());</span>
+			}
+
+			// if we didn't find by id, find by uuid or name
+<span class="nc bnc" id="L172" title="All 2 branches missed.">			if (drug == null){</span>
+<span class="nc" id="L173">				drug = conceptService.getDrug(drugName.trim());</span>
+			}
+
+<span class="nc bnc" id="L176" title="All 2 branches missed.">			if (drug != null) {</span>
+<span class="nc" id="L177">			    displayText = drug.getName();</span>
+<span class="nc bnc" id="L178" title="All 2 branches missed.">			    if (drugLabels != null) {</span>
+<span class="nc" id="L179">			        displayText = drugLabels.get(drugListIndexPos);</span>
+			    }
+<span class="nc" id="L181">				options.add(new Option(displayText, drug.getDrugId().toString(), false));</span>
+<span class="nc bnc" id="L182" title="All 2 branches missed.">				if (drugsUsedAsKey == null) {</span>
+<span class="nc" id="L183">				    drugsUsedAsKey = new ArrayList&lt;Drug&gt;();</span>
+				}
+<span class="nc" id="L185">				drugsUsedAsKey.add(drug);</span>
+<span class="nc" id="L186">				DrugOrderAnswer doa = new DrugOrderAnswer(drug, displayText);</span>
+<span class="nc" id="L187">				dof.addDrugOrderAnswer(doa);</span>
+<span class="nc" id="L188">				drugListIndexPos ++;</span>
+<span class="nc bnc" id="L189" title="All 6 branches missed.">			} else if (drugName.length() &gt; 0 &amp;&amp; drugName.charAt(0) == '/' &amp;&amp; drugName.charAt(drugName.length()-1) == '/'){</span>
+<span class="nc" id="L190">			    options.add(new Option(&quot;[ &quot; + drugName.substring(1,drugName.length()-1) + &quot; ]&quot;, &quot;~&quot;, false));</span>
+			} else {
+<span class="nc" id="L192">			    throw new IllegalArgumentException(&quot;No Drug found for drug name/id/uuid &quot; + drugName);</span>
+			}
+<span class="nc" id="L194">		}</span>
+
+<span class="nc bnc" id="L196" title="All 2 branches missed.">		if (drugsUsedAsKey == null)</span>
+<span class="nc" id="L197">			throw new IllegalArgumentException(&quot;You must provide a valid drug name, or a valid ID or a valid UUID in &quot; + parameters);</span>
+
+	      // there need to be the same number of drugs as drug labels
+<span class="nc bnc" id="L200" title="All 4 branches missed.">        if (drugLabels != null &amp;&amp; drugsUsedAsKey.size() != drugLabels.size())</span>
+<span class="nc" id="L201">            throw new IllegalArgumentException(&quot;There are a different number of drugLabels (&quot; + drugLabels.size() + &quot;) than drugs (&quot; + drugsUsedAsKey.size() + &quot;).&quot;);</span>
+
+
+        // Register Drug Widget
+<span class="nc bnc" id="L205" title="All 4 branches missed.">        if (checkbox &amp;&amp; drugsUsedAsKey.size() == 1){</span>
+<span class="nc" id="L206">            CheckboxWidget cb = new CheckboxWidget();</span>
+<span class="nc" id="L207">            cb.setLabel(displayText);</span>
+<span class="nc" id="L208">            cb.setValue(drugsUsedAsKey.get(0).getDrugId().toString());</span>
+<span class="nc" id="L209">            drugWidget = cb;</span>
+<span class="nc" id="L210">        } else {</span>
+<span class="nc" id="L211">            DropdownWidget dw = new DropdownWidget();</span>
+<span class="nc" id="L212">            dw.setOptions(options);</span>
+<span class="nc" id="L213">            drugWidget = dw;</span>
+        }
+<span class="nc" id="L215">        context.registerWidget(drugWidget);</span>
+<span class="nc" id="L216">        drugErrorWidget = new ErrorWidget();</span>
+<span class="nc" id="L217">        context.registerErrorWidget(drugWidget, drugErrorWidget);</span>
+
+		//start date
+<span class="nc" id="L220">		startDateWidget = new DateWidget();</span>
+<span class="nc" id="L221">        startDateErrorWidget = new ErrorWidget();</span>
+<span class="nc" id="L222">        context.registerWidget(startDateWidget);</span>
+<span class="nc" id="L223">        context.registerErrorWidget(startDateWidget, startDateErrorWidget);</span>
+
+<span class="nc bnc" id="L225" title="All 4 branches missed.">        if (!hideDoseAndFrequency &amp;&amp; hideDose){</span>
+<span class="nc" id="L226">		        createFrequencyWidget(context, mss);</span>
+		
+<span class="nc" id="L228">		        createFrequencyWeekWidget(context, mss);</span>
+	        }
+<span class="nc bnc" id="L230" title="All 2 branches missed.">        else if(!hideDoseAndFrequency) {</span>
+		        // dose validation by drug is done in validateSubmission()
+<span class="nc" id="L232">		        doseWidget = new NumberFieldWidget(0d, 9999999d, true);</span>
+		        //set default value (maybe temporarily)
+<span class="nc" id="L234">		        String defaultDoseStr = parameters.get(CONFIG_DEFAULT_DOSE);</span>
+<span class="nc bnc" id="L235" title="All 2 branches missed.">		        if (!StringUtils.isEmpty(defaultDoseStr)){</span>
+			        try {
+<span class="nc" id="L237">				        defaultDose = Double.valueOf(defaultDoseStr);</span>
+<span class="nc" id="L238">				        doseWidget.setInitialValue(defaultDose);</span>
+<span class="nc" id="L239">			        } catch (Exception ex){</span>
+<span class="nc" id="L240">				        throw new RuntimeException(&quot;optional attribute 'defaultDose' must be numeric or empty.&quot;);</span>
+<span class="nc" id="L241">			        }</span>
+		        }
+		
+<span class="nc" id="L244">		        doseErrorWidget = new ErrorWidget();</span>
+<span class="nc" id="L245">		        context.registerWidget(doseWidget);</span>
+<span class="nc" id="L246">		        context.registerErrorWidget(doseWidget, doseErrorWidget);</span>
+		
+<span class="nc" id="L248">		        createFrequencyWidget(context, mss);</span>
+		
+<span class="nc" id="L250">		        createFrequencyWeekWidget(context, mss);</span>
+	        }
+
+<span class="nc bnc" id="L253" title="All 2 branches missed.">        if (!usingDurationField){</span>
+<span class="nc" id="L254">    		discontinuedDateWidget = new DateWidget();</span>
+<span class="nc" id="L255">    		discontinuedDateErrorWidget = new ErrorWidget();</span>
+<span class="nc" id="L256">    		context.registerWidget(discontinuedDateWidget);</span>
+<span class="nc" id="L257">    		context.registerErrorWidget(discontinuedDateWidget, discontinuedDateErrorWidget);</span>
+        }
+<span class="nc bnc" id="L259" title="All 2 branches missed.">		if (parameters.get(FIELD_DISCONTINUED_REASON) != null){</span>
+<span class="nc" id="L260">		    String discReasonConceptStr = (String) parameters.get(FIELD_DISCONTINUED_REASON);</span>
+<span class="nc" id="L261">		    Concept discontineReasonConcept = HtmlFormEntryUtil.getConcept(discReasonConceptStr);</span>
+<span class="nc bnc" id="L262" title="All 2 branches missed.">		    if (discontineReasonConcept == null)</span>
+<span class="nc" id="L263">		        throw new IllegalArgumentException(&quot;discontinuedReasonConceptId is not set to a valid conceptId or concept UUID&quot;);</span>
+<span class="nc" id="L264">		    dof.setDiscontinuedReasonQuestion(discontineReasonConcept);</span>
+
+<span class="nc" id="L266">		    discontinuedReasonWidget = new DropdownWidget();</span>
+<span class="nc" id="L267">		    discontinuedReasonErrorWidget = new ErrorWidget();</span>
+
+<span class="nc" id="L269">		    List&lt;Option&gt; discOptions = new ArrayList&lt;Option&gt;();</span>
+<span class="nc" id="L270">		    discOptions.add(new Option(&quot;&quot;, &quot;&quot;, false));</span>
+
+<span class="nc bnc" id="L272" title="All 2 branches missed.">		    if (parameters.get(FIELD_DISCONTINUED_REASON_ANSWERS) != null){</span>
+		        //setup a list of the reason concepts
+<span class="nc" id="L274">		        List&lt;Concept&gt; discReasons = new ArrayList&lt;Concept&gt;();</span>
+<span class="nc" id="L275">		        String discAnswersString = (String) parameters.get(FIELD_DISCONTINUED_REASON_ANSWERS);</span>
+<span class="nc" id="L276">		        String[] strDiscAnswers = discAnswersString.split(&quot;,&quot;);</span>
+<span class="nc bnc" id="L277" title="All 2 branches missed.">		        for (int i = 0; i &lt; strDiscAnswers.length; i++){</span>
+<span class="nc" id="L278">		            String thisAnswer = strDiscAnswers[i];</span>
+<span class="nc" id="L279">		            Concept answer = HtmlFormEntryUtil.getConcept(thisAnswer, &quot;discontinueReasonAnswers includes a value that is not a valid conceptId or concept UUID&quot;);</span>
+<span class="nc" id="L280">	                discReasons.add(answer);</span>
+		        }
+
+<span class="nc bnc" id="L283" title="All 2 branches missed.">		        if (parameters.get(FIELD_DISCONTINUED_REASON_ANSWER_LABELS) != null){</span>
+		            // use the listed discontinueReasons, and use labels:
+<span class="nc" id="L285">		            String discLabelsString = parameters.get(FIELD_DISCONTINUED_REASON_ANSWER_LABELS);</span>
+<span class="nc" id="L286">		            String[] strDiscAnswerLabels = discLabelsString.split(&quot;,&quot;);</span>
+		            //a little validation:
+<span class="nc bnc" id="L288" title="All 2 branches missed.">		            if (strDiscAnswerLabels.length != discReasons.size())</span>
+<span class="nc" id="L289">		                throw new RuntimeException(&quot;discontinueReasonAnswers and discontinueReasonAnswerLabels must contain the same number of members.&quot;);</span>
+<span class="nc bnc" id="L290" title="All 2 branches missed.">		            for (int i = 0; i &lt; strDiscAnswerLabels.length; i ++ ){</span>
+<span class="nc" id="L291">		                discOptions.add(new Option( strDiscAnswerLabels[i], discReasons.get(i).getConceptId().toString(),false));</span>
+<span class="nc" id="L292">		                dof.addDiscontinuedReasonAnswer(new ObsFieldAnswer(strDiscAnswerLabels[i].trim(), discReasons.get(i)));</span>
+		            }
+<span class="nc" id="L294">		        } else {</span>
+		            // use the listed discontinueReasons, and use their ConceptNames.
+<span class="nc bnc" id="L296" title="All 2 branches missed.">    		        for (Concept c: discReasons){</span>
+<span class="nc" id="L297">    		            discOptions.add(new Option( c.getName(Context.getLocale(), false).getName(), c.getConceptId().toString(),false));</span>
+<span class="nc" id="L298">    		            dof.addDiscontinuedReasonAnswer(new ObsFieldAnswer(c.getName(Context.getLocale()).getName(), c));</span>
+<span class="nc" id="L299">    		        }</span>
+		        }
+<span class="nc" id="L301">		    } else {</span>
+		        //just use the conceptAnswers
+<span class="nc bnc" id="L303" title="All 2 branches missed.">    		    for (ConceptAnswer ca : discontineReasonConcept.getAnswers()){</span>
+<span class="nc" id="L304">    		        discOptions.add(new Option( ca.getAnswerConcept().getName(Context.getLocale()).getName(), ca.getAnswerConcept().getConceptId().toString(),false));</span>
+<span class="nc" id="L305">    		        dof.addDiscontinuedReasonAnswer(new ObsFieldAnswer(ca.getAnswerConcept().getName(Context.getLocale()).getName(), ca.getAnswerConcept()));</span>
+<span class="nc" id="L306">    		    }</span>
+		    }
+<span class="nc bnc" id="L308" title="All 2 branches missed.">		    if (discOptions.size() == 1)</span>
+<span class="nc" id="L309">		        throw new IllegalArgumentException(&quot;discontinue reason Concept doesn't have any ConceptAnswers&quot;);</span>
+
+<span class="nc" id="L311">		    discontinuedReasonWidget.setOptions(discOptions);</span>
+<span class="nc" id="L312">		    context.registerWidget(discontinuedReasonWidget);</span>
+<span class="nc" id="L313">	        context.registerErrorWidget(discontinuedReasonWidget, discontinuedReasonErrorWidget);</span>
+		}
+		
+<span class="nc" id="L316">		createAdditionalWidgets(context);</span>
+		
+<span class="nc bnc" id="L318" title="All 4 branches missed.">		if (context.getMode() != Mode.ENTER &amp;&amp; context.getExistingOrders() != null) {</span>
+			// If VIEW, EDIT
+<span class="nc" id="L320">			populateDrugOrderValuesFromDB(context, usingDurationField);</span>
+		}
+
+<span class="nc" id="L323">        instructionsLabel = parameters.get(FIELD_INSTRUCTIONS_LABEL);</span>
+<span class="nc bnc" id="L324" title="All 2 branches missed.">        if (instructionsLabel != null){</span>
+<span class="nc" id="L325">            instructionsWidget = new TextFieldWidget();</span>
+<span class="nc bnc" id="L326" title="All 2 branches missed.">            if (existingOrder != null){</span>
+<span class="nc" id="L327">                instructionsWidget.setInitialValue(existingOrder.getInstructions());</span>
+            }
+<span class="nc" id="L329">            instructionsErrorWidget = new ErrorWidget();</span>
+<span class="nc" id="L330">            context.registerWidget(instructionsWidget);</span>
+<span class="nc" id="L331">            context.registerErrorWidget(instructionsWidget, instructionsErrorWidget);</span>
+        }
+
+<span class="nc bnc" id="L334" title="All 2 branches missed.">        if (usingDurationField){</span>
+<span class="nc" id="L335">            orderDurationWidget = new TextFieldWidget(4);</span>
+<span class="nc bnc" id="L336" title="All 4 branches missed.">            if (existingOrder != null &amp;&amp; existingOrder.getAutoExpireDate() != null){</span>
+                //set duration from autoExpireDate in days
+<span class="nc" id="L338">                Long autoDateMilis = existingOrder.getAutoExpireDate().getTime();</span>
+<span class="nc" id="L339">                Long startDateMilis = existingOrder.getStartDate().getTime();</span>
+<span class="nc" id="L340">                Long diffInMSec = autoDateMilis - startDateMilis;</span>
+                // Find date difference in days
+                // (24 hours 60 minutes 60 seconds 1000 millisecond)
+<span class="nc" id="L343">                Long diffOfDays = diffInMSec / (24 * 60 * 60 * 1000);</span>
+<span class="nc" id="L344">                orderDurationWidget.setInitialValue(String.valueOf(diffOfDays.intValue()));</span>
+            }
+<span class="nc" id="L346">            orderDurationErrorWidget = new ErrorWidget();</span>
+<span class="nc" id="L347">            context.registerWidget(orderDurationWidget);</span>
+<span class="nc" id="L348">            context.registerErrorWidget(orderDurationWidget, orderDurationErrorWidget);</span>
+        }
+<span class="nc" id="L350">        context.addFieldToActiveSection(dof);</span>
+<span class="nc" id="L351">	}</span>
+
+	protected void createAdditionalWidgets(FormEntryContext context) {
+	    
+<span class="nc" id="L355">    }</span>
+
+	/**
+	 * Be aware it's called by the constructor.
+	 *  
+	 * @param context
+	 * @param usingDurationField
+	 */
+	protected void populateDrugOrderValuesFromDB(FormEntryContext context, Boolean usingDurationField) {
+<span class="nc bnc" id="L364" title="All 2 branches missed.">	    for (Drug drug : drugsUsedAsKey) {</span>
+<span class="nc bnc" id="L365" title="All 2 branches missed.">	        if (context.getExistingOrders().containsKey(drug.getConcept())) {</span>
+	        		//this will return null if Order is not a DrugOrder even if matched by Concept
+<span class="nc" id="L367">	    		    DrugOrder drugOrder = (DrugOrder) context.removeExistingDrugOrder(drug);</span>
+<span class="nc bnc" id="L368" title="All 2 branches missed.">	    		    if (drugOrder != null){</span>
+<span class="nc" id="L369">	    				existingOrder = drugOrder;</span>
+<span class="nc bnc" id="L370" title="All 2 branches missed.">	    				if (drugWidget instanceof DropdownWidget){</span>
+<span class="nc" id="L371">	    				    drugWidget.setInitialValue(drugOrder.getDrug().getDrugId());</span>
+	    				} else {
+<span class="nc bnc" id="L373" title="All 2 branches missed.">	    				    if (((CheckboxWidget) drugWidget).getValue().equals(drugOrder.getDrug().getDrugId().toString()))</span>
+<span class="nc" id="L374">	    				        ((CheckboxWidget) drugWidget).setInitialValue(&quot;CHECKED&quot;);</span>
+	    				}
+<span class="nc" id="L376">	    				startDateWidget.setInitialValue(drugOrder.getStartDate());</span>
+<span class="nc bnc" id="L377" title="All 4 branches missed.">	    				if (!hideDoseAndFrequency &amp;&amp; hideDose){</span>
+<span class="nc" id="L378">							    frequencyWidget.setInitialValue(parseFrequencyDays(drugOrder.getFrequency()));</span>
+<span class="nc" id="L379">							    frequencyWeekWidget.setInitialValue(parseFrequencyWeek(drugOrder.getFrequency()));</span>
+						    }
+<span class="nc bnc" id="L381" title="All 2 branches missed.">					    else if(!hideDoseAndFrequency) {</span>
+<span class="nc" id="L382">						    doseWidget.setInitialValue(drugOrder.getDose());</span>
+<span class="nc" id="L383">						    frequencyWidget.setInitialValue(parseFrequencyDays(drugOrder.getFrequency()));</span>
+<span class="nc" id="L384">						    frequencyWeekWidget.setInitialValue(parseFrequencyWeek(drugOrder.getFrequency()));</span>
+					    }
+<span class="nc bnc" id="L386" title="All 2 branches missed.">	    				if (!usingDurationField){</span>
+<span class="nc" id="L387">	    				    discontinuedDateWidget.setInitialValue(drugOrder.getDiscontinuedDate());</span>
+<span class="nc bnc" id="L388" title="All 4 branches missed.">	    				    if (discontinuedReasonWidget != null &amp;&amp; drugOrder.getDiscontinuedReason() != null)</span>
+<span class="nc" id="L389">	    				        discontinuedReasonWidget.setInitialValue(drugOrder.getDiscontinuedReason().getConceptId());</span>
+	    				}
+	    				break;
+	    		    }
+
+	        }
+<span class="nc" id="L395">	    }</span>
+<span class="nc" id="L396">    }</span>
+
+	/**
+	 * Be aware it's called by the constructor.
+	 * 
+	 * @param context
+	 * @param mss
+	 */
+	protected void createFrequencyWeekWidget(FormEntryContext context, MessageSourceService mss) {
+<span class="nc" id="L405">	    frequencyWeekWidget = new DropdownWidget();</span>
+<span class="nc" id="L406">	    frequencyWeekErrorWidget = new ErrorWidget();</span>
+	    // fill frequency drop down lists (ENTER, EDIT)
+<span class="nc" id="L408">	    List&lt;Option&gt; weekOptions = new ArrayList&lt;Option&gt;();</span>
+<span class="nc bnc" id="L409" title="All 2 branches missed.">	    if (context.getMode() != Mode.VIEW ) {</span>
+<span class="nc bnc" id="L410" title="All 2 branches missed.">	    	for (int i = 7; i &gt;= 1; i--) {</span>
+<span class="nc" id="L411">	    	    weekOptions.add(new Option(i + &quot; &quot; + mss.getMessage(&quot;DrugOrder.frequency.days&quot;) + &quot;/&quot;  + mss.getMessage(&quot;DrugOrder.frequency.week&quot;) , String.valueOf(i), false));</span>
+	        }
+	    }
+<span class="nc" id="L414">	    frequencyWeekWidget.setOptions(weekOptions);</span>
+<span class="nc" id="L415">	    context.registerWidget(frequencyWeekWidget);</span>
+<span class="nc" id="L416">	    context.registerErrorWidget(frequencyWeekWidget, frequencyWeekErrorWidget);</span>
+<span class="nc" id="L417">    }</span>
+
+	/**
+	 * Be aware it's called by the constructor.
+	 * 
+	 * @param context
+	 * @param mss
+	 */
+	protected void createFrequencyWidget(FormEntryContext context, MessageSourceService mss) {
+<span class="nc" id="L426">	    frequencyWidget = new DropdownWidget();</span>
+<span class="nc" id="L427">	    frequencyErrorWidget = new ErrorWidget();</span>
+	    // fill frequency drop down lists (ENTER, EDIT)
+<span class="nc" id="L429">	    List&lt;Option&gt; freqOptions = new ArrayList&lt;Option&gt;();</span>
+<span class="nc bnc" id="L430" title="All 2 branches missed.">	    if (context.getMode() != Mode.VIEW ) {</span>
+<span class="nc bnc" id="L431" title="All 2 branches missed.">	    	for (int i = 1; i &lt;= 10; i++) {</span>
+<span class="nc" id="L432">	    	    freqOptions.add(new Option(i + &quot;/&quot; + mss.getMessage(&quot;DrugOrder.frequency.day&quot;), String.valueOf(i), false));</span>
+	    	}
+	    }
+<span class="nc" id="L435">	    frequencyWidget.setOptions(freqOptions);</span>
+<span class="nc" id="L436">	    context.registerWidget(frequencyWidget);</span>
+<span class="nc" id="L437">	    context.registerErrorWidget(frequencyWidget, frequencyErrorWidget);</span>
+<span class="nc" id="L438">    }</span>
+
+	/**
+	 * Static helper method to parse frequency string
+	 *
+	 * &lt;strong&gt;Should&lt;/strong&gt; return times per day which is part of frequency string
+	 * @param frequency (format &quot;x/d y d/w&quot;)
+	 * @return x
+	 */
+	private static String parseFrequencyDays(String frequency) {
+<span class="nc" id="L448">		String days = StringUtils.substringBefore(frequency, &quot;/d&quot;);</span>
+<span class="nc" id="L449">		return days;</span>
+	}
+
+	/**
+	 * Static helper method to parse frequency string
+	 *
+	 * &lt;strong&gt;Should&lt;/strong&gt; return number of days per weeks which is part of frequency string
+	 * @param frequency (format &quot;x/d y d/w&quot;)
+	 * @return y
+	 */
+	private static String parseFrequencyWeek(String frequency) {
+<span class="nc" id="L460">		String temp = StringUtils.substringAfter(frequency, &quot;/d&quot;);</span>
+<span class="nc" id="L461">		String weeks = StringUtils.substringBefore(temp, &quot;d/&quot;);</span>
+<span class="nc" id="L462">		return weeks;</span>
+	}
+
+	/**
+	 * &lt;strong&gt;Should&lt;/strong&gt; return HTML snippet
+	 * @see HtmlGeneratorElement#generateHtml(org.openmrs.module.htmlformentry.FormEntryContext)
+	 */
+	@Override
+    public String generateHtml(FormEntryContext context) {
+<span class="nc" id="L471">		StringBuilder ret = new StringBuilder();</span>
+<span class="nc" id="L472">		MessageSourceService mss = Context.getMessageSourceService();</span>
+		
+<span class="nc bnc" id="L474" title="All 2 branches missed.">		if (drugWidget != null) {</span>
+<span class="nc bnc" id="L475" title="All 2 branches missed.">		    if (drugWidget instanceof CheckboxWidget == false)</span>
+<span class="nc" id="L476">		        ret.append(mss.getMessage(&quot;DrugOrder.drug&quot;) + &quot; &quot;);</span>
+<span class="nc" id="L477">			ret.append(drugWidget.generateHtml(context) + &quot; &quot;);</span>
+<span class="nc bnc" id="L478" title="All 2 branches missed.">			if (context.getMode() != Mode.VIEW)</span>
+<span class="nc" id="L479">				ret.append(drugErrorWidget.generateHtml(context));</span>
+<span class="nc" id="L480">			ret.append(&quot; | &quot;);</span>
+		}
+		
+<span class="nc" id="L483">		ret.append(generateHtmlForAdditionalWidgets(context));</span>
+		
+<span class="nc bnc" id="L485" title="All 2 branches missed.">		if (frequencyWidget != null) {</span>
+<span class="nc" id="L486">			ret.append(mss.getMessage(&quot;DrugOrder.frequency&quot;) + &quot; &quot;);</span>
+<span class="nc" id="L487">			ret.append(frequencyWidget.generateHtml(context));</span>
+<span class="nc bnc" id="L488" title="All 2 branches missed.">			if (context.getMode() != Mode.VIEW)</span>
+<span class="nc" id="L489">				ret.append(frequencyErrorWidget.generateHtml(context));</span>
+		}
+<span class="nc bnc" id="L491" title="All 2 branches missed.">		if (frequencyWeekWidget != null) {</span>
+<span class="nc" id="L492">			ret.append(&quot; x &quot;);</span>
+<span class="nc" id="L493">			ret.append(frequencyWeekWidget.generateHtml(context)  + &quot; &quot;);</span>
+<span class="nc bnc" id="L494" title="All 2 branches missed.">			if (context.getMode() != Mode.VIEW)</span>
+<span class="nc" id="L495">				ret.append(frequencyWeekErrorWidget.generateHtml(context));</span>
+		}
+<span class="nc bnc" id="L497" title="All 2 branches missed.">		if (startDateWidget != null) {</span>
+<span class="nc" id="L498">			ret.append(&quot; | &quot;);</span>
+<span class="nc" id="L499">			ret.append(mss.getMessage(&quot;general.dateStart&quot;) + &quot; &quot;);</span>
+<span class="nc" id="L500">			ret.append(startDateWidget.generateHtml(context) + &quot; &quot;);</span>
+<span class="nc bnc" id="L501" title="All 2 branches missed.">			if (context.getMode() != Mode.VIEW)</span>
+<span class="nc" id="L502">				ret.append(startDateErrorWidget.generateHtml(context));</span>
+		}
+<span class="nc bnc" id="L504" title="All 2 branches missed.">		if (orderDurationWidget != null){</span>
+<span class="nc" id="L505">		    ret.append(mss.getMessage(&quot;htmlformentry.general.for&quot;) + &quot; &quot;);</span>
+<span class="nc" id="L506">		    ret.append(orderDurationWidget.generateHtml(context));</span>
+<span class="nc" id="L507">		    ret.append(&quot; &quot; + mss.getMessage(&quot;htmlformentry.general.days&quot;) +  &quot; &quot;);</span>
+<span class="nc bnc" id="L508" title="All 2 branches missed.">		    if (context.getMode() != Mode.VIEW)</span>
+<span class="nc" id="L509">                ret.append(orderDurationErrorWidget.generateHtml(context));</span>
+		}
+		//duration and discontinuedDate are now mutually exclusive
+<span class="nc bnc" id="L512" title="All 2 branches missed.">		if (discontinuedDateWidget != null) {</span>
+<span class="nc" id="L513">			ret.append(mss.getMessage(&quot;general.dateDiscontinued&quot;) + &quot; &quot;);</span>
+<span class="nc" id="L514">			ret.append(discontinuedDateWidget.generateHtml(context) + &quot; &quot;);</span>
+<span class="nc bnc" id="L515" title="All 2 branches missed.">			if (context.getMode() != Mode.VIEW)</span>
+<span class="nc" id="L516">				ret.append(discontinuedDateErrorWidget.generateHtml(context));</span>
+		}
+<span class="nc bnc" id="L518" title="All 2 branches missed.">		if (discontinuedReasonWidget != null){</span>
+<span class="nc" id="L519">		    ret.append(&quot; | &quot; + mss.getMessage(&quot;general.discontinuedReason&quot;) + &quot; &quot;);</span>
+<span class="nc" id="L520">            ret.append(discontinuedReasonWidget.generateHtml(context) + &quot; &quot;);</span>
+<span class="nc bnc" id="L521" title="All 2 branches missed.">            if (context.getMode() != Mode.VIEW)</span>
+<span class="nc" id="L522">                ret.append(discontinuedReasonErrorWidget.generateHtml(context));</span>
+        }
+		
+<span class="nc" id="L525">		ret.append(generateHtmlForWidget(context, instructionsLabel + &quot; &quot;, instructionsWidget, instructionsErrorWidget));</span>
+		
+<span class="nc" id="L527">		return ret.toString();</span>
+    }
+	
+	protected String generateHtmlForAdditionalWidgets(FormEntryContext context) {
+<span class="nc" id="L531">		MessageSourceService mss = Context.getMessageSourceService();</span>
+		
+<span class="nc" id="L533">	    return generateHtmlForWidget(context, mss.getMessage(&quot;DrugOrder.dose&quot;) + &quot; &quot;, doseWidget, doseErrorWidget);</span>
+    }
+
+	public static String generateHtmlForWidget(FormEntryContext context, String label, Widget widget, Widget errorWidget) {
+<span class="nc" id="L537">		StringBuilder html = new StringBuilder();</span>
+<span class="nc bnc" id="L538" title="All 2 branches missed.">		if (widget != null){</span>
+<span class="nc bnc" id="L539" title="All 2 branches missed.">			if (label != null) {</span>
+<span class="nc" id="L540">				html.append(label);</span>
+			}
+<span class="nc" id="L542">			html.append(widget.generateHtml(context) + &quot; &quot;);</span>
+<span class="nc bnc" id="L543" title="All 4 branches missed.">		    if (context.getMode() != Mode.VIEW &amp;&amp; errorWidget != null)</span>
+<span class="nc" id="L544">		    	html.append(errorWidget.generateHtml(context));</span>
+		}
+<span class="nc" id="L546">		return html.toString();</span>
+	}
+
+	/**
+	 * handleSubmission saves a drug order if in ENTER or EDIT-mode
+	 *  
+	 * @see org.openmrs.module.htmlformentry.action.FormSubmissionControllerAction#handleSubmission(org.openmrs.module.htmlformentry.FormEntrySession, javax.servlet.http.HttpServletRequest)
+	 */
+	@Override
+    public void handleSubmission(FormEntrySession session, HttpServletRequest submission) {
+<span class="nc" id="L556">		OrderTag orderTag = newOrderTag();</span>
+		
+<span class="nc bnc" id="L558" title="All 2 branches missed.">	    if (drugWidget.getValue(session.getContext(), submission) != null)</span>
+<span class="nc" id="L559">	            orderTag.drugId = ((String) drugWidget.getValue(session.getContext(), submission));</span>
+<span class="nc" id="L560">    	orderTag.startDate =  startDateWidget.getValue(session.getContext(), submission);</span>
+<span class="nc bnc" id="L561" title="All 2 branches missed.">    	if (orderDurationWidget != null){</span>
+<span class="nc" id="L562">    	   String orderDurationStr = (String) orderDurationWidget.getValue(session.getContext(), submission);</span>
+    	   try {
+<span class="nc" id="L564">    	       orderTag.orderDuration = Integer.valueOf(orderDurationStr);</span>
+<span class="nc" id="L565">    	   } catch (Exception ex){</span>
+    	       //pass
+<span class="nc" id="L567">    	   }</span>
+    	}
+<span class="nc bnc" id="L569" title="All 2 branches missed.">    	if (discontinuedDateWidget != null){</span>
+<span class="nc" id="L570">    	    orderTag.discontinuedDate = discontinuedDateWidget.getValue(session.getContext(), submission);</span>
+    	}    
+<span class="nc bnc" id="L572" title="All 2 branches missed.">    	if (discontinuedReasonWidget != null){</span>
+<span class="nc" id="L573">    	    orderTag.discontinuedReasonStr = (String) discontinuedReasonWidget.getValue(session.getContext(), submission);</span>
+    	}
+<span class="nc bnc" id="L575" title="All 2 branches missed.">    	if (instructionsWidget != null)</span>
+<span class="nc" id="L576">    	    orderTag.instructions = (String) instructionsWidget.getValue(session.getContext(), submission);</span>
+<span class="nc bnc" id="L577" title="All 4 branches missed.">    	if (!StringUtils.isEmpty(orderTag.drugId) &amp;&amp; !orderTag.drugId.equals(&quot;~&quot;)){</span>
+<span class="nc" id="L578">        	orderTag.drug = Context.getConceptService().getDrug(Integer.valueOf(orderTag.drugId));</span>
+<span class="nc bnc" id="L579" title="All 2 branches missed.">        	if (defaultDose == null)</span>
+<span class="nc" id="L580">        	    orderTag.dose = orderTag.drug.getDoseStrength();</span>
+        	else
+<span class="nc" id="L582">        	    orderTag.dose = defaultDose;</span>
+        	
+<span class="nc bnc" id="L584" title="All 4 branches missed.">        	if (!hideDoseAndFrequency &amp;&amp; hideDose) {</span>
+<span class="nc" id="L585">		        orderTag.frequency = (String) frequencyWidget.getValue(session.getContext(), submission);</span>
+<span class="nc bnc" id="L586" title="All 2 branches missed.">		        if (frequencyWeekWidget != null) {</span>
+<span class="nc" id="L587">			        orderTag.frequency += &quot;/d &quot; + frequencyWeekWidget.getValue(session.getContext(), submission) + &quot;d/w&quot;;</span>
+		        }
+	        }
+<span class="nc bnc" id="L590" title="All 2 branches missed.">	        else if (!hideDoseAndFrequency){</span>
+<span class="nc" id="L591">		        orderTag.dose = (Double) doseWidget.getValue(session.getContext(), submission);</span>
+<span class="nc" id="L592">		        orderTag.frequency = (String) frequencyWidget.getValue(session.getContext(), submission);</span>
+<span class="nc bnc" id="L593" title="All 2 branches missed.">		        if (frequencyWeekWidget != null) {</span>
+<span class="nc" id="L594">			        orderTag.frequency += &quot;/d &quot; + frequencyWeekWidget.getValue(session.getContext(), submission) + &quot;d/w&quot;;</span>
+		        }
+	        }
+        	
+<span class="nc" id="L598">        	populateOrderTag(orderTag, session, submission);</span>
+        	
+<span class="nc bnc" id="L600" title="All 6 branches missed.">        	if (session.getContext().getMode() == Mode.ENTER || (session.getContext().getMode() == Mode.EDIT &amp;&amp; existingOrder == null)) {	   	</span>
+<span class="nc" id="L601">    	    	enterOrder(session, orderTag);</span>
+<span class="nc bnc" id="L602" title="All 2 branches missed.">    	    } else if (session.getContext().getMode() == Mode.EDIT) {</span>
+<span class="nc" id="L603">    	    	editOrder(session, orderTag);</span>
+    		}
+<span class="nc bnc" id="L605" title="All 2 branches missed.">    	} else if (existingOrder != null){</span>
+<span class="nc" id="L606">    	     voidOrder(session);</span>
+    	    
+    	}
+<span class="nc" id="L609">    }</span>
+	
+	protected OrderTag newOrderTag() {
+<span class="nc" id="L612">		return new OrderTag();</span>
+	}
+
+	protected void populateOrderTag(OrderTag orderTag, FormEntrySession session, HttpServletRequest submission) {
+	    
+<span class="nc" id="L617">    }</span>
+
+	protected void voidOrder(FormEntrySession session) {
+	    //void order 
+<span class="nc" id="L621">	     existingOrder.setVoided(true);</span>
+<span class="nc" id="L622">	     existingOrder.setVoidedBy(Context.getAuthenticatedUser());</span>
+<span class="nc" id="L623">	     existingOrder.setVoidReason(&quot;Drug De-selected in &quot; + session.getForm().getName());</span>
+<span class="nc" id="L624">    }</span>
+
+	protected void editOrder(FormEntrySession session, OrderTag orderTag) {
+<span class="nc" id="L627">	    existingOrder.setDrug(orderTag.drug);</span>
+<span class="nc" id="L628">	    existingOrder.setDose(orderTag.dose);</span>
+<span class="nc" id="L629">	    existingOrder.setFrequency(orderTag.frequency);</span>
+<span class="nc" id="L630">	    existingOrder.setStartDate(orderTag.startDate);</span>
+<span class="nc bnc" id="L631" title="All 2 branches missed.">	    if (orderTag.orderDuration != null)</span>
+<span class="nc" id="L632">	        existingOrder.setAutoExpireDate(calculateAutoExpireDate(orderTag.startDate, orderTag.orderDuration));</span>
+<span class="nc bnc" id="L633" title="All 2 branches missed.">	    if (orderTag.discontinuedDate != null){</span>
+<span class="nc" id="L634">	        existingOrder.setDiscontinuedDate(orderTag.discontinuedDate);</span>
+<span class="nc" id="L635">	        existingOrder.setDiscontinued(true);</span>
+	    } 
+<span class="nc bnc" id="L637" title="All 2 branches missed.">	    if (!StringUtils.isEmpty(orderTag.discontinuedReasonStr))</span>
+<span class="nc" id="L638">	        existingOrder.setDiscontinuedReason(HtmlFormEntryUtil.getConcept(orderTag.discontinuedReasonStr));</span>
+	    
+<span class="nc" id="L640">	    existingOrder.setConcept(orderTag.drug.getConcept());  	</span>
+<span class="nc bnc" id="L641" title="All 2 branches missed.">	    if (!StringUtils.isEmpty(orderTag.instructions))</span>
+<span class="nc" id="L642">	        existingOrder.setInstructions((String) orderTag.instructions);</span>
+<span class="nc" id="L643">	    log.debug(&quot;modifying drug order, drugId is &quot; + orderTag.drugId + &quot; and startDate is &quot; + orderTag.startDate);</span>
+<span class="nc" id="L644">	    existingOrder = setDiscontinueDateFromAutoExpire(existingOrder);</span>
+<span class="nc" id="L645">	    session.getSubmissionActions().getCurrentEncounter().setDateChanged(new Date());</span>
+<span class="nc" id="L646">    }</span>
+
+	protected void enterOrder(FormEntrySession session, OrderTag orderTag) {
+<span class="nc" id="L649">	    DrugOrder drugOrder = new DrugOrder();</span>
+<span class="nc bnc" id="L650" title="All 2 branches missed.">	    if (drugOrder.getDateCreated() == null)</span>
+<span class="nc" id="L651">	        drugOrder.setDateCreated(new Date());</span>
+<span class="nc bnc" id="L652" title="All 2 branches missed.">	    if (drugOrder.getCreator() == null)</span>
+<span class="nc" id="L653">	        drugOrder.setCreator(Context.getAuthenticatedUser());</span>
+<span class="nc bnc" id="L654" title="All 2 branches missed.">	    if (drugOrder.getUuid() == null)</span>
+<span class="nc" id="L655">	        drugOrder.setUuid(UUID.randomUUID().toString());</span>
+<span class="nc" id="L656">	    drugOrder.setDrug(orderTag.drug);</span>
+<span class="nc" id="L657">	    drugOrder.setPatient(session.getPatient());</span>
+<span class="nc" id="L658">	    drugOrder.setDose(orderTag.dose);</span>
+<span class="nc" id="L659">	    drugOrder.setFrequency(orderTag.frequency);</span>
+<span class="nc" id="L660">	    drugOrder.setStartDate(orderTag.startDate);</span>
+	    //order duration:
+<span class="nc bnc" id="L662" title="All 2 branches missed.">	    if (orderTag.orderDuration != null)</span>
+<span class="nc" id="L663">	        drugOrder.setAutoExpireDate(calculateAutoExpireDate(orderTag.startDate, orderTag.orderDuration));</span>
+<span class="nc" id="L664">	    drugOrder.setVoided(false);</span>
+<span class="nc" id="L665">	    drugOrder.setDrug(orderTag.drug);</span>
+<span class="nc" id="L666">	    drugOrder.setConcept(orderTag.drug.getConcept());</span>
+<span class="nc" id="L667">	    drugOrder.setOrderType(Context.getOrderService().getOrderType(OpenmrsConstants.ORDERTYPE_DRUG)); </span>
+<span class="nc bnc" id="L668" title="All 2 branches missed.">	    if (!StringUtils.isEmpty(orderTag.instructions))</span>
+<span class="nc" id="L669">	        drugOrder.setInstructions((String) orderTag.instructions);</span>
+<span class="nc bnc" id="L670" title="All 2 branches missed.">	    if (orderTag.discontinuedDate != null){</span>
+<span class="nc" id="L671">	        drugOrder.setDiscontinuedDate(orderTag.discontinuedDate);</span>
+<span class="nc" id="L672">	        drugOrder.setDiscontinued(true);</span>
+	    }    
+<span class="nc bnc" id="L674" title="All 2 branches missed.">	    if (!StringUtils.isEmpty(orderTag.discontinuedReasonStr))</span>
+<span class="nc" id="L675">	        drugOrder.setDiscontinuedReason(HtmlFormEntryUtil.getConcept(orderTag.discontinuedReasonStr));</span>
+<span class="nc" id="L676">	    log.debug(&quot;adding new drug order, drugId is &quot; + orderTag.drugId + &quot; and startDate is &quot; + orderTag.startDate);</span>
+<span class="nc" id="L677">	    drugOrder = setDiscontinueDateFromAutoExpire(drugOrder);</span>
+<span class="nc" id="L678">	    session.getSubmissionActions().getCurrentEncounter().addOrder(drugOrder);</span>
+<span class="nc" id="L679">    }</span>
+
+	/**
+	 * &lt;strong&gt;Should&lt;/strong&gt; return validation errors if doseWidget, startDateWidget or discontinuedDateWidget is invalid
+	 * @see org.openmrs.module.htmlformentry.action.FormSubmissionControllerAction#validateSubmission(org.openmrs.module.htmlformentry.FormEntryContext, javax.servlet.http.HttpServletRequest)
+	 */
+	@Override
+    public Collection&lt;FormSubmissionError&gt; validateSubmission(FormEntryContext context, HttpServletRequest submission) {
+
+<span class="nc" id="L688">			List&lt;FormSubmissionError&gt; ret = new ArrayList&lt;FormSubmissionError&gt;();</span>
+			try {
+<span class="nc bnc" id="L690" title="All 6 branches missed.">			if (drugWidget != null &amp;&amp; drugWidget.getValue(context, submission) != null &amp;&amp; ((String) drugWidget.getValue(context, submission)).equals(&quot;~&quot;))</span>
+<span class="nc" id="L691">			    throw new IllegalArgumentException(&quot;htmlformentry.error.cannotChooseADrugHeader&quot;);</span>
+<span class="nc" id="L692">			} catch (Exception ex){</span>
+<span class="nc" id="L693">			    ret.add(new FormSubmissionError(context</span>
+<span class="nc" id="L694">                        .getFieldName(drugErrorWidget), Context</span>
+<span class="nc" id="L695">                        .getMessageSourceService().getMessage(ex.getMessage())));</span>
+<span class="nc" id="L696">			}</span>
+			//if no drug specified, then don't do anything.
+<span class="nc bnc" id="L698" title="All 8 branches missed.">			if (drugWidget != null &amp;&amp; drugWidget.getValue(context, submission) != null &amp;&amp; !((String) drugWidget.getValue(context, submission)).trim().equals(&quot;&quot;) &amp;&amp; !((String) drugWidget.getValue(context, submission)).trim().equals(&quot;~&quot;)){</span>
+    			try {
+<span class="nc bnc" id="L700" title="All 2 branches missed.">    				if (doseWidget != null) {</span>
+<span class="nc" id="L701">    					Double dose = (Double) doseWidget.getValue(context, submission);</span>
+<span class="nc bnc" id="L702" title="All 2 branches missed.">    					if (dose == null)</span>
+<span class="nc" id="L703">    						throw new Exception(&quot;htmlformentry.error.required&quot;);</span>
+    					
+    					// min max
+<span class="nc bnc" id="L706" title="All 2 branches missed.">    					if (validateDose) {</span>
+<span class="nc" id="L707">    						String drugID = (String) drugWidget.getValue(context, submission);</span>
+<span class="nc" id="L708">    						Drug drug = Context.getConceptService().getDrug(drugID);</span>
+<span class="nc bnc" id="L709" title="All 8 branches missed.">    						if ((drug.getMinimumDailyDose() != null &amp;&amp; dose &lt; drug.getMinimumDailyDose()) || (drug.getMaximumDailyDose() != null &amp;&amp; dose &gt; drug.getMaximumDailyDose())) {</span>
+<span class="nc" id="L710">    							throw new IllegalArgumentException(&quot;htmlformentry.error.doseOutOfRange&quot;);</span>
+    						}							
+    					}
+    				}
+<span class="nc" id="L714">    			} catch (Exception ex) {</span>
+<span class="nc" id="L715">    				ret.add(new FormSubmissionError(context</span>
+<span class="nc" id="L716">    						.getFieldName(doseErrorWidget), Context</span>
+<span class="nc" id="L717">    						.getMessageSourceService().getMessage(ex.getMessage())));</span>
+<span class="nc" id="L718">    			}</span>
+    			try {
+<span class="nc bnc" id="L720" title="All 2 branches missed.">    				if (startDateWidget != null) {</span>
+<span class="nc" id="L721">    					Date dateCreated = startDateWidget.getValue(context, submission);</span>
+<span class="nc bnc" id="L722" title="All 2 branches missed.">    					if (dateCreated == null)</span>
+<span class="nc" id="L723">    						throw new Exception(&quot;htmlformentry.error.required&quot;);</span>
+    				}
+<span class="nc" id="L725">    			} catch (Exception ex) {</span>
+<span class="nc" id="L726">    				ret.add(new FormSubmissionError(context</span>
+<span class="nc" id="L727">    						.getFieldName(startDateErrorWidget), Context</span>
+<span class="nc" id="L728">    						.getMessageSourceService().getMessage(ex.getMessage())));</span>
+<span class="nc" id="L729">    			}</span>
+    			try {
+<span class="nc bnc" id="L731" title="All 4 branches missed.">                    if (startDateWidget != null &amp;&amp; discontinuedDateWidget != null) {</span>
+<span class="nc" id="L732">                        Date startDate = startDateWidget.getValue(context, submission);</span>
+<span class="nc" id="L733">                        Date endDate = discontinuedDateWidget.getValue(context, submission);</span>
+<span class="nc bnc" id="L734" title="All 4 branches missed.">                        if (startDate != null &amp;&amp; endDate != null </span>
+<span class="nc bnc" id="L735" title="All 2 branches missed.">                                &amp;&amp; startDate.getTime() &gt; endDate.getTime())</span>
+<span class="nc" id="L736">                            throw new Exception(&quot;htmlformentry.error.discontinuedDateBeforeStartDate&quot;);</span>
+                    }
+<span class="nc" id="L738">                } catch (Exception ex) {</span>
+<span class="nc" id="L739">                    ret.add(new FormSubmissionError(context</span>
+<span class="nc" id="L740">                            .getFieldName(discontinuedDateErrorWidget), Context</span>
+<span class="nc" id="L741">                            .getMessageSourceService().getMessage(ex.getMessage())));</span>
+<span class="nc" id="L742">                }</span>
+                try {
+<span class="nc bnc" id="L744" title="All 4 branches missed.">                    if (discontinuedReasonWidget != null &amp;&amp; discontinuedDateWidget != null) {</span>
+<span class="nc" id="L745">                        String discReason = (String) discontinuedReasonWidget.getValue(context, submission);</span>
+<span class="nc" id="L746">                        Date endDate = discontinuedDateWidget.getValue(context, submission);</span>
+<span class="nc bnc" id="L747" title="All 4 branches missed.">                        if (endDate == null &amp;&amp; !StringUtils.isEmpty(discReason))</span>
+<span class="nc" id="L748">                            throw new Exception(&quot;htmlformentry.error.discontinuedReasonEnteredWithoutDate&quot;);</span>
+                    }
+<span class="nc" id="L750">                } catch (Exception ex) {</span>
+<span class="nc" id="L751">                    ret.add(new FormSubmissionError(context</span>
+<span class="nc" id="L752">                            .getFieldName(discontinuedReasonErrorWidget), Context</span>
+<span class="nc" id="L753">                            .getMessageSourceService().getMessage(ex.getMessage())));</span>
+<span class="nc" id="L754">                }</span>
+                try {
+<span class="nc bnc" id="L756" title="All 4 branches missed.">                    if (orderDurationWidget != null &amp;&amp; orderDurationWidget.getValue(context, submission) != null) {</span>
+<span class="nc" id="L757">                        String orderDurationVal = (String) orderDurationWidget.getValue(context, submission);</span>
+<span class="nc bnc" id="L758" title="All 2 branches missed.">                        if (!orderDurationVal.equals(&quot;&quot;)){</span>
+                            try {
+<span class="nc" id="L760">                                Integer.valueOf(orderDurationVal);</span>
+<span class="nc" id="L761">                            } catch (Exception ex){</span>
+<span class="nc" id="L762">                                throw new Exception(&quot;htmlformentry.error.durationMustBeEmptyOrNumeric&quot;);</span>
+<span class="nc" id="L763">                            }</span>
+                        }    
+                    }
+<span class="nc" id="L766">                } catch (Exception ex) {</span>
+<span class="nc" id="L767">                    ret.add(new FormSubmissionError(context</span>
+<span class="nc" id="L768">                            .getFieldName(orderDurationErrorWidget), Context</span>
+<span class="nc" id="L769">                            .getMessageSourceService().getMessage(ex.getMessage())));</span>
+<span class="nc" id="L770">                }</span>
+			}
+			
+<span class="nc" id="L773">			return ret;</span>
+	    }
+	
+	protected Date calculateAutoExpireDate(Date startDate, Integer orderDuration){
+<span class="nc" id="L777">	    Calendar cal = Calendar.getInstance();</span>
+<span class="nc" id="L778">	    cal.setTime(startDate);</span>
+<span class="nc" id="L779">	    cal.add(Calendar.DAY_OF_MONTH, orderDuration);</span>
+<span class="nc" id="L780">	    return cal.getTime();</span>
+	}
+	
+	
+	private DrugOrder setDiscontinueDateFromAutoExpire(DrugOrder dor){
+<span class="nc bnc" id="L785" title="All 2 branches missed.">	    if (dor.getAutoExpireDate() != null){</span>
+<span class="nc" id="L786">	        Date today = new Date();</span>
+<span class="nc bnc" id="L787" title="All 2 branches missed.">	        if (dor.getAutoExpireDate().getTime() &lt; today.getTime()){</span>
+<span class="nc" id="L788">	            dor.setDiscontinuedDate(dor.getAutoExpireDate());</span>
+	            //TODO:  when discontinueReason is a String, set it.
+	        }    
+	    }
+<span class="nc" id="L792">	    return dor;</span>
+	}
+
+	/* (non-Javadoc)
+	 * @see org.openmrs.module.htmlformentry.element.GettingExistingOrder#getExistingOrder()
+	 */
+	@Override
+	public DrugOrder getExistingOrder() {
+<span class="nc" id="L800">		return existingOrder;</span>
+	}
+	
+<span class="nc" id="L803">	protected static class OrderTag {</span>
+	    
+	    public String drugId;
+	    
+	    public Date startDate;
+	    
+	    public Integer orderDuration;
+	    
+	    public Date discontinuedDate;
+	    
+	    public String discontinuedReasonStr;
+	    
+	    public String instructions;
+	    
+	    public Drug drug;
+	    
+	    public Double dose;
+	    
+	    public String frequency;
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.8.202204050719</span></div></body></html>

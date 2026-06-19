@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>RadioButtonsWidget.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">HTML Form Entry API</a> &gt; <a href="index.source.html" class="el_package">org.openmrs.module.htmlformentry.widget</a> &gt; <span class="el_source">RadioButtonsWidget.java</span></div><h1>RadioButtonsWidget.java</h1><pre class="source lang-java linenums">package org.openmrs.module.htmlformentry.widget;
+
+import org.openmrs.module.htmlformentry.FormEntryContext;
+import org.openmrs.module.htmlformentry.FormEntryContext.Mode;
+
+/**
+ * A widget that implements radio buttons, like a bunch of {@code &lt;input type=&quot;radio&quot;/&gt;}.
+ */
+public class RadioButtonsWidget extends SingleOptionWidget {
+	
+<span class="nc" id="L11">	private String answerSeparator = null;</span>
+	
+	/**
+	 * Default Constructor
+	 */
+	public RadioButtonsWidget() {
+<span class="nc" id="L17">		super();</span>
+<span class="nc" id="L18">	}</span>
+	
+	/**
+	 * @see Widget#generateHtml(FormEntryContext)
+	 */
+	@Override
+	public String generateHtml(FormEntryContext context) {
+<span class="nc" id="L25">		StringBuilder sb = new StringBuilder();</span>
+<span class="nc bnc" id="L26" title="All 2 branches missed.">		if (context.getMode() == Mode.VIEW) {</span>
+<span class="nc bnc" id="L27" title="All 2 branches missed.">            for (int i = 0; i &lt; getOptions().size(); ++i) {</span>
+<span class="nc" id="L28">                Option opt = getOptions().get(i);</span>
+<span class="nc bnc" id="L29" title="All 2 branches missed.">				boolean selected = getInitialValue() == null ? &quot;&quot;.equals(opt.getValue()) : getInitialValue().equals(</span>
+<span class="nc" id="L30">				    opt.getValue());</span>
+<span class="nc bnc" id="L31" title="All 2 branches missed.">				if (selected) {</span>
+<span class="nc" id="L32">					sb.append(WidgetFactory.displayValue(&quot;[X]&amp;#160;&quot; + opt.getLabel()));</span>
+				} else {
+<span class="nc" id="L34">					sb.append(WidgetFactory.displayEmptyValue(&quot;[&amp;#160;&amp;#160;]&amp;#160;&quot; + opt.getLabel()));</span>
+				}
+<span class="nc bnc" id="L36" title="All 2 branches missed.">                if (i &lt; getOptions().size() - 1) {</span>
+<span class="nc" id="L37">                    sb.append(getAnswerSeparator());</span>
+                }
+			}
+		} else {
+<span class="nc" id="L41">			String id = context.getFieldName(this);</span>
+<span class="nc bnc" id="L42" title="All 2 branches missed.">			for (int i = 0; i &lt; getOptions().size(); ++i) {</span>
+<span class="nc" id="L43">				Option option = getOptions().get(i);</span>
+<span class="nc" id="L44">				boolean selected = option.isSelected();</span>
+<span class="nc bnc" id="L45" title="All 2 branches missed.">				if (!selected)</span>
+<span class="nc bnc" id="L46" title="All 2 branches missed.">					selected = getInitialValue() == null ? option.getValue().equals(&quot;&quot;) : getInitialValue().equals(</span>
+<span class="nc" id="L47">					    option.getValue());</span>
+<span class="nc" id="L48">				sb.append(&quot;&lt;input type=\&quot;radio\&quot; id=\&quot;&quot;).append(id + &quot;_&quot; + i).append(&quot;\&quot; name=\&quot;&quot;)</span>
+<span class="nc" id="L49">				        .append(id).append(&quot;\&quot; value=\&quot;&quot;).append(option.getValue()).append(&quot;\&quot;&quot;);</span>
+<span class="nc bnc" id="L50" title="All 2 branches missed.">				if (selected)</span>
+<span class="nc" id="L51">					sb.append(&quot; checked=\&quot;true\&quot;&quot;);</span>
+<span class="nc" id="L52">				sb.append(&quot; onMouseDown=\&quot;radioDown(this)\&quot; onClick=\&quot;radioClicked(this)\&quot;&quot;);</span>
+<span class="nc" id="L53">				sb.append(&quot;/&gt;&quot;);</span>
+<span class="nc" id="L54">				sb.append(&quot;&lt;label for=\&quot;&quot;).append(id + &quot;_&quot; + i).append(&quot;\&quot;&gt;&quot;).append(option.getLabel()).append(&quot;&lt;/label&gt;&quot;);</span>
+<span class="nc bnc" id="L55" title="All 2 branches missed.">				if (i &lt; getOptions().size() - 1) {</span>
+<span class="nc" id="L56">					sb.append(getAnswerSeparator());</span>
+                }
+			}
+		}
+<span class="nc" id="L60">		return sb.toString();</span>
+	}
+	
+	/**
+	 * @return the answerSeparator
+	 */
+	public String getAnswerSeparator() {
+<span class="nc bnc" id="L67" title="All 2 branches missed.">		if (answerSeparator == null)</span>
+<span class="nc" id="L68">			answerSeparator = &quot;&amp;#160;&quot;;</span>
+<span class="nc" id="L69">		return answerSeparator;</span>
+	}
+	
+	/**
+	 * @param answerSeparator the answerSeparator to set
+	 */
+	public void setAnswerSeparator(String answerSeparator) {
+<span class="nc" id="L76">		this.answerSeparator = answerSeparator;</span>
+<span class="nc" id="L77">	}</span>
+
+	public RadioButtonsWidget clone() {
+<span class="nc" id="L80">		RadioButtonsWidget clone = new RadioButtonsWidget();</span>
+<span class="nc" id="L81">		clone.setAnswerSeparator(this.getAnswerSeparator());</span>
+<span class="nc" id="L82">		clone.setInitialValue(this.getInitialValue());</span>
+<span class="nc" id="L83">		clone.setOptions(this.getOptions());</span>
+<span class="nc" id="L84">		return clone;</span>
+	}
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.8.202204050719</span></div></body></html>

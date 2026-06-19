@@ -1,0 +1,181 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>NameWidget.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">HTML Form Entry API</a> &gt; <a href="index.source.html" class="el_package">org.openmrs.module.htmlformentry.widget</a> &gt; <span class="el_source">NameWidget.java</span></div><h1>NameWidget.java</h1><pre class="source lang-java linenums">package org.openmrs.module.htmlformentry.widget;
+
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+
+import javax.servlet.http.HttpServletRequest;
+
+import org.openmrs.PersonName;
+import org.openmrs.api.context.Context;
+import org.openmrs.messagesource.MessageSourceService;
+import org.openmrs.module.htmlformentry.FormEntryContext;
+import org.openmrs.module.htmlformentry.compatibility.NameSupportCompatibility;
+
+/**
+ * A widget that allows the input of a Person name. Implemented using text fields
+ * that accept all name properties. The fields will display based on the 
+ * layout and templet defined in the global property.
+ */
+public class NameWidget extends Gadget {
+
+<span class="nc" id="L25">	private Map&lt;String, TextFieldWidget&gt; widgetMap = new HashMap&lt;String, TextFieldWidget&gt;();</span>
+
+<span class="nc" id="L27">	public NameWidget() {</span>
+<span class="nc" id="L28">		widgetMap.put(&quot;prefix&quot;, new TextFieldWidget());</span>
+<span class="nc" id="L29">		widgetMap.put(&quot;givenName&quot;, new TextFieldWidget());</span>
+<span class="nc" id="L30">		widgetMap.put(&quot;middleName&quot;, new TextFieldWidget());</span>
+<span class="nc" id="L31">		widgetMap.put(&quot;familyNamePrefix&quot;, new TextFieldWidget());</span>
+<span class="nc" id="L32">		widgetMap.put(&quot;familyNameSuffix&quot;, new TextFieldWidget());</span>
+<span class="nc" id="L33">		widgetMap.put(&quot;familyName&quot;, new TextFieldWidget());</span>
+<span class="nc" id="L34">		widgetMap.put(&quot;familyName2&quot;, new TextFieldWidget());</span>
+<span class="nc" id="L35">		widgetMap.put(&quot;degree&quot;, new TextFieldWidget());</span>
+<span class="nc" id="L36">	}</span>
+
+	public NameWidget(PersonName personName) {
+<span class="nc" id="L39">		this();</span>
+<span class="nc" id="L40">		setInitialValue(personName);</span>
+<span class="nc" id="L41">	}</span>
+
+	@Override
+    public String generateHtml(FormEntryContext context) {
+<span class="nc" id="L45">		MessageSourceService messageSourceService = Context.getMessageSourceService();</span>
+<span class="nc" id="L46">		NameSupportCompatibility nameSupport = Context.getRegisteredComponent(&quot;htmlformentry.NameSupportCompatibility&quot;, NameSupportCompatibility.class);</span>
+
+		TextFieldWidget textFieldWidget;
+		Map&lt;String, String&gt; fieldMap;
+
+<span class="nc bnc" id="L51" title="All 2 branches missed.">		if (!isRegistered) {</span>
+<span class="nc" id="L52">			registerWidgets(context);</span>
+<span class="nc" id="L53">			isRegistered = true;</span>
+		}
+
+		// have the date and time widgets generate their HTML
+<span class="nc" id="L57">		StringBuilder sb = new StringBuilder();</span>
+
+<span class="nc" id="L59">		sb.append(&quot;&lt;table&gt;&quot;);</span>
+
+<span class="nc" id="L61">		List&lt;List&lt;Map&lt;String, String&gt;&gt;&gt; fieldLines = nameSupport.getLines();</span>
+
+<span class="nc bnc" id="L63" title="All 2 branches missed.">		for (List&lt;Map&lt;String, String&gt;&gt; line : fieldLines) {</span>
+<span class="nc" id="L64">			sb.append(&quot;&lt;tr&gt;&quot;);</span>
+<span class="nc" id="L65">			int colIndex = 0;</span>
+<span class="nc bnc" id="L66" title="All 2 branches missed.">			for (Iterator&lt;Map&lt;String, String&gt;&gt; iterator = line.iterator(); iterator.hasNext(); colIndex++) {</span>
+
+<span class="nc" id="L68">				fieldMap = iterator.next();</span>
+
+<span class="nc bnc" id="L70" title="All 2 branches missed.">				if (fieldMap.get(&quot;isToken&quot;).equals(nameSupport.getLayoutToken())) {</span>
+
+<span class="nc" id="L72">					String label = messageSourceService.getMessage(fieldMap.get(&quot;displayText&quot;));</span>
+<span class="nc" id="L73">					textFieldWidget = widgetMap.get(fieldMap.get(&quot;codeName&quot;));</span>
+<span class="nc" id="L74">					textFieldWidget.setTextFieldSize(Integer.parseInt(fieldMap.get(&quot;displaySize&quot;)));</span>
+<span class="nc" id="L75">					sb.append(&quot;&lt;td&gt;&quot;).append(label).append(&quot;&lt;/td&gt;&quot;);</span>
+<span class="nc bnc" id="L76" title="All 4 branches missed.">					if (!iterator.hasNext() &amp;&amp; colIndex &lt; nameSupport.getMaxTokens()) {</span>
+<span class="nc" id="L77">						sb.append(&quot;&lt;td colspan='&quot;).append(nameSupport.getMaxTokens() - colIndex).append(&quot;'&gt;&quot;);</span>
+					}
+					else {
+<span class="nc" id="L80">						sb.append(&quot;&lt;td&gt;&quot;);</span>
+					}
+<span class="nc" id="L82">					sb.append(textFieldWidget.generateHtml(context)).append(&quot;&lt;/td&gt;&quot;);</span>
+				}
+			}
+<span class="nc" id="L85">			sb.append(&quot;&lt;/tr&gt;&quot;);</span>
+<span class="nc" id="L86">		}</span>
+<span class="nc" id="L87">		sb.append(&quot;&lt;/table&gt; \n&quot;);</span>
+<span class="nc" id="L88">		return sb.toString();</span>
+	}
+
+	@Override
+    public PersonName getValue(FormEntryContext context, HttpServletRequest request) {
+		
+<span class="nc" id="L94">		PersonName returnPersonName = new PersonName();</span>
+<span class="nc" id="L95">		returnPersonName.setPrefix(getWidgetValue(&quot;prefix&quot;, context, request));</span>
+<span class="nc" id="L96">		returnPersonName.setGivenName(getWidgetValue(&quot;givenName&quot;, context, request));</span>
+<span class="nc" id="L97">		returnPersonName.setMiddleName(getWidgetValue(&quot;middleName&quot;, context, request));</span>
+<span class="nc" id="L98">		returnPersonName.setFamilyName(getWidgetValue(&quot;familyName&quot;, context, request));</span>
+<span class="nc" id="L99">		returnPersonName.setFamilyName2(getWidgetValue(&quot;familyName2&quot;, context, request));</span>
+<span class="nc" id="L100">		returnPersonName.setFamilyNamePrefix(getWidgetValue(&quot;familyNamePrefix&quot;, context, request));</span>
+<span class="nc" id="L101">		returnPersonName.setFamilyNameSuffix(getWidgetValue(&quot;familyNameSuffix&quot;, context, request));</span>
+<span class="nc" id="L102">		returnPersonName.setDegree(getWidgetValue(&quot;degree&quot;, context, request));</span>
+		
+<span class="nc bnc" id="L104" title="All 2 branches missed.">		if (context.getExistingPatient() != null) {</span>
+<span class="nc" id="L105">			PersonName originalPreferedName = context.getExistingPatient().getPersonName();</span>
+			
+<span class="nc bnc" id="L107" title="All 4 branches missed.">			if (originalPreferedName != null &amp;&amp; isPersonNameEqual(originalPreferedName, returnPersonName)) {</span>
+<span class="nc" id="L108">				returnPersonName = originalPreferedName;</span>
+			}
+		}
+		
+<span class="nc" id="L112">		return returnPersonName;</span>
+	}
+	
+	private boolean isPersonNameEqual(PersonName personName1, PersonName personName2) {
+		
+<span class="nc" id="L117">		boolean returnValue = true;</span>
+		
+		// these are the methods to compare. All are expected to be Strings
+<span class="nc" id="L120">		String[] methods = { &quot;getGivenName&quot;, &quot;getMiddleName&quot;, &quot;getFamilyName&quot; };</span>
+		
+<span class="nc" id="L122">		Class&lt;? extends PersonName&gt; nameClass = personName1.getClass();</span>
+		
+		// loop over all of the selected methods and compare this and other
+<span class="nc bnc" id="L125" title="All 2 branches missed.">		for (String methodName : methods) {</span>
+			try {
+<span class="nc" id="L127">				Method method = nameClass.getMethod(methodName, new Class[] {});</span>
+				
+<span class="nc" id="L129">				String person1Value = (String) method.invoke(personName1);</span>
+<span class="nc" id="L130">				String person2Value = (String) method.invoke(personName2);</span>
+				
+<span class="nc bnc" id="L132" title="All 4 branches missed.">				if (person2Value != null &amp;&amp; person2Value.length() &gt; 0)</span>
+<span class="nc" id="L133">					returnValue &amp;= person2Value.equals(person1Value);</span>
+<span class="nc bnc" id="L134" title="All 4 branches missed.">				else if (person1Value != null &amp;&amp; person1Value.length() &gt; 0)</span>
+<span class="nc" id="L135">					returnValue &amp;= false;</span>
+				
+			}
+<span class="nc" id="L138">			catch (NoSuchMethodException e) {</span>
+<span class="nc" id="L139">				e.printStackTrace();</span>
+			}
+<span class="nc" id="L141">			catch (IllegalAccessException e) {</span>
+<span class="nc" id="L142">				e.printStackTrace();</span>
+			}
+<span class="nc" id="L144">			catch (InvocationTargetException e) {</span>
+<span class="nc" id="L145">				e.printStackTrace();</span>
+<span class="nc" id="L146">			}</span>
+		}
+<span class="nc" id="L148">		return returnValue;</span>
+	}
+
+	@Override
+    public void setInitialValue(Object value) {
+<span class="nc bnc" id="L153" title="All 2 branches missed.">		if (value != null) {</span>
+<span class="nc" id="L154">			PersonName initialValue = (PersonName) value;</span>
+<span class="nc" id="L155">			setWidgetValue(&quot;prefix&quot;, initialValue.getPrefix());</span>
+<span class="nc" id="L156">			setWidgetValue(&quot;givenName&quot;, initialValue.getGivenName());</span>
+<span class="nc" id="L157">			setWidgetValue(&quot;middleName&quot;, initialValue.getMiddleName());</span>
+<span class="nc" id="L158">			setWidgetValue(&quot;familyNamePrefix&quot;, initialValue.getFamilyNamePrefix());</span>
+<span class="nc" id="L159">			setWidgetValue(&quot;familyNameSuffix&quot;, initialValue.getFamilyNameSuffix());</span>
+<span class="nc" id="L160">			setWidgetValue(&quot;familyName&quot;, initialValue.getFamilyName());</span>
+<span class="nc" id="L161">			setWidgetValue(&quot;familyName2&quot;, initialValue.getFamilyName2());</span>
+<span class="nc" id="L162">			setWidgetValue(&quot;degree&quot;, initialValue.getDegree());</span>
+		}
+<span class="nc" id="L164">	}</span>
+
+	@Override
+	protected void registerWidgets(FormEntryContext context) {
+<span class="nc bnc" id="L168" title="All 2 branches missed.">		for (TextFieldWidget textWidget : widgetMap.values()) {</span>
+<span class="nc" id="L169">			context.registerWidget(textWidget);</span>
+<span class="nc" id="L170">		}</span>
+<span class="nc" id="L171">	}</span>
+
+	private String getWidgetValue(String fieldName, FormEntryContext context, HttpServletRequest request) {
+<span class="nc" id="L174">		return widgetMap.get(fieldName).getValue(context, request);</span>
+	}
+
+	private void setWidgetValue(String fieldName, String value) {
+<span class="nc" id="L178">		widgetMap.get(fieldName).setInitialValue(value);</span>
+<span class="nc" id="L179">	}</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.8.202204050719</span></div></body></html>

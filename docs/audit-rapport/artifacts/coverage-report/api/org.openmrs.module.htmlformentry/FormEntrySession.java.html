@@ -1,0 +1,1194 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>FormEntrySession.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">HTML Form Entry API</a> &gt; <a href="index.source.html" class="el_package">org.openmrs.module.htmlformentry</a> &gt; <span class="el_source">FormEntrySession.java</span></div><h1>FormEntrySession.java</h1><pre class="source lang-java linenums">package org.openmrs.module.htmlformentry;
+
+import java.io.StringWriter;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpSession;
+
+import org.apache.commons.lang.StringEscapeUtils;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+import org.apache.velocity.VelocityContext;
+import org.apache.velocity.app.VelocityEngine;
+import org.apache.velocity.runtime.RuntimeConstants;
+import org.apache.velocity.runtime.log.CommonsLogLogChute;
+import org.openmrs.Concept;
+import org.openmrs.Encounter;
+import org.openmrs.Form;
+import org.openmrs.Location;
+import org.openmrs.Obs;
+import org.openmrs.Order;
+import org.openmrs.Patient;
+import org.openmrs.PatientIdentifier;
+import org.openmrs.PatientProgram;
+import org.openmrs.Person;
+import org.openmrs.PersonAttribute;
+import org.openmrs.Relationship;
+import org.openmrs.api.ObsService;
+import org.openmrs.api.context.Context;
+import org.openmrs.module.htmlformentry.FormEntryContext.Mode;
+import org.openmrs.module.htmlformentry.compatibility.PatientServiceCompatibility;
+import org.openmrs.module.htmlformentry.property.ExitFromCareProperty;
+import org.openmrs.module.htmlformentry.velocity.VelocityContextContentProvider;
+import org.openmrs.module.htmlformentry.widget.AutocompleteWidget;
+import org.openmrs.module.htmlformentry.widget.ConceptSearchAutocompleteWidget;
+import org.openmrs.module.htmlformentry.widget.Widget;
+import org.openmrs.util.OpenmrsUtil;
+import org.springframework.util.StringUtils;
+import org.springframework.web.util.JavaScriptUtils;
+
+/**
+ * This represents the multi-request transaction that begins the moment a user clicks on a form to
+ * fill out or to view. &lt;/p&gt; Creating one of these requires an HtmlForm object, or at least the xml
+ * from one. Creating a FormEntrySession does the following things:
+ * &lt;ol&gt;
+ * &lt;li&gt;If an existing encounter is provided (for viewing, as opposed to creation) then the
+ * observations from that encounter are fetched such that they can be displayed by widgets.&lt;/li&gt;
+ * &lt;li&gt;Generates html to be displayed to the user.&lt;/li&gt;
+ * &lt;li&gt;Creates a FormSubmissionController, which is aware of all widgets in the form, and knows how
+ * to validate them and handle their submission.&lt;/li&gt;
+ * &lt;/ol&gt;
+ * To validate and submit a form you need to do something like this:
+ * &lt;p/&gt;
+ * &lt;pre&gt;
+ *  session.getHtmlToDisplay();
+ * 	List&amp;lt;FormSubmissionError&amp;gt; 
+ * 	validationErrors = session.getSubmissionController().validateSubmission(session.getContext(),
+ * 	    request);
+ * 	if (validationErrors.size() == 0) {
+ * 		session.prepareForSubmit();
+ * 		session.getSubmissionController().handleFormSubmission(session, request);
+ * 		session.applyActions();
+ *     } else {
+ * 		// display errors
+ * 		// redisplay form
+ *     }
+ * }
+ * &lt;/pre&gt;
+ */
+public class FormEntrySession {
+
+    /**
+     * Logger to use with this class
+     */
+<span class="fc" id="L79">    protected final Log log = LogFactory.getLog(getClass());</span>
+
+    private Form form;
+
+    private Encounter encounter;
+
+    private long encounterModifiedTimestamp; // if two people try to edit this form simultaneously, we need to be able to panic
+
+    private Patient patient;
+
+    // The default url to go to after saving or canceling the form, and is typically set by the web application in its
+    // controller for filling out HTML Forms
+    private String returnUrl;
+
+    // The url to go to after saving (but not canceling). May be set by a form through the &lt;redirectOnSave/&gt; tag or a
+    // post-submission action. Values will be substituted for {{patient.id}} and {{encounter.id}}.
+    private String afterSaveUrlTemplate;
+
+    private HtmlForm htmlForm;
+
+    private long formModifiedTimestamp; // if we are not using sessions, and the structure of the form is modified while a user is filling one out, we need to be able to panic
+
+    private FormEntryContext context;
+
+    private HtmlFormEntryGenerator htmlGenerator;
+
+    private FormSubmissionController submissionController;
+
+    private FormSubmissionActions submissionActions;
+
+    // calling the getter will build this once, then cache it
+    private String htmlToDisplay;
+
+    private VelocityEngine velocityEngine;
+
+    private VelocityContext velocityContext;
+
+<span class="fc" id="L116">    private boolean voidEncounter = false;</span>
+    
+<span class="fc" id="L118">    private String hasChangedInd = &quot;false&quot;;</span>
+
+    private HttpSession httpSession;
+
+    private String xmlDefinition;
+
+    /**
+     * Applications and UI Frameworks that embed HTML Forms may store context variables as attributes to make them available to tags
+     */
+<span class="fc" id="L127">    private Map&lt;String, Object&gt; attributes = new HashMap&lt;String, Object&gt;();</span>
+
+    /**
+     * Private constructor that creates a new Form Entry Session for the specified Patient in the
+     * specified {@Mode}
+     *
+     * @param patient
+     * @param mode
+     * @param defaultLocation
+     * @param httpSession
+     */
+<span class="fc" id="L138">    private FormEntrySession(Patient patient, FormEntryContext.Mode mode, Location defaultLocation, HttpSession httpSession) {</span>
+<span class="fc" id="L139">        context = new FormEntryContext(mode);</span>
+<span class="fc" id="L140">        context.setDefaultLocation(defaultLocation);</span>
+<span class="fc" id="L141">        context.setHttpSession(httpSession);</span>
+<span class="fc" id="L142">        this.httpSession = httpSession;</span>
+<span class="fc" id="L143">        this.patient = patient;</span>
+
+        // AUDIT | NEN-7510 8.15 — formulier geopend, toegang tot patiëntgegevens
+<span class="fc" id="L146">        log.info(&quot;AUDIT | action=FORM_OPEN&quot;</span>
+<span class="pc bpc" id="L147" title="2 of 4 branches missed.">                + &quot; | userId=&quot; + (Context.getAuthenticatedUser() != null ? Context.getAuthenticatedUser().getId() : &quot;anonymous&quot;)</span>
+<span class="pc" id="L148">                + &quot; | patientId=&quot; + (patient != null ? patient.getPatientId() : &quot;null&quot;)</span>
+<span class="fc" id="L149">                + &quot; | mode=&quot; + mode.name());</span>
+<span class="fc" id="L150">        context.setupExistingData(patient);</span>
+<span class="fc" id="L151">        velocityEngine = new VelocityEngine();</span>
+
+        // This code pattern is copied to HtmlFormEntryServiceImpl. Any bugfixes should be copied too.
+        // #1953 - Velocity errors in HTML form entry
+<span class="fc" id="L155">        velocityEngine.setProperty(RuntimeConstants.RUNTIME_LOG_LOGSYSTEM_CLASS,</span>
+                &quot;org.apache.velocity.runtime.log.CommonsLogLogChute&quot;);
+<span class="fc" id="L157">        velocityEngine.setProperty(CommonsLogLogChute.LOGCHUTE_COMMONS_LOG_NAME, &quot;htmlformentry_velocity&quot;);</span>
+
+        try {
+<span class="fc" id="L160">            velocityEngine.init();</span>
+<span class="nc" id="L161">        } catch (Exception e) {</span>
+<span class="nc" id="L162">            log.error(&quot;Error initializing Velocity engine&quot;, e);</span>
+<span class="fc" id="L163">        }</span>
+<span class="fc" id="L164">        velocityContext = new VelocityContext();</span>
+<span class="fc" id="L165">        velocityContext.put(&quot;locale&quot;, Context.getLocale());</span>
+<span class="fc" id="L166">        velocityContext.put(&quot;patient&quot;, patient);</span>
+<span class="fc" id="L167">        velocityContext.put(&quot;fn&quot;, new VelocityFunctions(this));</span>
+<span class="fc" id="L168">        velocityContext.put(&quot;user&quot;, Context.getAuthenticatedUser());</span>
+<span class="fc" id="L169">        velocityContext.put(&quot;session&quot;, this);</span>
+<span class="fc" id="L170">        velocityContext.put(&quot;context&quot;, context);</span>
+<span class="fc" id="L171">        velocityContext.put(&quot;formGeneratedDatetime&quot;, new Date());</span>
+<span class="fc" id="L172">        velocityContext.put(&quot;visit&quot;, context.getVisit());</span>
+
+        {
+<span class="fc" id="L175">            Map&lt;String, List&lt;String&gt;&gt; identifiers = new HashMap&lt;String, List&lt;String&gt;&gt;();</span>
+<span class="pc bpc" id="L176" title="1 of 2 branches missed.">            if (patient != null) {</span>
+<span class="fc bfc" id="L177" title="All 2 branches covered.">                for (PatientIdentifier id : patient.getActiveIdentifiers()) {</span>
+<span class="fc" id="L178">                    String idType = id.getIdentifierType().getName();</span>
+<span class="fc" id="L179">                    List&lt;String&gt; list = identifiers.get(idType);</span>
+<span class="pc bpc" id="L180" title="1 of 2 branches missed.">                    if (list == null) {</span>
+<span class="fc" id="L181">                        list = new ArrayList&lt;String&gt;();</span>
+<span class="fc" id="L182">                        identifiers.put(idType, list);</span>
+                    }
+<span class="fc" id="L184">                    list.add(id.getIdentifier());</span>
+<span class="fc" id="L185">                }</span>
+            }
+<span class="fc" id="L187">            velocityContext.put(&quot;patientIdentifiers&quot;, identifiers);</span>
+        }
+
+        {
+<span class="fc" id="L191">            Map&lt;String, Object&gt; attributes = new HashMap&lt;String, Object&gt;();</span>
+<span class="pc bpc" id="L192" title="1 of 2 branches missed.">            if (patient != null) {</span>
+<span class="fc bfc" id="L193" title="All 2 branches covered.">                for (PersonAttribute att : patient.getActiveAttributes()) {</span>
+<span class="fc" id="L194">                    String attName = att.getAttributeType().getName();</span>
+<span class="pc bpc" id="L195" title="1 of 2 branches missed.">                    if (att.getValue() != null) {</span>
+<span class="fc" id="L196">                        attributes.put(attName.replaceAll(&quot;'&quot;, &quot;&quot;), att.getHydratedObject());</span>
+                    }
+<span class="fc" id="L198">                }</span>
+            }
+<span class="fc" id="L200">            velocityContext.put(&quot;personAttributes&quot;, attributes);</span>
+        }
+
+        // the relationship query only makes sense in the context of saved patients, so only call it if this patient
+        // has already been persisted (i.e., assigned an id and uuid)
+<span class="pc bpc" id="L205" title="3 of 6 branches missed.">        if (patient != null &amp;&amp; patient.getId() != null &amp;&amp; patient.getUuid() != null</span>
+<span class="pc bpc" id="L206" title="1 of 2 branches missed.">                &amp;&amp; !(&quot;testing-html-form-entry&quot;.equals(patient.getUuid()))) {</span>
+<span class="fc" id="L207">            List&lt;Relationship&gt; rels = Context.getPersonService().getRelationshipsByPerson(patient);</span>
+            // TODO put this is core in relationship service
+<span class="fc" id="L209">            Map&lt;String, List&lt;Person&gt;&gt; relMap = new HashMap&lt;String, List&lt;Person&gt;&gt;();</span>
+<span class="fc bfc" id="L210" title="All 2 branches covered.">            for (Relationship rel : rels) {</span>
+<span class="pc bpc" id="L211" title="1 of 2 branches missed.">                if (rel.getPersonA().getPersonId().equals(patient.getPersonId())) {</span>
+<span class="nc" id="L212">                    List&lt;Person&gt; list = relMap.get(rel.getRelationshipType().getbIsToA());</span>
+<span class="nc bnc" id="L213" title="All 2 branches missed.">                    if (list == null) {</span>
+<span class="nc" id="L214">                        list = new ArrayList&lt;Person&gt;();</span>
+<span class="nc" id="L215">                        relMap.put(rel.getRelationshipType().getbIsToA(), list);</span>
+                    }
+<span class="nc" id="L217">                    list.add(rel.getPersonB());</span>
+<span class="nc" id="L218">                } else {</span>
+<span class="fc" id="L219">                    List&lt;Person&gt; list = relMap.get(rel.getRelationshipType().getaIsToB());</span>
+<span class="pc bpc" id="L220" title="1 of 2 branches missed.">                    if (list == null) {</span>
+<span class="fc" id="L221">                        list = new ArrayList&lt;Person&gt;();</span>
+<span class="fc" id="L222">                        relMap.put(rel.getRelationshipType().getaIsToB(), list);</span>
+                    }
+<span class="fc" id="L224">                    list.add(rel.getPersonA());</span>
+                }
+<span class="fc" id="L226">            }</span>
+<span class="fc" id="L227">            velocityContext.put(&quot;relationshipList&quot;, rels);</span>
+<span class="fc" id="L228">            velocityContext.put(&quot;relationshipMap&quot;, relMap);</span>
+        }
+
+		// finally allow modules to provide content to the velocity context
+<span class="pc bpc" id="L232" title="1 of 2 branches missed.">		for (VelocityContextContentProvider provider : Context.getRegisteredComponents(VelocityContextContentProvider.class)) {</span>
+<span class="nc" id="L233">			provider.populateContext(this, velocityContext);</span>
+<span class="nc" id="L234">		}</span>
+
+<span class="fc" id="L236">        htmlGenerator = new HtmlFormEntryGenerator();</span>
+<span class="fc" id="L237">    }</span>
+
+
+    /**
+     * Creates a new HTML Form Entry session (in &quot;Enter&quot; mode) for the specified Patient, using the
+     * specified xml string to create the HTML Form object
+     *
+     * @param patient
+     * @param xml
+     * @param httpSession
+     * @throws Exception
+     */
+    public FormEntrySession(Patient patient, String xml, HttpSession httpSession) throws Exception {
+<span class="nc" id="L250">        this(patient, Mode.ENTER, null, httpSession);</span>
+<span class="nc" id="L251">        submissionController = new FormSubmissionController();</span>
+
+<span class="nc" id="L253">        this.xmlDefinition = xml;</span>
+<span class="nc" id="L254">    }</span>
+
+    /**
+     * Creates a new HTML Form Entry session (in &quot;Enter&quot; mode) for the specified Patient, using the
+     * specified HTML Form
+     *
+     * @param patient
+     * @param htmlForm
+     * @param httpSession
+     * @throws Exception
+     */
+    public FormEntrySession(Patient patient, HtmlForm htmlForm, HttpSession httpSession) throws Exception {
+<span class="nc" id="L266">        this(patient, htmlForm, Mode.ENTER, httpSession);</span>
+<span class="nc" id="L267">    }</span>
+
+    public FormEntrySession(Patient patient, HtmlForm htmlForm, Mode mode, HttpSession httpSession) throws Exception {
+<span class="nc" id="L270">        this(patient, htmlForm, mode, null, httpSession, true, false);</span>
+<span class="nc" id="L271">    }</span>
+
+    public FormEntrySession(Patient patient, HtmlForm htmlForm, Mode mode, Location defaultLocation, HttpSession httpSession,
+                            boolean automaticClientSideValidation, boolean clientSideValidationHints) throws Exception {
+<span class="nc" id="L275">        this(patient, mode, defaultLocation, httpSession);</span>
+<span class="nc" id="L276">        this.context.setAutomaticClientSideValidation(automaticClientSideValidation);</span>
+<span class="nc" id="L277">        this.context.setClientSideValidationHints(clientSideValidationHints);</span>
+<span class="nc" id="L278">        this.htmlForm = htmlForm;</span>
+<span class="nc bnc" id="L279" title="All 2 branches missed.">        this.formModifiedTimestamp = (htmlForm.getDateChanged() == null ? htmlForm.getDateCreated() : htmlForm</span>
+<span class="nc" id="L280">                .getDateChanged()).getTime();</span>
+<span class="nc" id="L281">        form = htmlForm.getForm();</span>
+
+<span class="nc" id="L283">        velocityContext.put(&quot;form&quot;, form);</span>
+<span class="nc" id="L284">        submissionController = new FormSubmissionController();</span>
+
+        // avoid lazy initialization exceptions later
+<span class="nc bnc" id="L287" title="All 2 branches missed.">        if (form.getEncounterType() != null)</span>
+<span class="nc" id="L288">            form.getEncounterType().getName();</span>
+
+<span class="nc" id="L290">        xmlDefinition = htmlForm.getXmlData();</span>
+<span class="nc" id="L291">    }</span>
+
+    /**
+     * Creates a new HTML Form Entry session (in &quot;Enter&quot; mode) for the specified patient and using
+     * the HTML Form associated with the specified Form
+     *
+     * @param patient
+     * @param form
+     * @param httpSession
+     * @throws Exception
+     */
+    public FormEntrySession(Patient patient, Form form, HttpSession httpSession) throws Exception {
+<span class="nc" id="L303">        this(patient, Mode.ENTER, null, httpSession);</span>
+<span class="nc" id="L304">        this.form = form;</span>
+
+<span class="nc" id="L306">        velocityContext.put(&quot;form&quot;, form);</span>
+<span class="nc" id="L307">        submissionController = new FormSubmissionController();</span>
+
+<span class="nc" id="L309">        HtmlForm temp = HtmlFormEntryUtil.getService().getHtmlFormByForm(form);</span>
+<span class="nc bnc" id="L310" title="All 2 branches missed.">        this.formModifiedTimestamp = (temp.getDateChanged() == null ? temp.getDateCreated() : temp.getDateChanged())</span>
+<span class="nc" id="L311">                .getTime();</span>
+<span class="nc" id="L312">        xmlDefinition = temp.getXmlData();</span>
+<span class="nc" id="L313">    }</span>
+
+    /**
+     * Creates a new HTML Form Entry session for the specified patient, encounter, and {@see Mode},
+     * using the specified HtmlForm and with default Location
+     *
+     * @param patient
+     * @param encounter
+     * @param mode
+     * @param htmlForm
+     * @param httpSession
+     * @throws Exception
+     */
+    public FormEntrySession(Patient patient, Encounter encounter, Mode mode, HtmlForm htmlForm, HttpSession httpSession) throws Exception {
+<span class="fc" id="L327">        this(patient, encounter, mode, htmlForm, null, httpSession, true, false);</span>
+<span class="fc" id="L328">    }</span>
+
+    /**
+     * Creates a new HTML Form Entry session for the specified patient, encounter, and {@see Mode},
+     * using the specified HtmlForm
+     *
+     * @param patient
+     * @param encounter
+     * @param mode
+     * @param htmlForm
+     * @param defaultLocation
+     * @param httpSession
+     * @throws Exception
+     */
+    public FormEntrySession(Patient patient, Encounter encounter, Mode mode, HtmlForm htmlForm, Location defaultLocation,
+                            HttpSession httpSession, boolean automaticClientSideValidation,
+                            boolean clientSideValidationHints) throws Exception {
+<span class="fc" id="L345">        this(patient, mode, defaultLocation, httpSession);</span>
+<span class="fc" id="L346">        this.context.setAutomaticClientSideValidation(automaticClientSideValidation);</span>
+<span class="fc" id="L347">        this.context.setClientSideValidationHints(clientSideValidationHints);</span>
+<span class="fc" id="L348">        this.htmlForm = htmlForm;</span>
+<span class="pc bpc" id="L349" title="1 of 2 branches missed.">        if (htmlForm != null) {</span>
+<span class="pc bpc" id="L350" title="1 of 2 branches missed.">            if (htmlForm.getId() != null)</span>
+<span class="nc bnc" id="L351" title="All 2 branches missed.">                this.formModifiedTimestamp = (htmlForm.getDateChanged() == null ? htmlForm.getDateCreated() : htmlForm</span>
+<span class="nc" id="L352">                        .getDateChanged()).getTime();</span>
+<span class="fc" id="L353">            form = htmlForm.getForm();</span>
+<span class="fc" id="L354">            velocityContext.put(&quot;form&quot;, form);</span>
+            // avoid lazy initialization exceptions later
+<span class="pc bpc" id="L356" title="2 of 4 branches missed.">            if (form != null &amp;&amp; form.getEncounterType() != null)</span>
+<span class="fc" id="L357">                form.getEncounterType().getName();</span>
+        }
+
+<span class="fc" id="L360">        this.encounter = encounter;</span>
+<span class="fc bfc" id="L361" title="All 2 branches covered.">        if (encounter != null) {</span>
+<span class="fc" id="L362">            velocityContext.put(&quot;encounter&quot;, encounter);</span>
+<span class="fc" id="L363">            encounterModifiedTimestamp = getEncounterModifiedDate(encounter);</span>
+        }
+
+<span class="fc" id="L366">        submissionController = new FormSubmissionController();</span>
+<span class="fc" id="L367">        context.setupExistingData(encounter);</span>
+<span class="fc" id="L368">        this.xmlDefinition = htmlForm.getXmlData();</span>
+<span class="fc" id="L369">    }</span>
+
+
+    /**
+     * Evaluates a velocity expression and returns the result as a string
+     *
+     * @param velocityExpression
+     * @returns
+     */
+    public String evaluateVelocityExpression(String velocityExpression) {
+<span class="nc" id="L379">        StringWriter writer = new StringWriter();</span>
+        try {
+<span class="nc" id="L381">            velocityEngine.evaluate(velocityContext, writer, FormEntrySession.class.getName(), velocityExpression);</span>
+<span class="nc" id="L382">            return writer.toString();</span>
+<span class="nc" id="L383">        } catch (CannotBePreviewedException ex) {</span>
+<span class="nc" id="L384">            return &quot;Cannot be previewed&quot;;</span>
+<span class="nc" id="L385">        } catch (Exception ex) {</span>
+<span class="nc bnc" id="L386" title="All 4 branches missed.">            if (ex.getCause() != null &amp;&amp; ex.getCause() instanceof CannotBePreviewedException) {</span>
+<span class="nc" id="L387">                return &quot;Cannot be run in preview mode: &quot; + velocityExpression;</span>
+            } else {
+<span class="nc" id="L389">                log.error(&quot;Exception evaluating velocity expression&quot;, ex);</span>
+<span class="nc" id="L390">                return &quot;Velocity Error! &quot; + ex.getMessage();</span>
+            }
+        }
+    }
+
+    /**
+     * Creates the HTML for a HTML Form given the xml for the form. This method uses the
+     * HtmlFormGenerator to process any HTML Form Entry-specific tags and returns pure HTML that can
+     * be rendered by a browser
+     *
+     * @param xml the xml string representing the form we wish to create
+     * @return broswer-renderable html
+     * @throws Exception
+     * &lt;strong&gt;Should&lt;/strong&gt; return correct xml with a greater than character in an excludeIf tag
+     * &lt;strong&gt;Should&lt;/strong&gt; return correct xml with a greater than character in an includeIf tag
+     * &lt;strong&gt;Should&lt;/strong&gt; return correct xml with a compound expression in an excludeIf tag
+     * &lt;strong&gt;Should&lt;/strong&gt; return correct xml with a compound expression in an includeIf tag
+     */
+    public String createForm(String xml) throws Exception {
+<span class="pc bpc" id="L409" title="1 of 2 branches missed.">        if (htmlForm != null) {</span>
+<span class="fc" id="L410">            context.getSchema().setName(htmlForm.getName());</span>
+<span class="fc" id="L411">            context.setUnmatchedMode(false);</span>
+        }
+<span class="fc" id="L413">        xml = htmlGenerator.substituteCharacterCodesWithAsciiCodes(xml);</span>
+<span class="fc" id="L414">        xml = htmlGenerator.stripComments(xml);</span>
+<span class="fc" id="L415">        xml = htmlGenerator.convertSpecialCharactersWithinLogicAndVelocityTests(xml);</span>
+<span class="fc" id="L416">        xml = htmlGenerator.applyRoleRestrictions(xml);</span>
+<span class="fc" id="L417">        xml = htmlGenerator.applyMacros(this, xml);</span>
+<span class="fc" id="L418">        xml = htmlGenerator.processPages(this,xml);</span>
+<span class="fc" id="L419">        xml = htmlGenerator.applyRepeats(xml);</span>
+<span class="fc" id="L420">        xml = htmlGenerator.applyTranslations(xml, context);</span>
+<span class="fc" id="L421">        xml = htmlGenerator.applyTags(this, xml);</span>
+
+<span class="pc bpc" id="L423" title="5 of 6 branches missed.">        if (context.hasUnmatchedObsGroupEntities() &amp;&amp; (context.getMode() == Mode.EDIT || context.getMode() == Mode.VIEW)) {</span>
+<span class="nc bnc" id="L424" title="All 4 branches missed.">            if (context.getUnmatchedObsGroupEntities().size() &gt; 1 &amp;&amp; context.getExistingObsInGroupsCount() &gt; 0)</span>
+<span class="nc" id="L425">                context.setGuessingInd(true);</span>
+<span class="nc" id="L426">            context.setUnmatchedMode(true);</span>
+<span class="nc" id="L427">            xml = htmlGenerator.applyUnmatchedTags(this, xml);</span>
+        }
+
+<span class="fc" id="L430">        xml = htmlGenerator.wrapInDiv(xml);</span>
+<span class="fc" id="L431">        return xml;</span>
+    }
+
+    /**
+     * If the html form contains both PatientTags and Encounter tags then initialize it with the
+     * Patient and Encounter associated with the Form else if htmlform only contains PatientTags
+     * then initialize it with the Patient associated with the Form.
+     */
+    public void prepareForSubmit() {
+
+<span class="fc" id="L441">        submissionActions = new FormSubmissionActions();</span>
+
+<span class="pc bpc" id="L443" title="3 of 4 branches missed.">        if (hasPatientTag() &amp;&amp; !hasEncouterTag()) {</span>
+            try {
+<span class="nc" id="L445">                submissionActions.beginPerson(patient);</span>
+<span class="nc" id="L446">            } catch (InvalidActionException e) {</span>
+<span class="nc" id="L447">                log.error(&quot;Programming error: should be no errors starting a patient&quot;, e);</span>
+<span class="nc" id="L448">            }</span>
+        } else {
+<span class="fc bfc" id="L450" title="All 2 branches covered.">            if (context.getMode() == Mode.EDIT) {</span>
+<span class="pc bpc" id="L451" title="1 of 2 branches missed.">                if (encounter == null)</span>
+<span class="nc" id="L452">                    throw new RuntimeException(&quot;Programming exception: encounter shouldn't be null in EDIT mode&quot;);</span>
+            } else {
+<span class="fc" id="L454">                encounter = new Encounter();</span>
+            }
+            try {
+<span class="fc" id="L457">                submissionActions.beginPerson(patient);</span>
+<span class="fc" id="L458">                submissionActions.beginEncounter(encounter);</span>
+<span class="nc" id="L459">            } catch (InvalidActionException e) {</span>
+<span class="nc" id="L460">                log.error(&quot;Programming error: should be no errors starting a patient and encounter&quot;, e);</span>
+<span class="fc" id="L461">            }</span>
+        }
+
+<span class="fc" id="L464">    }</span>
+
+    /**
+     * Applies all the actions associated with a form submission--that is, create/update any
+     * Persons, Encounters, and Obs in the database as necessary, and enroll Patient in any programs
+     * as needed
+     * &lt;p/&gt;
+     * TODO: This requires that...
+     *
+     * @throws BadFormDesignException
+     */
+    public void applyActions() throws BadFormDesignException {
+        // if any encounter to be created by this form is missing a required field, throw an error
+        // (If there's a widget but it was left blank, that would have been caught earlier--this
+        // is for when there was no widget in the first place.)
+        // the change here assumes that the encounterLocation and encounterProvider tags are validated elsewhere since they are
+        // not required
+
+        {
+<span class="fc bfc" id="L483" title="All 2 branches covered.">            for (Encounter e : submissionActions.getEncountersToCreate()) {</span>
+<span class="pc bpc" id="L484" title="1 of 2 branches missed.">                if (e.getEncounterDatetime() == null) {</span>
+<span class="nc" id="L485">                    throw new BadFormDesignException(</span>
+                            &quot;Please check the design of your form to make sure it has the tag &lt;b&gt;&amp;lt;encounterDate/&amp;gt&lt;/b&gt;&quot;);
+                }
+<span class="fc" id="L488">            }</span>
+        }
+
+        //if we're un-voiding an existing voided encounter.  This won't get hit 99.9% of the time.  See EncounterDetailSubmissionElement
+<span class="pc bpc" id="L492" title="3 of 6 branches missed.">        if (!voidEncounter &amp;&amp; encounter != null &amp;&amp; encounter.isVoided()) {</span>
+<span class="nc" id="L493">            encounter.setVoided(false);</span>
+<span class="nc" id="L494">            encounter.setVoidedBy(null);</span>
+<span class="nc" id="L495">            encounter.setVoidReason(null);</span>
+<span class="nc" id="L496">            encounter.setDateVoided(null);</span>
+        }
+
+        // remove any obs groups that don't contain children
+<span class="fc" id="L500">		HtmlFormEntryUtil.removeEmptyObs(submissionActions.getObsToCreate());</span>
+
+        // propagate encounterDatetime to Obs where necessary
+<span class="pc bpc" id="L503" title="1 of 2 branches missed.">        if (submissionActions.getObsToCreate() != null) {</span>
+<span class="fc" id="L504">            List&lt;Obs&gt; toCheck = new ArrayList&lt;Obs&gt;();</span>
+<span class="fc" id="L505">            toCheck.addAll(submissionActions.getObsToCreate());</span>
+<span class="pc bpc" id="L506" title="1 of 2 branches missed.">            while (toCheck.size() &gt; 0) {</span>
+<span class="nc" id="L507">                Obs o = toCheck.remove(toCheck.size() - 1);</span>
+<span class="nc bnc" id="L508" title="All 4 branches missed.">                if (o.getObsDatetime() == null &amp;&amp; o.getEncounter() != null) {</span>
+<span class="nc" id="L509">                    o.setObsDatetime(o.getEncounter().getEncounterDatetime());</span>
+<span class="nc bnc" id="L510" title="All 2 branches missed.">                    if (log.isDebugEnabled())</span>
+<span class="nc" id="L511">                        log.debug(&quot;Set obsDatetime to &quot; + o.getObsDatetime() + &quot; for &quot;</span>
+<span class="nc" id="L512">                                + o.getConcept().getName(Context.getLocale()));</span>
+                }
+<span class="nc bnc" id="L514" title="All 4 branches missed.">                if (o.getLocation() == null &amp;&amp; o.getEncounter() != null) {</span>
+<span class="nc" id="L515">                    o.setLocation(o.getEncounter().getLocation());</span>
+                }
+<span class="nc bnc" id="L517" title="All 2 branches missed.">                if (o.hasGroupMembers())</span>
+<span class="nc" id="L518">                    toCheck.addAll(o.getGroupMembers());</span>
+<span class="nc" id="L519">            }</span>
+        }
+
+        // propagate encounterDatetime to PatientPrograms where necessary
+<span class="pc bpc" id="L523" title="1 of 2 branches missed.">        if (submissionActions.getPatientProgramsToCreate() != null) {</span>
+<span class="pc bpc" id="L524" title="1 of 2 branches missed.">            for (PatientProgram pp : submissionActions.getPatientProgramsToCreate()) {</span>
+<span class="nc bnc" id="L525" title="All 2 branches missed.">                if (pp.getDateEnrolled() == null)</span>
+<span class="nc" id="L526">                    pp.setDateEnrolled(encounter.getEncounterDatetime());</span>
+<span class="nc" id="L527">            }</span>
+        }
+
+<span class="pc bpc" id="L530" title="1 of 2 branches missed.">        if (submissionActions.getPatientProgramsToComplete() != null) {</span>
+<span class="pc bpc" id="L531" title="1 of 2 branches missed.">            for (PatientProgram pp : submissionActions.getPatientProgramsToComplete()) {</span>
+<span class="nc bnc" id="L532" title="All 2 branches missed.">                if (pp.getDateCompleted() == null) {</span>
+<span class="nc" id="L533">                    pp.setDateCompleted(encounter.getEncounterDatetime());</span>
+                }
+                // If an appropriate outcome has been recorded, set this on the patient program
+<span class="nc" id="L536">                Concept outcomesConcept = pp.getProgram().getOutcomesConcept();</span>
+<span class="nc bnc" id="L537" title="All 2 branches missed.">                if (outcomesConcept != null) {</span>
+<span class="nc" id="L538">                    List&lt;Obs&gt; outcomeObs = findObsForConcept(outcomesConcept, submissionActions.getObsToCreate());</span>
+<span class="nc bnc" id="L539" title="All 2 branches missed.">                    if (outcomeObs.size() == 1) {</span>
+<span class="nc" id="L540">                        pp.setOutcome(outcomeObs.get(0).getValueCoded());</span>
+                    }
+<span class="nc bnc" id="L542" title="All 2 branches missed.">                    else if (outcomeObs.size() &gt; 1) {</span>
+<span class="nc" id="L543">                        throw new IllegalStateException(&quot;Unable to complete patient program as multiple outcome observations are recorded: &quot; + outcomeObs);</span>
+                    }
+                }
+<span class="nc" id="L546">            }</span>
+        }
+
+        // TODO wrap this in a transaction
+<span class="pc bpc" id="L550" title="1 of 2 branches missed.">        if (submissionActions.getPersonsToCreate() != null) {</span>
+<span class="pc bpc" id="L551" title="1 of 2 branches missed.">            for (Person p : submissionActions.getPersonsToCreate()) {</span>
+<span class="nc bnc" id="L552" title="All 2 branches missed.">                if (p instanceof Patient) {</span>
+<span class="nc" id="L553">                    Patient patient = (Patient) p;</span>
+<span class="nc" id="L554">                    PatientIdentifier patientIdentifier = patient.getPatientIdentifier();</span>
+<span class="nc bnc" id="L555" title="All 4 branches missed.">                    if (!StringUtils.hasText(patient.getGivenName()) || !StringUtils.hasText(patient.getFamilyName())</span>
+<span class="nc bnc" id="L556" title="All 6 branches missed.">                            || !StringUtils.hasText(patient.getGender()) || patient.getBirthdate() == null</span>
+<span class="nc bnc" id="L557" title="All 2 branches missed.">                            || patientIdentifier == null || !StringUtils.hasText(patientIdentifier.getIdentifier())</span>
+<span class="nc bnc" id="L558" title="All 4 branches missed.">                            || patientIdentifier.getIdentifierType() == null || patientIdentifier.getLocation() == null) {</span>
+<span class="nc" id="L559">                        throw new BadFormDesignException(</span>
+                                &quot;Please check the design of your form to make sure the following fields are mandatory to create a patient: &lt;br/&gt;&lt;b&gt;&amp;lt;personName/&amp;gt;&lt;/b&gt;, &lt;b&gt;&amp;lt;birthDateOrAge/&amp;gt;&lt;/b&gt;, &lt;b&gt;&amp;lt;gender/&amp;gt;&lt;/b&gt;, &lt;b&gt;&amp;lt;identifierType/&amp;gt;&lt;/b&gt;, &lt;b&gt;&amp;lt;identifier/&amp;gt;&lt;/b&gt;, and &lt;b&gt;&amp;lt;identifierLocation/&amp;gt;&lt;/b&gt;&quot;);
+                    }
+                }
+<span class="nc" id="L563">                Context.getPersonService().savePerson(p);</span>
+<span class="nc" id="L564">            }</span>
+        }
+<span class="pc bpc" id="L566" title="1 of 2 branches missed.">        if (submissionActions.getEncountersToCreate() != null) {</span>
+<span class="fc bfc" id="L567" title="All 2 branches covered.">            for (Encounter e : submissionActions.getEncountersToCreate()) {</span>
+<span class="pc bpc" id="L568" title="1 of 2 branches missed.">                if (form != null) {</span>
+<span class="fc" id="L569">                    e.setForm(form);</span>
+<span class="pc bpc" id="L570" title="1 of 2 branches missed.">                    if (form.getEncounterType() != null)</span>
+<span class="fc" id="L571">                        e.setEncounterType(form.getEncounterType());</span>
+                }
+<span class="fc" id="L573">                Context.getEncounterService().saveEncounter(encounter);</span>
+                // AUDIT | NEN-7510 8.15 — nieuwe encounter opgeslagen
+<span class="fc" id="L575">                log.info(&quot;AUDIT | action=ENCOUNTER_CREATE&quot;</span>
+<span class="pc bpc" id="L576" title="2 of 4 branches missed.">                        + &quot; | userId=&quot; + (Context.getAuthenticatedUser() != null ? Context.getAuthenticatedUser().getId() : &quot;anonymous&quot;)</span>
+<span class="pc" id="L577">                        + &quot; | patientId=&quot; + (patient != null ? patient.getPatientId() : &quot;null&quot;)</span>
+<span class="pc bpc" id="L578" title="1 of 2 branches missed.">                        + &quot; | encounterId=&quot; + encounter.getId()</span>
+<span class="pc" id="L579">                        + &quot; | formId=&quot; + (htmlForm != null ? htmlForm.getId() : &quot;null&quot;));</span>
+<span class="fc" id="L580">            }</span>
+        }
+
+        //deal with relationships
+<span class="pc bpc" id="L584" title="1 of 2 branches missed.">        if (submissionActions.getRelationshipsToCreate() != null) {</span>
+<span class="pc bpc" id="L585" title="1 of 2 branches missed.">            for (Relationship r : submissionActions.getRelationshipsToCreate()) {</span>
+<span class="nc bnc" id="L586" title="All 2 branches missed.">                if (log.isDebugEnabled()) {</span>
+<span class="nc" id="L587">                    log.debug(&quot;creating relationships&quot; + r.getRelationshipType().getDescription());</span>
+                }
+<span class="nc" id="L589">                Context.getPersonService().saveRelationship(r);</span>
+<span class="nc" id="L590">            }</span>
+        }
+
+<span class="pc bpc" id="L593" title="1 of 2 branches missed.">        if (submissionActions.getRelationshipsToVoid() != null) {</span>
+<span class="pc bpc" id="L594" title="1 of 2 branches missed.">            for (Relationship r : submissionActions.getRelationshipsToVoid()) {</span>
+<span class="nc bnc" id="L595" title="All 2 branches missed.">                if (log.isDebugEnabled()) {</span>
+<span class="nc" id="L596">                    log.debug(&quot;voiding relationships&quot; + r.getId());</span>
+                }
+<span class="nc" id="L598">                Context.getPersonService().voidRelationship(r, &quot;htmlformentry&quot;);</span>
+<span class="nc" id="L599">            }</span>
+        }
+
+<span class="pc bpc" id="L602" title="1 of 2 branches missed.">        if (submissionActions.getRelationshipsToEdit() != null) {</span>
+<span class="pc bpc" id="L603" title="1 of 2 branches missed.">            for (Relationship r : submissionActions.getRelationshipsToCreate()) {</span>
+<span class="nc bnc" id="L604" title="All 2 branches missed.">                if (log.isDebugEnabled()) {</span>
+<span class="nc" id="L605">                    log.debug(&quot;editing relationships&quot; + r.getId());</span>
+                }
+<span class="nc" id="L607">                Context.getPersonService().saveRelationship(r);</span>
+<span class="nc" id="L608">            }</span>
+        }
+
+        // program enrollments are trickier since we need to make sure the patient isn't already enrolled
+        // 1. if the patient is already enrolled on the given date, just skip this
+        // 2. if the patient is enrolled *after* the given date, shift the existing enrollment to start earlier. (TODO decide if this is right)
+        // 3. otherwise just enroll them as requested
+<span class="pc bpc" id="L615" title="1 of 2 branches missed.">        if (submissionActions.getPatientProgramsToCreate() != null) {</span>
+<span class="pc bpc" id="L616" title="1 of 2 branches missed.">            for (PatientProgram toCreate : submissionActions.getPatientProgramsToCreate()) {</span>
+<span class="nc" id="L617">                boolean skip = false;</span>
+<span class="nc" id="L618">                PatientProgram earliestAfter = null;</span>
+<span class="nc" id="L619">                List&lt;PatientProgram&gt; already = Context.getProgramWorkflowService().getPatientPrograms(toCreate.getPatient(),</span>
+<span class="nc" id="L620">                        toCreate.getProgram(), null, null, null, null, false);</span>
+<span class="nc bnc" id="L621" title="All 2 branches missed.">                for (PatientProgram pp : already) {</span>
+<span class="nc bnc" id="L622" title="All 2 branches missed.">                    if (pp.getActive(toCreate.getDateEnrolled())) {</span>
+<span class="nc" id="L623">                        skip = true;</span>
+<span class="nc" id="L624">                        break;</span>
+                    }
+                    // if the existing one starts after toCreate
+<span class="nc bnc" id="L627" title="All 2 branches missed.">                    if (OpenmrsUtil.compare(pp.getDateEnrolled(), toCreate.getDateEnrolled()) &gt; 0) {</span>
+<span class="nc bnc" id="L628" title="All 2 branches missed.">                        if (earliestAfter == null</span>
+<span class="nc bnc" id="L629" title="All 2 branches missed.">                                || OpenmrsUtil.compare(pp.getDateEnrolled(), earliestAfter.getDateEnrolled()) &lt; 0) {</span>
+<span class="nc" id="L630">                            earliestAfter = pp;</span>
+                        }
+                    }
+<span class="nc" id="L633">                }</span>
+<span class="nc bnc" id="L634" title="All 2 branches missed.">                if (skip) {</span>
+<span class="nc" id="L635">                    continue;</span>
+                }
+<span class="nc bnc" id="L637" title="All 2 branches missed.">                if (earliestAfter != null) {</span>
+                    // edit this enrollment to move its start date earlier
+<span class="nc" id="L639">                    earliestAfter.setDateEnrolled(toCreate.getDateEnrolled());</span>
+<span class="nc" id="L640">                    Context.getProgramWorkflowService().savePatientProgram(earliestAfter);</span>
+                } else {
+                    // just enroll as requested
+<span class="nc" id="L643">                    Context.getProgramWorkflowService().savePatientProgram(toCreate);</span>
+                }
+<span class="nc" id="L645">            }</span>
+        }
+
+        //complete any necessary programs
+<span class="pc bpc" id="L649" title="1 of 2 branches missed.">        if (submissionActions.getPatientProgramsToComplete() != null) {</span>
+<span class="pc bpc" id="L650" title="1 of 2 branches missed.">            for (PatientProgram toComplete : submissionActions.getPatientProgramsToComplete()) {</span>
+<span class="nc" id="L651">                Context.getProgramWorkflowService().savePatientProgram(toComplete);</span>
+<span class="nc" id="L652">            }</span>
+        }
+
+<span class="pc bpc" id="L655" title="1 of 2 branches missed.">        if (submissionActions.getPatientProgramsToUpdate() != null) {</span>
+<span class="pc bpc" id="L656" title="1 of 2 branches missed.">            for (PatientProgram patientProgram : submissionActions.getPatientProgramsToUpdate()) {</span>
+<span class="nc" id="L657">                Context.getProgramWorkflowService().savePatientProgram(patientProgram);</span>
+<span class="nc" id="L658">            }</span>
+        }
+
+<span class="fc" id="L661">        ObsService obsService = Context.getObsService();</span>
+        
+<span class="pc bpc" id="L663" title="1 of 2 branches missed.">        if (submissionActions.getObsToVoid() != null) {</span>
+<span class="pc bpc" id="L664" title="1 of 2 branches missed.">            for (Obs o : submissionActions.getObsToVoid()) {</span>
+<span class="nc bnc" id="L665" title="All 2 branches missed.">                if (log.isDebugEnabled())</span>
+<span class="nc" id="L666">                    log.debug(&quot;voiding obs: &quot; + o.getObsId());</span>
+<span class="nc" id="L667">                obsService.voidObs(o, &quot;htmlformentry&quot;);</span>
+                // if o was in a group and that group has no obs left, void the group
+<span class="nc" id="L669">				voidObsGroupIfAllChildObsVoided(o.getObsGroup());</span>
+<span class="nc" id="L670">            }</span>
+        }
+
+        // If we're in EDIT mode, we have to save the encounter so that any new obs are created.
+        // This feels a bit like a hack, but actually it's a good thing to update the encounter's dateChanged in this case. (PS- turns out there's no dateChanged on encounter up to 1.5.)
+        // If there is no encounter (impossible at the time of writing this comment) we save the obs manually
+<span class="fc bfc" id="L676" title="All 2 branches covered.">        if (context.getMode() == Mode.EDIT) {</span>
+<span class="pc bpc" id="L677" title="1 of 2 branches missed.">            if (encounter != null) {</span>
+<span class="pc bpc" id="L678" title="1 of 2 branches missed.">                if (voidEncounter) {</span>
+                    try {
+<span class="nc" id="L680">                        HtmlFormEntryUtil.voidEncounter(encounter, htmlForm, &quot;voided via htmlformentry form submission&quot;);</span>
+                        // AUDIT | NEN-7510 8.15 — encounter gevoided (verwijderd via formulier)
+<span class="nc" id="L682">                        log.info(&quot;AUDIT | action=ENCOUNTER_VOID&quot;</span>
+<span class="nc bnc" id="L683" title="All 4 branches missed.">                                + &quot; | userId=&quot; + (Context.getAuthenticatedUser() != null ? Context.getAuthenticatedUser().getId() : &quot;anonymous&quot;)</span>
+<span class="nc" id="L684">                                + &quot; | patientId=&quot; + (patient != null ? patient.getPatientId() : &quot;null&quot;)</span>
+<span class="nc" id="L685">                                + &quot; | encounterId=&quot; + encounter.getId());</span>
+<span class="nc" id="L686">                    } catch (Exception ex) {</span>
+                        // AUDIT | NEN-7510 8.15 — poging tot void van encounter mislukt
+<span class="nc" id="L688">                        log.warn(&quot;AUDIT | action=ENCOUNTER_VOID_FAILED&quot;</span>
+<span class="nc bnc" id="L689" title="All 4 branches missed.">                                + &quot; | userId=&quot; + (Context.getAuthenticatedUser() != null ? Context.getAuthenticatedUser().getId() : &quot;anonymous&quot;)</span>
+<span class="nc" id="L690">                                + &quot; | patientId=&quot; + (patient != null ? patient.getPatientId() : &quot;null&quot;)</span>
+<span class="nc" id="L691">                                + &quot; | encounterId=&quot; + encounter.getId()</span>
+<span class="nc" id="L692">                                + &quot; | error=&quot; + ex.getMessage());</span>
+<span class="nc" id="L693">                        throw new RuntimeException(&quot;Unable to void encounter.&quot;, ex);</span>
+<span class="nc" id="L694">                    }</span>
+                }
+<span class="fc" id="L696">                Context.getEncounterService().saveEncounter(encounter);</span>
+                // AUDIT | NEN-7510 8.15 — bestaande encounter bijgewerkt (EDIT)
+<span class="fc" id="L698">                log.info(&quot;AUDIT | action=ENCOUNTER_EDIT&quot;</span>
+<span class="pc bpc" id="L699" title="2 of 4 branches missed.">                        + &quot; | userId=&quot; + (Context.getAuthenticatedUser() != null ? Context.getAuthenticatedUser().getId() : &quot;anonymous&quot;)</span>
+<span class="pc" id="L700">                        + &quot; | patientId=&quot; + (patient != null ? patient.getPatientId() : &quot;null&quot;)</span>
+<span class="pc bpc" id="L701" title="1 of 2 branches missed.">                        + &quot; | encounterId=&quot; + encounter.getId()</span>
+<span class="pc" id="L702">                        + &quot; | formId=&quot; + (htmlForm != null ? htmlForm.getId() : &quot;null&quot;));</span>
+<span class="nc bnc" id="L703" title="All 2 branches missed.">            } else if (submissionActions.getObsToCreate() != null) {</span>
+                // this may not work right due to savehandlers (similar error to HTML-135) but this branch is
+                // unreachable until html forms are allowed to edit data without an encounter
+<span class="nc bnc" id="L706" title="All 2 branches missed.">                for (Obs o : submissionActions.getObsToCreate())</span>
+<span class="nc" id="L707">                    obsService.saveObs(o, null);</span>
+            }
+        }
+
+        /*
+           ObsService obsService = Context.getObsService();
+           This should propagate from above
+          if (submissionActions.getObsToCreate() != null) {
+              for (Obs o : submissionActions.getObsToCreate())
+                  Context.getObsService().saveObs(o, null);
+          }
+          */
+
+<span class="pc bpc" id="L720" title="1 of 2 branches missed.">		if (submissionActions.getIdentifiersToVoid() != null) {</span>
+<span class="pc bpc" id="L721" title="1 of 2 branches missed.">			for (PatientIdentifier patientIdentifier : submissionActions.getIdentifiersToVoid()) {</span>
+<span class="nc" id="L722">				patientIdentifier.setVoided(true);</span>
+<span class="nc" id="L723">				patientIdentifier.setVoidedBy(Context.getAuthenticatedUser());</span>
+<span class="nc" id="L724">				patientIdentifier.setVoidReason(getForm().getName()); // Use form name as reason</span>
+<span class="nc" id="L725">				patientIdentifier.setDateVoided(new Date());</span>
+<span class="nc" id="L726">			}</span>
+		}
+
+        // save the patient
+        // TODO: we are having some issues here when updating a Patient and an Encounter via an HTML form due recently discovered problems with the way
+        // we are using Hibernate.  We rely on Spring AOP saveHandlers and the save methods themselves to set some key parameters like date created--and
+        // sometimes a flush can be called before these methods are called. This should be resolved once we move save handling out of Spring AOP and
+        // into a Hibernate Interceptor (which happens in 1.9)
+<span class="pc bpc" id="L734" title="2 of 4 branches missed.">        if (patient != null &amp;&amp; submissionActions.getPatientUpdateRequired()) {</span>
+<span class="nc" id="L735">            Context.getPersonService().savePerson(patient);</span>
+        }
+
+        // exit the patient from care or process patient's death
+<span class="pc bpc" id="L739" title="1 of 2 branches missed.">        if (submissionActions.getExitFromCareProperty() != null) {</span>
+<span class="nc" id="L740">            ExitFromCareProperty exitFromCareProperty =</span>
+<span class="nc" id="L741">                    submissionActions.getExitFromCareProperty();</span>
+<span class="nc bnc" id="L742" title="All 2 branches missed.">            if (exitFromCareProperty.getCauseOfDeathConcept() != null) {</span>
+<span class="nc" id="L743">                Context.getPatientService().processDeath(this.getPatient(), exitFromCareProperty.getDateOfExit(),</span>
+<span class="nc" id="L744">                        exitFromCareProperty.getCauseOfDeathConcept(), exitFromCareProperty.getOtherReason());</span>
+            } else {
+<span class="nc" id="L746">            	PatientServiceCompatibility patientService = Context.getRegisteredComponent(&quot;htmlformentry.PatientServiceCompatibility&quot;, PatientServiceCompatibility.class);</span>
+<span class="nc" id="L747">            	patientService.exitFromCare(this.getPatient(), exitFromCareProperty.getDateOfExit(), exitFromCareProperty.getReasonExitConcept());</span>
+            }
+
+        }
+
+        // handle any custom actions (for an example of a custom action, see: https://github.com/PIH/openmrs-module-appointmentschedulingui/commit/e2cda8de1caa8a45d319ae4fbf7714c90c9adb8b)
+<span class="pc bpc" id="L753" title="1 of 2 branches missed.">        if (submissionActions.getCustomFormSubmissionActions() != null) {</span>
+<span class="nc bnc" id="L754" title="All 2 branches missed.">            for (CustomFormSubmissionAction customFormSubmissionAction : submissionActions.getCustomFormSubmissionActions()) {</span>
+<span class="nc" id="L755">                customFormSubmissionAction.applyAction(this);</span>
+<span class="nc" id="L756">            }</span>
+        }
+
+<span class="fc" id="L759">    }</span>
+
+    /**
+     * Returns true if group is an obs group that has no unvoided members.
+     *
+     * @param group
+     * @return
+     */
+    private void voidObsGroupIfAllChildObsVoided(Obs group) {
+<span class="nc bnc" id="L768" title="All 2 branches missed.">		if (group != null) {</span>
+
+            // probably should be able to just tet if group.getGroupMembers() == 0 since
+            // getGroupMembers only returns non-voided members?
+<span class="nc" id="L772">			boolean allObsVoided = true;</span>
+<span class="nc bnc" id="L773" title="All 2 branches missed.">			for (Obs member : group.getGroupMembers()) {</span>
+<span class="nc bnc" id="L774" title="All 4 branches missed.">				allObsVoided = allObsVoided &amp;&amp; member.isVoided();</span>
+<span class="nc" id="L775">			}</span>
+<span class="nc bnc" id="L776" title="All 2 branches missed.">			if (allObsVoided) {</span>
+<span class="nc" id="L777">				Context.getObsService().voidObs(group, &quot;htmlformentry&quot;);</span>
+			}
+<span class="nc" id="L779">			voidObsGroupIfAllChildObsVoided(group.getObsGroup());</span>
+		}
+<span class="nc" id="L781">    }</span>
+
+    /**
+     * @return any obs from the passed list whose question is the passed concept
+     */
+    private List&lt;Obs&gt; findObsForConcept(Concept concept, List&lt;Obs&gt; obs) {
+<span class="nc" id="L787">        List&lt;Obs&gt; ret = new ArrayList&lt;Obs&gt;();</span>
+<span class="nc bnc" id="L788" title="All 2 branches missed.">        if (concept != null) {</span>
+<span class="nc bnc" id="L789" title="All 2 branches missed.">            for (Obs o : obs) {</span>
+<span class="nc bnc" id="L790" title="All 2 branches missed.">                if (o.getConcept().equals(concept)) {</span>
+<span class="nc" id="L791">                    ret.add(o);</span>
+                }
+<span class="nc" id="L793">            }</span>
+        }
+<span class="nc" id="L795">        return ret;</span>
+    }
+
+    /**
+     * Returns the submission controller associated with the session
+     */
+    public FormSubmissionController getSubmissionController() {
+<span class="fc" id="L802">        return submissionController;</span>
+    }
+
+    /**
+     * Returns the form entry context associated with the session
+     */
+    public FormEntryContext getContext() {
+<span class="fc" id="L809">        return context;</span>
+    }
+
+    /**
+     * Returns the submission actions associated with the session
+     */
+    public FormSubmissionActions getSubmissionActions() {
+<span class="fc" id="L816">        return submissionActions;</span>
+    }
+
+    /**
+     * Return the form display HTML associated with the session. This has the important side-effect of having tags
+     * populate the submissionActions list, so you must ensure this is called before you attempt to validate or process
+     * a form's submission.
+     * The first time you call this method on an instance will generate the HTML and cache it, so that subsequent calls
+     * are fast (and so that the submissionActions list is only populated once).
+     */
+    public String getHtmlToDisplay() throws Exception {
+<span class="fc bfc" id="L827" title="All 2 branches covered.">        if (htmlToDisplay == null) {</span>
+<span class="fc" id="L828">            htmlToDisplay = createForm(xmlDefinition);</span>
+        }
+<span class="fc" id="L830">        return htmlToDisplay;</span>
+    }
+
+    /**
+     * Creates the Javascript necessary to set form fields to the values entered during last
+     * submission Used to maintain previously-entered field values when redisplaying a form with
+     * validation errors
+     */
+    public String getSetLastSubmissionFieldsJavascript() {
+<span class="nc" id="L839">        HttpServletRequest lastSubmission = submissionController.getLastSubmission();</span>
+<span class="nc bnc" id="L840" title="All 2 branches missed.">        if (lastSubmission == null) {</span>
+<span class="nc" id="L841">            return &quot;&quot;;</span>
+        } else {
+<span class="nc" id="L843">            StringBuilder sb = new StringBuilder();</span>
+
+            // iterate through all the widgets and set their values based on the values in the last submission
+            // if there is no value in the last submission, explicitly set the value as empty to override any default values
+<span class="nc bnc" id="L847" title="All 2 branches missed.">            for (Map.Entry&lt;Widget, String&gt; entry : context.getFieldNames().entrySet()) {</span>
+<span class="nc" id="L848">                Widget widgetType = entry.getKey();</span>
+<span class="nc" id="L849">                String widgetFieldName = entry.getValue();</span>
+<span class="nc" id="L850">                String val = lastSubmission.getParameter(widgetFieldName);</span>
+
+                // note that for each widget we set, we also trigger the change event on that widget
+                // this is so any custom change handlers that a widget or tag may configure are called
+                // when we set a value here; this is specifically used to make sure we trigger the change
+                // handlers configured by the &lt;exitFromCare&gt; tag
+
+<span class="nc bnc" id="L857" title="All 2 branches missed.">                if (val != null) {</span>
+                    // special case to set the display field when autocomplete is used
+<span class="nc bnc" id="L859" title="All 2 branches missed.">                    if (AutocompleteWidget.class.isAssignableFrom(widgetType.getClass())) {</span>
+<span class="nc" id="L860">                        Class widgetClass = ((AutocompleteWidget) widgetType).getOptionClass();</span>
+
+<span class="nc bnc" id="L862" title="All 2 branches missed.">                        if (widgetClass != null) {</span>
+
+<span class="nc" id="L864">                            Object returnedObj = HtmlFormEntryUtil.convertToType(val.trim(), widgetClass);</span>
+
+<span class="nc bnc" id="L866" title="All 2 branches missed.">                            if (widgetClass.getSimpleName().equals(&quot;Location&quot;)) {</span>
+<span class="nc" id="L867">                                Location location = null;</span>
+<span class="nc bnc" id="L868" title="All 2 branches missed.">                                if (returnedObj != null) {</span>
+<span class="nc" id="L869">                                    location = (Location) returnedObj;</span>
+                                } else {
+                                    //This should typically never happen,why is there no location with this id, we
+                                    //should set val(locationId) to blank so that the hidden form field is blank too
+<span class="nc" id="L873">                                    val = &quot;&quot;;</span>
+                                }
+
+<span class="nc bnc" id="L876" title="All 2 branches missed.">                                sb.append(&quot;$j('#&quot; + widgetFieldName + &quot;').val(\&quot;&quot;</span>
+<span class="nc" id="L877">                                        + (location == null ? &quot;&quot; : JavaScriptUtils.javaScriptEscape(location.getName())) + &quot;\&quot;);\n&quot;);</span>
+<span class="nc bnc" id="L878" title="All 2 branches missed.">                                sb.append(&quot;$j('#&quot; + widgetFieldName + &quot;_hid&quot; + &quot;').val(\&quot;&quot;</span>
+<span class="nc" id="L879">                                        + (location == null ? &quot;&quot; : JavaScriptUtils.javaScriptEscape(location.getId().toString())) + &quot;\&quot;);\n&quot;);</span>
+<span class="nc" id="L880">                                sb.append(&quot;$j('#&quot; + widgetFieldName + &quot;').change();\n&quot;);</span>
+
+<span class="nc bnc" id="L882" title="All 2 branches missed.">                            } else if (widgetClass.getSimpleName().equals(&quot;Person&quot;)) {</span>
+<span class="nc" id="L883">                                Person provider = null;</span>
+<span class="nc bnc" id="L884" title="All 2 branches missed.">                                if (returnedObj != null) {</span>
+<span class="nc" id="L885">                                    provider = (Person) returnedObj;</span>
+                                } else {
+                                    //This should typically never happen,why is there no provider with this id, we
+                                    //should set val(providerid) to blank so that the hidden form field is blank too
+<span class="nc" id="L889">                                    val = &quot;&quot;;</span>
+                                }
+<span class="nc bnc" id="L891" title="All 2 branches missed.">                                sb.append(&quot;$j('#&quot; + widgetFieldName + &quot;').val(\&quot;&quot;</span>
+<span class="nc" id="L892">                                        + (provider == null ? &quot;&quot; : JavaScriptUtils.javaScriptEscape(provider.getPersonName().getFullName())) + &quot;\&quot;);\n&quot;);</span>
+<span class="nc bnc" id="L893" title="All 2 branches missed.">                                sb.append(&quot;$j('#&quot; + widgetFieldName + &quot;_hid&quot; + &quot;').val(\&quot;&quot;</span>
+<span class="nc" id="L894">                                        + (provider == null ? &quot;&quot; : JavaScriptUtils.javaScriptEscape(provider.getId().toString())) + &quot;\&quot;);\n&quot;);</span>
+<span class="nc" id="L895">                                sb.append(&quot;$j('#&quot; + widgetFieldName + &quot;').change();\n&quot;);</span>
+                            }
+                        }
+<span class="nc" id="L898">                    }</span>
+
+                    // special case to set the display field of the obs value widget when autocomplete is used with &lt;obs&gt; tag
+<span class="nc bnc" id="L901" title="All 2 branches missed.">                    else if (ConceptSearchAutocompleteWidget.class.isAssignableFrom(entry.getKey().getClass())) {</span>
+
+<span class="nc" id="L903">                        String conveptVal = lastSubmission.getParameter(widgetFieldName + &quot;_hid&quot;);</span>
+<span class="nc" id="L904">                        Object returnedObj = HtmlFormEntryUtil.convertToType(conveptVal.trim(), Concept.class);</span>
+<span class="nc" id="L905">                        Concept concept = null;</span>
+<span class="nc bnc" id="L906" title="All 2 branches missed.">                        if (returnedObj != null) {</span>
+<span class="nc" id="L907">                            concept = (Concept) returnedObj;</span>
+                        } else {
+                            //This should typically never happen,why if there no obs with this id, we
+                            //should set val(obsId) to blank so that the hidden form field is blank too
+<span class="nc" id="L911">                            val = &quot;&quot;;</span>
+                        }
+<span class="nc bnc" id="L913" title="All 2 branches missed.">                        sb.append(&quot;$j('#&quot; + widgetFieldName + &quot;').val(\&quot;&quot;</span>
+<span class="nc" id="L914">                                + (concept == null ? &quot;&quot; : JavaScriptUtils.javaScriptEscape(concept.getDisplayString())) + &quot;\&quot;);\n&quot;);</span>
+<span class="nc bnc" id="L915" title="All 2 branches missed.">                        sb.append(&quot;$j('#&quot; + widgetFieldName + &quot;_hid&quot; + &quot;').val(\&quot;&quot; + (concept == null ? &quot;&quot; : JavaScriptUtils.javaScriptEscape(concept.getId().toString())) + &quot;\&quot;);\n&quot;);</span>
+<span class="nc" id="L916">                        sb.append(&quot;$j('#&quot; + widgetFieldName + &quot;').change();\n&quot;);</span>
+<span class="nc" id="L917">                    } else {</span>
+                        // set the value of the widget based on it's name
+<span class="nc" id="L919">                        sb.append(&quot;setValueByName('&quot; + widgetFieldName + &quot;', '&quot; + JavaScriptUtils.javaScriptEscape(val)</span>
+                                + &quot;');\n&quot;);
+<span class="nc" id="L921">                        sb.append(&quot;$j('#&quot; + widgetFieldName + &quot;').change();\n&quot;);</span>
+                    }
+
+
+                } else {
+<span class="nc bnc" id="L926" title="All 2 branches missed.">                    if (AutocompleteWidget.class.isAssignableFrom(widgetType.getClass())) {</span>
+<span class="nc" id="L927">                        sb.append(&quot;$j('#&quot; + widgetFieldName + &quot;').val('');\n&quot;);</span>
+<span class="nc" id="L928">                        sb.append(&quot;$j('#&quot; + widgetFieldName + &quot;_hid&quot; + &quot;').val('');\n&quot;);</span>
+<span class="nc" id="L929">                        sb.append(&quot;$j('#&quot; + widgetFieldName + &quot;').change();\n&quot;);</span>
+<span class="nc bnc" id="L930" title="All 2 branches missed.">                    } else if (ConceptSearchAutocompleteWidget.class.isAssignableFrom(widgetType.getClass())) {</span>
+<span class="nc" id="L931">                        sb.append(&quot;$j('#&quot; + widgetFieldName + &quot;').val('');\n&quot;);</span>
+<span class="nc" id="L932">                        sb.append(&quot;$j('#&quot; + widgetFieldName + &quot;_hid&quot; + &quot;').val('');\n&quot;);</span>
+<span class="nc" id="L933">                        sb.append(&quot;$j('#&quot; + widgetFieldName + &quot;').change();\n&quot;);</span>
+                    } else {
+<span class="nc" id="L935">                        sb.append(&quot;setValueByName('&quot; + widgetFieldName + &quot;', '');\n&quot;);</span>
+<span class="nc" id="L936">                        sb.append(&quot;$j('#&quot; + widgetFieldName + &quot;').change();\n&quot;);</span>
+                    }
+                }
+<span class="nc" id="L939">            }</span>
+<span class="nc" id="L940">            return sb.toString();</span>
+        }
+    }
+
+    /**
+     * Returns a fragment of javascript that will display any error widgets that had errors on the
+     * last submission.
+     */
+    public String getLastSubmissionErrorJavascript() {
+<span class="nc bnc" id="L949" title="All 2 branches missed.">        if (context.getMode() == Mode.VIEW) {</span>
+            // in VIEW mode there are no error widgets
+<span class="nc" id="L951">            return &quot;&quot;;</span>
+        }
+
+<span class="nc" id="L954">        StringBuilder sb = new StringBuilder();</span>
+<span class="nc" id="L955">        List&lt;FormSubmissionError&gt; errs = submissionController.getLastSubmissionErrors();</span>
+<span class="nc bnc" id="L956" title="All 4 branches missed.">        if (errs != null &amp;&amp; errs.size() &gt; 0) {</span>
+<span class="nc bnc" id="L957" title="All 2 branches missed.">            for (FormSubmissionError error : errs) {</span>
+<span class="nc bnc" id="L958" title="All 2 branches missed.">                if (error.getSourceWidget() != null)</span>
+<span class="nc" id="L959">                    sb.append(&quot;showError('&quot; + context.getErrorFieldId(error.getSourceWidget()) + &quot;', '&quot; + error.getError()</span>
+                            + &quot;');\n&quot;);
+                else
+<span class="nc" id="L962">                    sb.append(&quot;showError('&quot; + error.getId() + &quot;', '&quot; + error.getError() + &quot;');\n&quot;);</span>
+<span class="nc" id="L963">            }</span>
+        }
+<span class="nc" id="L965">        return sb.toString();</span>
+    }
+
+    /**
+     * @return a fragment of javascript that tells the getValue and setValue methods how to work
+     */
+    public String getFieldAccessorJavascript() {
+<span class="nc" id="L972">        StringBuilder ret = new StringBuilder();</span>
+<span class="nc bnc" id="L973" title="All 2 branches missed.">        for (Map.Entry&lt;String, String&gt; e : context.getJavascriptFieldAccessorInfo().entrySet()) {</span>
+<span class="nc" id="L974">            ret.append(&quot;propertyAccessorInfo['&quot; + e.getKey() + &quot;'] = &quot; + e.getValue() + &quot;\n&quot;);</span>
+<span class="nc" id="L975">        }</span>
+<span class="nc" id="L976">        return ret.toString();</span>
+    }
+
+    /**
+     * Returns the Encounter associated with the session
+     */
+    public Encounter getEncounter() {
+<span class="fc" id="L983">        return encounter;</span>
+    }
+
+    /**
+     * Returns the Patient associated with the session
+     */
+    public Patient getPatient() {
+<span class="fc" id="L990">        return patient;</span>
+    }
+
+    /**
+     * Returns the Form associated with the session
+     */
+    public Form getForm() {
+<span class="nc" id="L997">        return form;</span>
+    }
+
+    /**
+     * Returns the id of the HtmlForm associated with the session
+     */
+    public Integer getHtmlFormId() {
+<span class="nc bnc" id="L1004" title="All 2 branches missed.">        return htmlForm == null ? null : htmlForm.getId();</span>
+    }
+
+    /**
+     * Returns the return Url associated with the session
+     */
+    public String getReturnUrl() {
+<span class="nc" id="L1011">        return returnUrl;</span>
+    }
+
+    /**
+     * Sets the return Url associated with the session
+     *
+     * @param returnUrl the returnUrl to set
+     */
+    public void setReturnUrl(String returnUrl) {
+<span class="nc" id="L1020">        this.returnUrl = returnUrl;</span>
+<span class="nc" id="L1021">    }</span>
+
+    /**
+     * Adds the patientId=xyz parameter to the returnUrl
+     *
+     * @return the returnUrl with patientId parameter
+     */
+    public String getReturnUrlWithParameters() {
+<span class="nc bnc" id="L1029" title="All 2 branches missed.">        if (!StringUtils.hasText(returnUrl))</span>
+<span class="nc" id="L1030">            return null;</span>
+<span class="nc" id="L1031">        String ret = returnUrl;</span>
+<span class="nc bnc" id="L1032" title="All 2 branches missed.">        if (!ret.contains(&quot;?&quot;))</span>
+<span class="nc" id="L1033">            ret += &quot;?&quot;;</span>
+<span class="nc bnc" id="L1034" title="All 4 branches missed.">        if (!ret.endsWith(&quot;?&quot;) &amp;&amp; !ret.endsWith(&quot;&amp;&quot;))</span>
+<span class="nc" id="L1035">            ret += &quot;&amp;&quot;;</span>
+<span class="nc" id="L1036">        ret += &quot;patientId=&quot; + getPatient().getPatientId();</span>
+<span class="nc" id="L1037">        return ret;</span>
+    }
+
+    /**
+     * Returns form modified timestamp
+     */
+    public long getFormModifiedTimestamp() {
+<span class="nc" id="L1044">        return formModifiedTimestamp;</span>
+    }
+
+    /**
+     * Returns the encounter modified timestamp
+     */
+    public long getEncounterModifiedTimestamp() {
+<span class="nc" id="L1051">        return encounterModifiedTimestamp;</span>
+    }
+
+    /**
+     * Calculates the date an encounter was last modified by checking the creation and voided times
+     * of all Obs and Orders associated with the Encounter
+     *
+     * @param encounter
+     * @return last modified time, as a Long
+     */
+    public static long getEncounterModifiedDate(Encounter encounter) {
+<span class="fc" id="L1062">        long ret = encounter.getDateCreated().getTime();</span>
+<span class="pc bpc" id="L1063" title="1 of 2 branches missed.">        if (encounter.getDateVoided() != null)</span>
+<span class="nc" id="L1064">            ret = Math.max(ret, encounter.getDateVoided().getTime());</span>
+<span class="pc bpc" id="L1065" title="1 of 2 branches missed.">        for (Obs o : encounter.getAllObs(true)) {</span>
+<span class="nc" id="L1066">            ret = Math.max(ret, o.getDateCreated().getTime());</span>
+<span class="nc bnc" id="L1067" title="All 2 branches missed.">            if (o.getDateVoided() != null)</span>
+<span class="nc" id="L1068">                ret = Math.max(ret, o.getDateVoided().getTime());</span>
+<span class="nc" id="L1069">        }</span>
+<span class="pc bpc" id="L1070" title="1 of 2 branches missed.">        for (Order o : encounter.getOrders()) {</span>
+<span class="nc" id="L1071">            ret = Math.max(ret, o.getDateCreated().getTime());</span>
+<span class="nc bnc" id="L1072" title="All 2 branches missed.">            if (o.getDateVoided() != null)</span>
+<span class="nc" id="L1073">                ret = Math.max(ret, o.getDateVoided().getTime());</span>
+<span class="nc" id="L1074">        }</span>
+<span class="fc" id="L1075">        return ret;</span>
+    }
+
+    public boolean hasEncouterTag() {
+<span class="pc bpc" id="L1079" title="1 of 2 branches missed.">        for (String tag : HtmlFormEntryConstants.ENCOUNTER_TAGS) {</span>
+<span class="fc" id="L1080">            tag = &quot;&lt;&quot; + tag;</span>
+<span class="pc bpc" id="L1081" title="1 of 2 branches missed.">            if (htmlForm.getXmlData().contains(tag)) {</span>
+<span class="fc" id="L1082">                return true;</span>
+            }
+        }
+<span class="nc" id="L1085">        return false;</span>
+    }
+
+    public boolean hasPatientTag() {
+<span class="fc bfc" id="L1089" title="All 2 branches covered.">        for (String tag : HtmlFormEntryConstants.PATIENT_TAGS) {</span>
+<span class="fc" id="L1090">            tag = &quot;&lt;&quot; + tag;</span>
+<span class="pc bpc" id="L1091" title="1 of 2 branches missed.">            if (htmlForm.getXmlData().contains(tag)) {</span>
+<span class="nc" id="L1092">                return true;</span>
+            }
+        }
+<span class="fc" id="L1095">        return false;</span>
+    }
+
+    public void setVoidEncounter(boolean voidEncounter) {
+<span class="nc" id="L1099">        this.voidEncounter = voidEncounter;</span>
+<span class="nc" id="L1100">    }</span>
+
+    public String getHasChangedInd() {
+<span class="nc" id="L1103">		return hasChangedInd;</span>
+	}
+
+	public void setHasChangedInd(String hasChangedInd) {
+<span class="nc" id="L1107">		this.hasChangedInd = hasChangedInd;</span>
+<span class="nc" id="L1108">	}</span>
+
+    public HttpSession getHttpSession() {
+<span class="fc" id="L1111">        return httpSession;</span>
+    }
+
+    public void setAutomaticClientSideValidation(boolean automaticClientSideValidation) {
+<span class="nc" id="L1115">        context.setAutomaticClientSideValidation(automaticClientSideValidation);</span>
+<span class="nc" id="L1116">    }</span>
+
+    public void setClientSideValidationHints(boolean clientSideValidationHints) {
+<span class="nc" id="L1119">        context.setClientSideValidationHints(true);</span>
+<span class="nc" id="L1120">    }</span>
+
+    public void setAttribute(String key, Object value) {
+<span class="nc" id="L1123">        attributes.put(key, value);</span>
+<span class="nc" id="L1124">    }</span>
+
+    public Object getAttribute(String key) {
+<span class="nc" id="L1127">        return attributes.get(key);</span>
+    }
+
+    public void setAttributes(Map&lt;String, Object&gt; moreAttributes) {
+<span class="pc bpc" id="L1131" title="1 of 2 branches missed.">        if (moreAttributes != null) {</span>
+<span class="nc" id="L1132">            attributes.putAll(moreAttributes);</span>
+        }
+<span class="fc" id="L1134">    }</span>
+
+    public void addToVelocityContext(String key, Object value) {
+<span class="nc" id="L1137">        velocityContext.put(key, value);</span>
+<span class="nc" id="L1138">    }</span>
+
+    public String getAfterSaveUrlTemplate() {
+<span class="nc" id="L1141">        return afterSaveUrlTemplate;</span>
+    }
+
+    /**
+     * After successfully submitting and saving a form, go to this url. (Null means that the web application should
+     * decide, based on its standard workflow.)
+     *
+     * This will be prepended with CONTEXTPATH/ and appropriate values will be substituted in for &quot;{{patient.id}}&quot; and
+     * &quot;{{encounter.id}}&quot;
+     *
+     * @param afterSaveUrlTemplate
+     */
+    public void setAfterSaveUrlTemplate(String afterSaveUrlTemplate) {
+<span class="nc" id="L1154">        this.afterSaveUrlTemplate = afterSaveUrlTemplate;</span>
+<span class="nc" id="L1155">    }</span>
+
+    public String getXmlDefinition() {
+<span class="nc" id="L1158">        return xmlDefinition;</span>
+    }
+
+    public void setForm(Form form) {
+<span class="nc" id="L1162">        this.form = form;</span>
+<span class="nc" id="L1163">    }</span>
+
+    public void setHtmlForm(HtmlForm htmlForm) {
+<span class="nc" id="L1166">        this.htmlForm = htmlForm;</span>
+<span class="nc bnc" id="L1167" title="All 2 branches missed.">        if(form != null) this.htmlForm.setForm(form);</span>
+<span class="nc" id="L1168">    }</span>
+    
+    public String getPatientPersonName() {
+<span class="nc" id="L1171">    	return StringEscapeUtils.escapeHtml(patient.getPersonName().getFullName());</span>
+    }
+    
+    public String getFormName() {
+<span class="nc" id="L1175">    	return StringEscapeUtils.escapeHtml(form.getName());</span>
+    }
+    
+    public String getEncounterFormName() {
+<span class="nc" id="L1179">    	return StringEscapeUtils.escapeHtml(encounter.getForm().getName());</span>
+    }
+    
+    public String getFormEncounterTypeName() {
+<span class="nc" id="L1183">    	return StringEscapeUtils.escapeHtml(form.getEncounterType().getName());</span>
+    }
+    
+    public String getEncounterEncounterTypeName() {
+<span class="nc" id="L1187">    	return StringEscapeUtils.escapeHtml(encounter.getEncounterType().getName());</span>
+    }
+    
+    public String getEncounterLocationName() {
+<span class="nc bnc" id="L1191" title="All 2 branches missed.">    	return StringEscapeUtils.escapeHtml(encounter.getLocation() == null ? &quot;&quot; : encounter.getLocation().getName());</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.8.202204050719</span></div></body></html>

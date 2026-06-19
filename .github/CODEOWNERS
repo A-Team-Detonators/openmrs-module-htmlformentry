@@ -1,0 +1,19 @@
+# CODEOWNERS — verplichte reviewers per pad
+# Alle wijzigingen vallen onder het C4-Detonators team
+
+# Standaard: alles vereist review van C4-Detonators
+* @A-Team-Detonators/C4-Detonators
+
+# CI/CD en GitHub configuratie
+.github/ @A-Team-Detonators/C4-Detonators
+
+# Productieconfiguratie
+environments/production/ @A-Team-Detonators/C4-Detonators
+docker/docker-compose.production.yml @A-Team-Detonators/C4-Detonators
+
+# Scripts met systeemimpact
+scripts/ @A-Team-Detonators/C4-Detonators
+
+# SBOM wordt automatisch gegenereerd door de CI-pipeline
+# Geen handmatige review vereist
+docs/sbom/

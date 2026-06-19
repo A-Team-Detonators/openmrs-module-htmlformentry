@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>EncounterRoleWidget.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">HTML Form Entry API</a> &gt; <a href="index.source.html" class="el_package">org.openmrs.module.htmlformentry.widget</a> &gt; <span class="el_source">EncounterRoleWidget.java</span></div><h1>EncounterRoleWidget.java</h1><pre class="source lang-java linenums">/**
+ * The contents of this file are subject to the OpenMRS Public License
+ * Version 1.0 (the &quot;License&quot;); you may not use this file except in
+ * compliance with the License. You may obtain a copy of the License at
+ * http://license.openmrs.org
+ *
+ * Software distributed under the License is distributed on an &quot;AS IS&quot;
+ * basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
+ * License for the specific language governing rights and limitations
+ * under the License.
+ *
+ * Copyright (C) OpenMRS, LLC.  All Rights Reserved.
+ */
+package org.openmrs.module.htmlformentry.widget;
+
+import org.openmrs.EncounterRole;
+import org.openmrs.api.context.Context;
+import org.openmrs.module.htmlformentry.FormEntryContext;
+import org.openmrs.module.htmlformentry.FormEntryContext.Mode;
+import org.springframework.util.StringUtils;
+
+import javax.servlet.http.HttpServletRequest;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.List;
+
+
+/**
+ * Widget that lets you choose an {@link EncounterRole} from a dropdown.
+ */
+<span class="fc" id="L31">public class EncounterRoleWidget implements Widget {</span>
+	
+	private EncounterRole initialValue;
+	
+	/**
+	 * @see org.openmrs.module.htmlformentry.widget.Widget#setInitialValue(java.lang.Object)
+	 */
+	@Override
+	public void setInitialValue(Object initialValue) {
+<span class="nc" id="L40">		this.initialValue = (EncounterRole) initialValue;</span>
+<span class="nc" id="L41">	}</span>
+
+	/**
+	 * @see org.openmrs.module.htmlformentry.widget.Widget#generateHtml(org.openmrs.module.htmlformentry.FormEntryContext)
+	 */
+	@Override
+	public String generateHtml(FormEntryContext context) {
+<span class="pc bpc" id="L48" title="1 of 2 branches missed.">		if (context.getMode() == Mode.VIEW) {</span>
+<span class="nc bnc" id="L49" title="All 2 branches missed.">            if (initialValue != null)</span>
+<span class="nc" id="L50">                return WidgetFactory.displayValue(initialValue.getName());</span>
+            else
+<span class="nc" id="L52">                return &quot;&quot;;</span>
+        }
+
+<span class="fc" id="L55">		List&lt;EncounterRole&gt; roles = Context.getEncounterService().getAllEncounterRoles(true);</span>
+<span class="fc" id="L56">        Collections.sort(roles, new Comparator&lt;EncounterRole&gt;() {</span>
+			@Override
+            public int compare(EncounterRole left, EncounterRole right) {
+<span class="fc" id="L59">	            return left.getName().compareTo(right.getName());</span>
+            }
+        });
+		
+<span class="fc" id="L63">		StringBuilder sb = new StringBuilder();</span>
+<span class="fc" id="L64">        sb.append(&quot;&lt;select name=\&quot;&quot; + context.getFieldName(this) + &quot;\&quot;&gt;&quot;);</span>
+<span class="fc" id="L65">        sb.append(&quot;\n&lt;option value=\&quot;\&quot;&gt;&quot;);</span>
+<span class="fc" id="L66">        sb.append(Context.getMessageSourceService().getMessage(&quot;htmlformentry.chooseAnEncounterRole&quot;));</span>
+<span class="fc" id="L67">        sb.append(&quot;&lt;/option&gt;&quot;);</span>
+        
+<span class="fc bfc" id="L69" title="All 2 branches covered.">        for (EncounterRole role : roles) {</span>
+<span class="fc" id="L70">        	sb.append(&quot;\n&lt;option &quot;);</span>
+<span class="pc bpc" id="L71" title="3 of 4 branches missed.">        	if (initialValue != null &amp;&amp; initialValue.equals(role))</span>
+<span class="nc" id="L72">        		sb.append(&quot;selected=\&quot;true\&quot; &quot;);</span>
+<span class="fc" id="L73">        	sb.append(&quot;value=\&quot;&quot; + role.getId() + &quot;\&quot;&gt;&quot;).append(role.getName()).append(&quot;&lt;/option&gt;&quot;);</span>
+<span class="fc" id="L74">        }</span>
+<span class="fc" id="L75">        sb.append(&quot;&lt;/select&gt;&quot;);</span>
+<span class="fc" id="L76">		return sb.toString();</span>
+	}
+	
+	/**
+	 * @see org.openmrs.module.htmlformentry.widget.Widget#getValue(org.openmrs.module.htmlformentry.FormEntryContext, javax.servlet.http.HttpServletRequest)
+	 */
+	@Override
+	public Object getValue(FormEntryContext context, HttpServletRequest request) {
+<span class="fc" id="L84">		String val = request.getParameter(context.getFieldName(this));</span>
+<span class="pc bpc" id="L85" title="1 of 2 branches missed.">        if (StringUtils.hasText(val)) {</span>
+<span class="fc" id="L86">        	return Context.getEncounterService().getEncounterRole(Integer.valueOf(val));</span>
+        }
+<span class="nc" id="L88">        return null;</span>
+	}
+	
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.8.202204050719</span></div></body></html>

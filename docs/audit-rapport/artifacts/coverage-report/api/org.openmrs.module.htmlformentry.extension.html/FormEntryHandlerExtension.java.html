@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>FormEntryHandlerExtension.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">HTML Form Entry API</a> &gt; <a href="index.source.html" class="el_package">org.openmrs.module.htmlformentry.extension.html</a> &gt; <span class="el_source">FormEntryHandlerExtension.java</span></div><h1>FormEntryHandlerExtension.java</h1><pre class="source lang-java linenums">package org.openmrs.module.htmlformentry.extension.html;
+
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Set;
+
+import org.openmrs.Form;
+import org.openmrs.api.context.Context;
+import org.openmrs.module.htmlformentry.HtmlForm;
+import org.openmrs.module.htmlformentry.HtmlFormEntryUtil;
+import org.openmrs.module.web.FormEntryContext;
+import org.openmrs.module.web.extension.FormEntryHandler;
+import org.openmrs.util.PrivilegeConstants;
+
+/**
+ * Defines the extension point that allows HTML Forms to appear in 
+ * the UI when the user indicates they want to enter a form, and wants to pick which form.
+ * 
+ * This extension is enabled by defining (uncommenting) it in the 
+ * /metadata/config.xml file. 
+ */
+<span class="nc" id="L25">public class FormEntryHandlerExtension extends FormEntryHandler {</span>
+
+	/**
+     * @see org.openmrs.module.web.extension.FormEntryModuleExtension#getFormEntryUrl()
+     */
+    @Override
+    public String getFormEntryUrl() {
+<span class="nc" id="L32">	    return &quot;module/htmlformentry/htmlFormEntry.form&quot;;</span>
+    }
+    
+	/**
+     * @see org.openmrs.module.web.extension.FormEntryModuleExtension#getViewFormUrl()
+     */
+    @Override
+    public String getViewFormUrl() {
+<span class="nc" id="L40">    	return &quot;module/htmlformentry/htmlFormEntry.form&quot;;</span>
+    }
+
+	/**
+     * @see org.openmrs.module.web.extension.FormEntryHandler#getEditFormUrl()
+     */
+    @Override
+    public String getEditFormUrl() {
+<span class="nc" id="L48">    	return &quot;module/htmlformentry/htmlFormEntry.form?mode=EDIT&quot;;</span>
+    }
+    
+    /**
+     * @see org.openmrs.module.web.extension.FormEntryModuleExtension#getFormList()
+     */
+    @Override
+    public List&lt;Form&gt; getFormsModuleCanEnter(FormEntryContext formEntryContext) {
+<span class="nc" id="L56">    	return addAllHtmlForms(new ArrayList&lt;Form&gt;());</span>
+    }
+
+	/**
+     * @see org.openmrs.module.web.extension.FormEntryModuleExtension#getFormsModuleCanView()
+     */
+    @Override
+    public Set&lt;Form&gt; getFormsModuleCanView() {
+<span class="nc" id="L64">    	return addAllHtmlForms(new HashSet&lt;Form&gt;());</span>
+    }
+
+	/**
+     * @see org.openmrs.module.web.extension.FormEntryHandler#getFormsModuleCanEdit()
+     */
+    @Override
+    public Set&lt;Form&gt; getFormsModuleCanEdit() {
+<span class="nc" id="L72">    	return addAllHtmlForms(new HashSet&lt;Form&gt;());</span>
+    }
+
+    private &lt;C extends Collection&lt;Form&gt;&gt; C addAllHtmlForms(C collection) {
+<span class="nc" id="L76">    	boolean showUnpublished = Context.getAuthenticatedUser().hasPrivilege(PrivilegeConstants.VIEW_UNPUBLISHED_FORMS);</span>
+<span class="nc" id="L77">    	Set&lt;Form&gt; ret = new LinkedHashSet&lt;Form&gt;();</span>
+<span class="nc bnc" id="L78" title="All 2 branches missed.">	    for (HtmlForm form : HtmlFormEntryUtil.getService().getAllHtmlForms()) {</span>
+<span class="nc bnc" id="L79" title="All 4 branches missed.">	    	if (showUnpublished || form.getForm().getPublished())</span>
+<span class="nc" id="L80">	    		ret.add(form.getForm());</span>
+<span class="nc" id="L81">	    }</span>
+<span class="nc" id="L82">	    collection.addAll(ret);</span>
+<span class="nc" id="L83">	    return collection;</span>
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.8.202204050719</span></div></body></html>

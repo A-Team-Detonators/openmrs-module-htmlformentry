@@ -1,0 +1,917 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>HtmlFormEntryGenerator.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">HTML Form Entry API</a> &gt; <a href="index.source.html" class="el_package">org.openmrs.module.htmlformentry</a> &gt; <span class="el_source">HtmlFormEntryGenerator.java</span></div><h1>HtmlFormEntryGenerator.java</h1><pre class="source lang-java linenums">package org.openmrs.module.htmlformentry;
+
+import java.io.ByteArrayInputStream;
+import java.io.PrintWriter;
+import java.io.StringWriter;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Properties;
+import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+import org.apache.commons.lang.StringUtils;
+import org.openmrs.Role;
+import org.openmrs.User;
+import org.openmrs.api.context.Context;
+import org.openmrs.module.htmlformentry.handler.AttributeDescriptor;
+import org.openmrs.module.htmlformentry.handler.IteratingTagHandler;
+import org.openmrs.module.htmlformentry.handler.TagHandler;
+import org.openmrs.module.htmlformentry.matching.ObsGroupEntity;
+import org.w3c.dom.Document;
+import org.w3c.dom.NamedNodeMap;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
+
+/**
+ * Provides methods to take a {@code &lt;htmlform&gt;...&lt;/htmlform&gt;} xml block and turns it into HTML to
+ * be displayed as a form in a web browser. It can apply the {@code &lt;macros&gt;...&lt;/macros&gt;} section,
+ * and replace tags like {@code &lt;obs/&gt;}.
+ */
+<span class="fc" id="L34">public class HtmlFormEntryGenerator implements TagHandler {</span>
+
+    /**
+     * @see #applyMacros(FormEntrySession, String)
+     * This method simply delegates to the applyMacros(FormEntrySession, String) method with a null FormEntry session.
+     * This is retained for backwards-compatibility, with the limitation that it does not support velocity expressions
+     * as macro values
+     */
+    public String applyMacros(String xml) throws Exception {
+<span class="fc" id="L43">        return applyMacros(null, xml);</span>
+    }
+
+    /**
+     * Takes an XML string, finds the {@code &lt;macros&gt;&lt;/macros&gt;} section in it, and applies those
+     * substitutions
+     * &lt;p/&gt;
+     * For example the following input:
+     * &lt;p/&gt;
+     * &lt;pre&gt;
+     * {@code
+     * &lt;htmlform&gt;
+     *     &lt;macros&gt;
+     *          count=1, 2, 3
+     *     &lt;/macros&gt;
+     *     You can count like $count
+     * &lt;/htmlform&gt;
+     * }
+     * &lt;/pre&gt;
+     * &lt;p/&gt;
+     * Would produce the following output:
+     * &lt;p/&gt;
+     * &lt;pre&gt;
+     * {@code
+     * &lt;htmlform&gt;
+     *     You can count like 1, 2, 3
+     * &lt;/htmlform&gt;
+     * }
+     * &lt;/pre&gt;
+     *
+     * @param xml the xml string to process for macros
+     * @return the xml string with after macro substitution
+     * @throws Exception
+     */
+    public String applyMacros(FormEntrySession session, String xml) throws Exception {
+<span class="fc" id="L78">        Document doc = HtmlFormEntryUtil.stringToDocument(xml);</span>
+<span class="fc" id="L79">        Node content = HtmlFormEntryUtil.findChild(doc, &quot;htmlform&quot;);</span>
+<span class="fc" id="L80">        Node macrosNode = HtmlFormEntryUtil.findChild(content, &quot;macros&quot;);</span>
+
+        // if there are no macros defined, we just return the original xml unchanged
+<span class="pc bpc" id="L83" title="1 of 2 branches missed.">        if (macrosNode == null) {</span>
+<span class="fc" id="L84">            return xml;</span>
+        }
+
+        // One way to define macros is simply as the text content of the macros node.  This is left for backwards compatibility
+<span class="nc" id="L88">        Properties macros = new Properties();</span>
+<span class="nc" id="L89">        String macrosText = macrosNode.getTextContent();</span>
+<span class="nc bnc" id="L90" title="All 2 branches missed.">        if (macrosText != null) {</span>
+<span class="nc" id="L91">            macros.load(new ByteArrayInputStream(macrosText.getBytes()));</span>
+        }
+
+        // Another way to define macros is as child tags to the macros node.
+<span class="nc" id="L95">        NodeList children = macrosNode.getChildNodes();</span>
+<span class="nc bnc" id="L96" title="All 2 branches missed.">        for (int i = 0; i &lt; children.getLength(); i++) {</span>
+<span class="nc" id="L97">            Node node = children.item(i);</span>
+<span class="nc bnc" id="L98" title="All 2 branches missed.">            if (&quot;macro&quot;.equals(node.getNodeName())) {</span>
+<span class="nc" id="L99">                String key = HtmlFormEntryUtil.getNodeAttribute(node, &quot;key&quot;, &quot;&quot;);</span>
+<span class="nc bnc" id="L100" title="All 2 branches missed.">                if (StringUtils.isBlank(key)) {</span>
+<span class="nc" id="L101">                    throw new IllegalArgumentException(&quot;Macros must define a 'key' attribute&quot;);</span>
+                }
+<span class="nc" id="L103">                String value = HtmlFormEntryUtil.getNodeAttribute(node, &quot;value&quot;, &quot;&quot;);</span>
+<span class="nc bnc" id="L104" title="All 2 branches missed.">                if (StringUtils.isBlank(value)) {</span>
+<span class="nc" id="L105">                    String expression = HtmlFormEntryUtil.getNodeAttribute(node, &quot;expression&quot;, &quot;&quot;);</span>
+<span class="nc bnc" id="L106" title="All 2 branches missed.">                    if (StringUtils.isBlank(expression)) {</span>
+<span class="nc" id="L107">                        throw new IllegalArgumentException(&quot;Macros must define either a 'value' or 'expression' attribute&quot;);</span>
+                    }
+<span class="nc bnc" id="L109" title="All 2 branches missed.">                    if (session != null) {</span>
+<span class="nc" id="L110">                        value = session.evaluateVelocityExpression(&quot;$!{&quot; + expression + &quot;}&quot;);</span>
+                    }
+                    else {
+<span class="nc" id="L113">                        value = expression;</span>
+                    }
+                }
+<span class="nc" id="L116">                macros.put(key, value);</span>
+            }
+        }
+
+        // now remove the macros node
+<span class="nc" id="L121">        content.removeChild(macrosNode);</span>
+
+        // switch back to String mode from the document so we can use string utilities to substitute
+<span class="nc" id="L124">        xml = HtmlFormEntryUtil.documentToString(doc);</span>
+
+        // substitute any macros we found
+<span class="nc bnc" id="L127" title="All 2 branches missed.">        for (Object temp : macros.keySet()) {</span>
+<span class="nc" id="L128">            String key = (String) temp;</span>
+<span class="nc" id="L129">            String value = macros.getProperty(key, &quot;&quot;);</span>
+<span class="nc" id="L130">            xml = xml.replace(&quot;$&quot; + key, value);</span>
+<span class="nc" id="L131">        }</span>
+
+<span class="nc" id="L133">        return xml;</span>
+    }
+
+    public String processPages(FormEntrySession session, String xml) throws Exception {    
+<span class="fc" id="L137">        Document doc = HtmlFormEntryUtil.stringToDocument(xml);</span>
+<span class="fc" id="L138">        Node content = HtmlFormEntryUtil.findChild(doc, &quot;htmlform&quot;);</span>
+<span class="fc" id="L139">        Node pageNode = HtmlFormEntryUtil.findChild(content, &quot;page&quot;);</span>
+        
+<span class="pc bpc" id="L141" title="1 of 2 branches missed.">        if (pageNode == null) {</span>
+<span class="fc" id="L142">            return xml;</span>
+        }
+
+<span class="nc" id="L145">        NodeList contentnodes = content.getChildNodes();</span>
+<span class="nc bnc" id="L146" title="All 2 branches missed.">        for(int z=0; z &lt; contentnodes.getLength(); z++){</span>
+<span class="nc" id="L147">            Node n = contentnodes.item(z);</span>
+<span class="nc bnc" id="L148" title="All 8 branches missed.">            if(n.getNodeType() == Node.ELEMENT_NODE &amp;&amp; !(n.getNodeName().equalsIgnoreCase(&quot;page&quot;) || n.getNodeName().equalsIgnoreCase(&quot;script&quot;) || n.getNodeName().equalsIgnoreCase(&quot;style&quot;))){  </span>
+<span class="nc" id="L149">                    throw new IllegalArgumentException(&quot;All tags must be inside the page tag if you decide to use it&quot;);             </span>
+<span class="nc bnc" id="L150" title="All 2 branches missed.">            }else if(n.getNodeType() == Node.TEXT_NODE){</span>
+<span class="nc bnc" id="L151" title="All 2 branches missed.">               if(n.getNodeValue().trim().length() &gt; 0){</span>
+<span class="nc" id="L152">                throw new IllegalArgumentException(&quot;All texts must be inside page tag if you decide to use it&quot;);</span>
+               }
+            }
+        }
+
+<span class="nc" id="L157">        org.w3c.dom.Element style = doc.createElement(&quot;style&quot;);</span>
+<span class="nc" id="L158">        String css = &quot;.pageHeader {overflow: hidden;border: 1px solid #ccc;border-bottom: 5px solid #66a3ff;background-color: #f1f1f1;}.pageHeader button {border-radius: 15px 15px 0px 0px;background-color: lightblue;border-top: 5px solid #f1f1f1;float: left;outline: none;cursor: pointer;padding: 14px 16px;transition: 0.3s;}.pageHeader button.active {background-color: #66a3ff;}.pageHeader button:hover {background-color: #ddd;}.content {display: none;overflow: hidden;padding: 10px;}.next {float: right;}.previous {float: left;}&quot;;       </span>
+<span class="nc" id="L159">		style.appendChild(doc.createTextNode(css));</span>
+
+<span class="nc" id="L161">        org.w3c.dom.Element js1 = doc.createElement(&quot;script&quot;);</span>
+<span class="nc" id="L162">        js1.setAttribute(&quot;src&quot;, &quot;/openmrs/moduleResources/htmlformentry/jquery-3.4.1.min.js?v=2.3.0&quot;);</span>
+<span class="nc" id="L163">        js1.setAttribute(&quot;type&quot;, &quot;text/javascript&quot;);</span>
+       
+<span class="nc" id="L165">        org.w3c.dom.Element jsNoConflict = doc.createElement(&quot;script&quot;);</span>
+<span class="nc" id="L166">        String jsBody = &quot;var jQ3 = $.noConflict(true);&quot;;</span>
+<span class="nc" id="L167">        jsNoConflict.setAttribute(&quot;type&quot;, &quot;text/javascript&quot;);</span>
+<span class="nc" id="L168">        jsNoConflict.appendChild(doc.createTextNode(jsBody));</span>
+
+<span class="nc" id="L170">        org.w3c.dom.Element js2 = doc.createElement(&quot;script&quot;);</span>
+<span class="nc" id="L171">        js2.setAttribute(&quot;type&quot;, &quot;text/javascript&quot;);</span>
+<span class="nc" id="L172">		js2.appendChild(doc.createTextNode(&quot;jQ3(document).ready(function (){var visibleContent = 0;function showItems() {jQ3('.listItems:eq(' + visibleContent + ')').addClass('active');jQ3('.content:eq(' + visibleContent + ')').show();};showItems();jQ3('.pageHeader button').click(function (event) {index = jQ3(this).index();jQ3('.listItems').removeClass('active');jQ3('.listItems:eq(' + index + ')').addClass('active');jQ3('.content').hide();visibleContent = index;showItems();});next = function () {jQ3('.listItems').removeClass('active');jQ3('.content').hide();visibleContent = visibleContent + 1;showItems();};previous = function () {jQ3('.listItems').removeClass('active');jQ3('.content').hide();visibleContent = visibleContent - 1;showItems();}});&quot;));</span>
+
+<span class="nc" id="L174">        NodeList pageNodes = doc.getElementsByTagName(&quot;page&quot;);</span>
+
+<span class="nc" id="L176">        org.w3c.dom.Element tabList = doc.createElement(&quot;div&quot;);</span>
+<span class="nc" id="L177">        tabList.setAttribute(&quot;class&quot;, &quot;pageHeader&quot;);</span>
+        org.w3c.dom.Element listItem;
+        org.w3c.dom.Element buttonsDiv;
+        org.w3c.dom.Element nextButton ;
+        org.w3c.dom.Element previousButton ;
+        
+<span class="nc bnc" id="L183" title="All 2 branches missed.">        for (int i=0;i &lt; pageNodes.getLength();i++){</span>
+            //This logic to set default value is implemented already in AbstractTagHandler..is it worth changing this class to implement this instead of taghandler??
+            String titleName;
+<span class="nc" id="L186">            Node item = pageNodes.item(i).getAttributes().getNamedItem(&quot;title&quot;);</span>
+<span class="nc bnc" id="L187" title="All 2 branches missed.">            if (item != null) {</span>
+<span class="nc" id="L188">                titleName = item.getNodeValue();</span>
+            }else { 
+<span class="nc" id="L190">                titleName = &quot;Tab&quot; + (i+1);</span>
+            }
+           
+<span class="nc" id="L193">            listItem = doc.createElement(&quot;button&quot;);</span>
+<span class="nc" id="L194">            listItem.setAttribute(&quot;class&quot;, &quot;listItems&quot;);</span>
+<span class="nc" id="L195">            listItem.appendChild(doc.createTextNode(titleName));</span>
+<span class="nc" id="L196">            tabList.appendChild(listItem);</span>
+<span class="nc" id="L197">            ((org.w3c.dom.Element) pageNodes.item(i)).setAttribute(&quot;class&quot;,&quot;content&quot;);</span>
+<span class="nc" id="L198">            ((org.w3c.dom.Element) pageNodes.item(i)).removeAttribute(&quot;title&quot;);</span>
+
+<span class="nc" id="L200">                buttonsDiv = doc.createElement(&quot;div&quot;);</span>
+<span class="nc" id="L201">                nextButton = doc.createElement(&quot;button&quot;);</span>
+<span class="nc" id="L202">                nextButton.setAttribute(&quot;class&quot;, &quot;next&quot;);</span>
+<span class="nc" id="L203">                nextButton.setAttribute(&quot;onclick&quot;, &quot;next();&quot;);</span>
+<span class="nc" id="L204">                nextButton.appendChild(doc.createTextNode(&quot;Next&quot;));</span>
+<span class="nc" id="L205">                previousButton = doc.createElement(&quot;button&quot;);             </span>
+<span class="nc" id="L206">                previousButton.setAttribute(&quot;class&quot;, &quot;previous&quot;);</span>
+<span class="nc" id="L207">                previousButton.setAttribute(&quot;onclick&quot;, &quot;previous();&quot;);</span>
+<span class="nc" id="L208">                previousButton.appendChild(doc.createTextNode(&quot;Previous&quot;));  </span>
+<span class="nc bnc" id="L209" title="All 2 branches missed.">                if( i &gt; 0)  {</span>
+<span class="nc" id="L210">                    buttonsDiv.appendChild(previousButton);</span>
+                }
+<span class="nc bnc" id="L212" title="All 2 branches missed.">                if(i&lt; pageNodes.getLength()-1){</span>
+<span class="nc" id="L213">                    buttonsDiv.appendChild(nextButton);</span>
+                }           
+
+<span class="nc" id="L216">                ((org.w3c.dom.Element) pageNodes.item(i)).appendChild(buttonsDiv);           </span>
+        }
+
+<span class="nc" id="L219">        pageNodes.item(0).getParentNode().insertBefore(style, pageNodes.item(0));</span>
+<span class="nc" id="L220">        pageNodes.item(0).getParentNode().insertBefore(js1, pageNodes.item(0));</span>
+<span class="nc" id="L221">        pageNodes.item(0).getParentNode().insertBefore(jsNoConflict, pageNodes.item(0));</span>
+<span class="nc" id="L222">        pageNodes.item(0).getParentNode().insertBefore(js2, pageNodes.item(0));</span>
+<span class="nc" id="L223">        pageNodes.item(0).getParentNode().insertBefore(tabList, pageNodes.item(0));</span>
+
+<span class="nc bnc" id="L225" title="All 2 branches missed.">        for (int y=0;y &lt; pageNodes.getLength();y++){</span>
+<span class="nc" id="L226">            doc.renameNode(pageNodes.item(y), null, &quot;div&quot;);</span>
+        }
+
+<span class="nc" id="L229">        xml = HtmlFormEntryUtil.documentToString(doc);</span>
+<span class="nc" id="L230">        return xml;</span>
+    }
+
+    /**
+     * Takes an XML string, finds the {@code &lt;translations&gt;&lt;/translations&gt;} section in it, and
+     * applies those substitutions
+     * &lt;p/&gt;
+     * &lt;pre&gt;
+     * {@code
+     * &lt;htmlform&gt;
+     *     &lt;translations defaultLocale=&quot;en&quot;&gt;
+     *       &lt;code name=&quot;night_sweats&quot;&gt;
+     *         &lt;variant locale=&quot;en&quot; value=&quot;night sweats&quot;/&gt;
+     *         &lt;variant locale=&quot;fr&quot; value=&quot;sueurs nocturnes&quot;/&gt;
+     * 		  &lt;/code&gt;
+     *     &lt;/translations&gt;
+     * &lt;/htmlform&gt;
+     * }
+     * &lt;/pre&gt;
+     *
+     * @param xml the xml string to process for translations
+     * @return the xml string after translation substitutions have been made
+     * @throws Exception
+     */
+    public String applyTranslations(String xml, FormEntryContext context) throws Exception {
+<span class="fc" id="L255">        Document doc = HtmlFormEntryUtil.stringToDocument(xml);</span>
+<span class="fc" id="L256">        Node content = HtmlFormEntryUtil.findChild(doc, &quot;htmlform&quot;);</span>
+<span class="fc" id="L257">        Node transNode = HtmlFormEntryUtil.findChild(content, &quot;translations&quot;);</span>
+
+        // if there are no translations defined, we just return the original xml unchanged
+<span class="pc bpc" id="L260" title="1 of 2 branches missed.">        if (transNode == null) {</span>
+<span class="fc" id="L261">            return xml;</span>
+        }
+
+<span class="nc" id="L264">        String defaultLocaleStr = HtmlFormEntryUtil.getNodeAttribute(transNode, &quot;defaultLocale&quot;, &quot;en&quot;);</span>
+
+<span class="nc" id="L266">        NodeList codeNodeList = transNode.getChildNodes();</span>
+<span class="nc bnc" id="L267" title="All 2 branches missed.">        for (int i = 0; i &lt; codeNodeList.getLength(); i++) {</span>
+<span class="nc" id="L268">            Node codeNode = codeNodeList.item(i);</span>
+<span class="nc bnc" id="L269" title="All 2 branches missed.">            if (codeNode.getNodeName().equalsIgnoreCase(&quot;code&quot;)) {</span>
+<span class="nc" id="L270">                String codeName = HtmlFormEntryUtil.getNodeAttribute(codeNode, &quot;name&quot;, null);</span>
+<span class="nc bnc" id="L271" title="All 2 branches missed.">                if (codeName == null) {</span>
+<span class="nc" id="L272">                    throw new IllegalArgumentException(&quot;All translation elements must contain a valid code name&quot;);</span>
+                }
+<span class="nc" id="L274">                NodeList variantNodeList = codeNode.getChildNodes();</span>
+<span class="nc bnc" id="L275" title="All 2 branches missed.">                for (int j = 0; j &lt; variantNodeList.getLength(); ++j) {</span>
+<span class="nc" id="L276">                    Node variantNode = variantNodeList.item(j);</span>
+<span class="nc bnc" id="L277" title="All 2 branches missed.">                    if (variantNode.getNodeName().equalsIgnoreCase(&quot;variant&quot;)) {</span>
+<span class="nc" id="L278">                        String localeStr = HtmlFormEntryUtil.getNodeAttribute(variantNode, &quot;locale&quot;, defaultLocaleStr);</span>
+<span class="nc" id="L279">                        String valueStr = HtmlFormEntryUtil.getNodeAttribute(variantNode, &quot;value&quot;, null);</span>
+<span class="nc bnc" id="L280" title="All 2 branches missed.">                        if (valueStr == null) {</span>
+<span class="nc" id="L281">                            throw new IllegalArgumentException(&quot;All variants must specify a value&quot;);</span>
+                        }
+<span class="nc" id="L283">                        context.getTranslator().addTranslation(localeStr, codeName, valueStr);</span>
+                    }
+                }
+            }
+        }
+
+        // now remove the macros node
+<span class="nc" id="L290">        content.removeChild(transNode);</span>
+
+        // switch back to String mode from the document so we can use string utilities to substitute
+<span class="nc" id="L293">        xml = HtmlFormEntryUtil.documentToString(doc);</span>
+<span class="nc" id="L294">        return xml;</span>
+    }
+
+   /**
+     * Takes an xml string, searches for 'comments' in the string using RegEx and filters out
+     * the comments from the input string
+     *
+     * @param xml input string
+     * @return the xml string after filtering out comments
+     * @throws Exception
+     * &lt;strong&gt;Should&lt;/strong&gt; return correct xml after filtering out comments
+     */
+    public String stripComments(String xml) {
+<span class="fc" id="L307">        StringBuilder result = new StringBuilder();</span>
+
+<span class="fc" id="L309">        int pos = 0;</span>
+<span class="fc" id="L310">        int start = xml.indexOf(&quot;&lt;!--&quot;, pos);</span>
+<span class="pc bpc" id="L311" title="1 of 2 branches missed.">        while (start &gt;= 0) {</span>
+<span class="nc" id="L312">            result.append(xml, pos, start);</span>
+
+<span class="nc" id="L314">            int end = xml.indexOf(&quot;--&gt;&quot;, start + 4);</span>
+<span class="nc bnc" id="L315" title="All 2 branches missed.">            if (end &lt; 0) {</span>
+                // malformed comment: stop processing, treat rest as already appended below
+<span class="nc" id="L317">                pos = xml.length();</span>
+<span class="nc" id="L318">                break;</span>
+            }
+
+<span class="nc" id="L321">            pos = end + 3;</span>
+<span class="nc" id="L322">            start = xml.indexOf(&quot;&lt;!--&quot;, pos);</span>
+<span class="nc" id="L323">        }</span>
+
+<span class="fc" id="L325">        result.append(xml.substring(pos));</span>
+
+<span class="fc" id="L327">        return result.toString();</span>
+    }
+
+    /**
+     * Takes an xml string, searches for special characters in the string and replaces them
+     * with the appropriate ascii value https://issues.openmrs.org/browse/HTML-325
+     *
+     * @param xml input string
+     * @return the xml after replacing special characters with their ascii code
+     * @throws Exception
+     * &lt;strong&gt;Should&lt;/strong&gt; return correct xml after replacing special characters with their ascii code
+     */
+    public String substituteCharacterCodesWithAsciiCodes(String xml) throws Exception {
+<span class="fc" id="L340">        HashMap&lt;String, String&gt; encodings = new HashMap&lt;&gt;();</span>
+<span class="fc" id="L341">        encodings.put(&quot;&amp;nbsp;&quot;, &quot;&amp;#160;&quot;);</span>
+<span class="fc bfc" id="L342" title="All 2 branches covered.">        for (String key : encodings.keySet()) {</span>
+<span class="fc" id="L343">            Pattern pattern = Pattern.compile(key);</span>
+<span class="fc" id="L344">            Matcher matcher = pattern.matcher(xml);</span>
+<span class="fc" id="L345">            xml = matcher.replaceAll(encodings.get(key));</span>
+<span class="fc" id="L346">        }</span>
+<span class="fc" id="L347">        return xml;</span>
+    }
+
+    /**
+     * Replaces &amp;&amp;, &lt; and &gt; within form with their encoded values within velocity and logic expressions
+     * (provides backwards compatibility after refactoring includeIf and excludeIf)
+     *
+     * @param xml
+     * @return
+     * @throws Exception
+     */
+    public String convertSpecialCharactersWithinLogicAndVelocityTests(String xml) throws Exception {
+
+<span class="fc" id="L360">        Pattern lessThan = Pattern.compile(&quot;&lt;&quot;);</span>
+<span class="fc" id="L361">        Pattern greaterThan = Pattern.compile(&quot;&gt;&quot;);</span>
+<span class="fc" id="L362">        Pattern doubleAmpersand = Pattern.compile(&quot;&amp;&amp;&quot;);</span>
+
+<span class="fc" id="L364">        Matcher velocityMatcher = Pattern.compile(&quot;velocityTest=\&quot;[^\&quot;]*\&quot;&quot;).matcher(xml);</span>
+<span class="fc" id="L365">        StringBuffer afterVelocityChanges = new StringBuffer();</span>
+
+<span class="pc bpc" id="L367" title="1 of 2 branches missed.">        while (velocityMatcher.find()) {</span>
+<span class="nc" id="L368">            String str = velocityMatcher.group();</span>
+<span class="nc" id="L369">            str = doubleAmpersand.matcher(str).replaceAll(&quot;&amp;amp;&amp;amp;&quot;);</span>
+<span class="nc" id="L370">            str = lessThan.matcher(str).replaceAll(&quot;&amp;lt;&quot;);</span>
+<span class="nc" id="L371">            str = greaterThan.matcher(str).replaceAll(&quot;&amp;gt;&quot;);</span>
+<span class="nc" id="L372">            velocityMatcher.appendReplacement(afterVelocityChanges, Matcher.quoteReplacement(str));</span>
+<span class="nc" id="L373">        }</span>
+<span class="fc" id="L374">        velocityMatcher.appendTail(afterVelocityChanges);</span>
+
+<span class="fc" id="L376">        Matcher logicMatcher = Pattern.compile(&quot;logicTest=\&quot;[^\&quot;]*\&quot;&quot;).matcher(afterVelocityChanges);</span>
+<span class="fc" id="L377">        StringBuffer afterLogicChanges = new StringBuffer();</span>
+
+<span class="pc bpc" id="L379" title="1 of 2 branches missed.">        while (logicMatcher.find()) {</span>
+<span class="nc" id="L380">            String str = logicMatcher.group();</span>
+<span class="nc" id="L381">            str = doubleAmpersand.matcher(str).replaceAll(&quot;&amp;amp;&amp;amp;&quot;);</span>
+<span class="nc" id="L382">            str = lessThan.matcher(str).replaceAll(&quot;&amp;lt;&quot;);</span>
+<span class="nc" id="L383">            str = greaterThan.matcher(str).replaceAll(&quot;&amp;gt;&quot;);</span>
+<span class="nc" id="L384">            logicMatcher.appendReplacement(afterLogicChanges, Matcher.quoteReplacement(str));</span>
+<span class="nc" id="L385">        }</span>
+
+<span class="fc" id="L387">        logicMatcher.appendTail(afterLogicChanges);</span>
+<span class="fc" id="L388">        return afterLogicChanges.toString();</span>
+    }
+
+
+    /**
+     * Calls the two underlying methods for handling the &quot;&lt;repeat&gt;&quot; tag
+     *
+     * @param xml
+     * @return
+     * @throws Exception
+     */
+    public String applyRepeats(String xml) throws Exception {
+<span class="fc" id="L400">        xml = applyRepeatTemplateTags(xml);</span>
+<span class="fc" id="L401">        xml = applyRepeatWithTags(xml);</span>
+<span class="fc" id="L402">        return xml;</span>
+    }
+
+    /**
+     * Handles the original version of the &lt;repeat&gt;:
+     *
+     * Takes an XML string, finds each {@code &lt;repeat&gt;&lt;/repeat&gt;} section in it, and applies those
+     * substitutions
+     * {@code
+     * &lt;htmlform&gt;
+     *   &lt;repeat&gt;
+     *     &lt;template&gt;
+     *       &lt;obsgroup groupingConceptId=&quot;1608&quot;&gt;
+     *         &lt;tr&gt;
+     *           &lt;td&gt;&lt;obs conceptId=&quot;1611&quot; answerConceptId=&quot;{conceptId}&quot; answerLabel=&quot;{answerLabel}&quot; /&gt;&lt;/td&gt;
+     *           &lt;td&gt;&lt;obs conceptId=&quot;1499&quot;/&gt;&lt;/td&gt;
+     *           &lt;td&gt;&lt;obs conceptId=&quot;1500&quot;/&gt;&lt;/td&gt;
+     *           &lt;td&gt;&lt;obs conceptId=&quot;1568&quot; answerConceptIds=&quot;1746,843,1743&quot; answerLabels=&quot;gueri,echec,abandonne&quot;/&gt;&lt;/td&gt;
+     *         &lt;/tr&gt;
+     *       &lt;/obsgroup&gt;
+     *     &lt;/template&gt;
+     *     &lt;render conceptId=&quot;2125&quot; answerLabel=&quot;Traitement initial: 2 HRZE/4 HR&quot;/&gt;
+     *     &lt;render conceptId=&quot;2125&quot; answerLabel=&quot;Traitement initial: 2 HRE/6HE (MSPP)&quot;/&gt;
+     *     &lt;render conceptId=&quot;2126&quot; answerLabel=&quot;Retraitement: 2 SHREZ + 1 HREX + 5 HRE&quot;/&gt;
+     *     &lt;render conceptId=&quot;2124&quot; answerLabel=&quot;Traitement des enfants de &amp;lt; ans: 2 HRZ/4 HR&quot;/&gt;
+     *   &lt;/repeat&gt;
+     * &lt;/htmlform&gt;
+     * }
+     **/
+    private String applyRepeatTemplateTags(String xml) throws Exception {
+<span class="fc" id="L432">        Document doc = HtmlFormEntryUtil.stringToDocument(xml);</span>
+<span class="fc" id="L433">        Node content = HtmlFormEntryUtil.findChild(doc, &quot;htmlform&quot;);</span>
+
+        // We are doing this as follows since I can't seem to get the XML node cloning to work right.
+        // We can refactor later as needed if we can get it to work properly, or replace the xml library
+        // First we need to parse the document to get the node attributes for repeating elements
+<span class="fc" id="L438">        List&lt;List&lt;Map&lt;String, String&gt;&gt;&gt; renderMaps = new ArrayList&lt;&gt;();</span>
+<span class="fc" id="L439">        loadRenderElementsForEachRepeatElement(content, renderMaps);</span>
+
+        // Now we are just going to use String replacements to explode the repeat tags properly
+<span class="fc" id="L442">        Iterator&lt;List&lt;Map&lt;String, String&gt;&gt;&gt; renderMapIter = renderMaps.iterator();</span>
+<span class="fc" id="L443">        int idLabelpairIndex = 0;</span>
+<span class="pc bpc" id="L444" title="1 of 2 branches missed.">        while (xml.contains(&quot;&lt;repeat&gt;&quot;)) {</span>
+<span class="nc" id="L445">            int startIndex = xml.indexOf(&quot;&lt;repeat&gt;&quot;);</span>
+<span class="nc" id="L446">            int endIndex = xml.indexOf(&quot;&lt;/repeat&gt;&quot;, startIndex) + 9;</span>
+<span class="nc" id="L447">            String xmlToReplace = xml.substring(startIndex, endIndex);</span>
+
+<span class="nc" id="L449">            String template = xmlToReplace.substring(xmlToReplace.indexOf(&quot;&lt;template&gt;&quot;) + 10,</span>
+<span class="nc" id="L450">                    xmlToReplace.indexOf(&quot;&lt;/template&gt;&quot;));</span>
+<span class="nc" id="L451">            StringBuilder replacement = new StringBuilder();</span>
+<span class="nc bnc" id="L452" title="All 2 branches missed.">            for (Map&lt;String, String&gt; replacements : renderMapIter.next()) {</span>
+<span class="nc" id="L453">                String curr = template;</span>
+<span class="nc bnc" id="L454" title="All 2 branches missed.">                for (String key : replacements.keySet()) {</span>
+<span class="nc" id="L455">                    curr = curr.replace(&quot;{&quot; + key + &quot;}&quot;, replacements.get(key));</span>
+<span class="nc" id="L456">                }</span>
+<span class="nc" id="L457">                replacement.append(curr);</span>
+<span class="nc" id="L458">            }</span>
+<span class="nc" id="L459">            xml = xml.substring(0, startIndex) + replacement + xml.substring(endIndex);</span>
+
+<span class="nc" id="L461">        }</span>
+
+<span class="fc" id="L463">        return xml;</span>
+    }
+
+    private void loadRenderElementsForEachRepeatElement(Node node, List&lt;List&lt;Map&lt;String, String&gt;&gt;&gt; renderMaps)
+            throws Exception {
+
+<span class="fc" id="L469">        NodeList list = node.getChildNodes();</span>
+<span class="fc bfc" id="L470" title="All 2 branches covered.">        for (int i = 0; i &lt; list.getLength(); i++) {</span>
+<span class="fc" id="L471">            Node n = list.item(i);</span>
+<span class="pc bpc" id="L472" title="3 of 4 branches missed.">            if (n.getNodeName().equalsIgnoreCase(&quot;repeat&quot;) &amp;&amp; !n.hasAttributes()) {</span>
+<span class="nc" id="L473">                Node templateNode = HtmlFormEntryUtil.findChild(n, &quot;template&quot;);</span>
+<span class="nc bnc" id="L474" title="All 2 branches missed.">                if (templateNode == null) {</span>
+<span class="nc" id="L475">                    throw new IllegalArgumentException(&quot;All &lt;repeat&gt; elements must contain a child &lt;template&gt; element.&quot;);</span>
+                }
+<span class="nc" id="L477">                List&lt;Map&lt;String, String&gt;&gt; l = new ArrayList&lt;&gt;();</span>
+<span class="nc" id="L478">                NodeList repeatNodes = n.getChildNodes();</span>
+<span class="nc bnc" id="L479" title="All 2 branches missed.">                for (int j = 0; j &lt; repeatNodes.getLength(); j++) {</span>
+<span class="nc" id="L480">                    Node renderNode = repeatNodes.item(j);</span>
+<span class="nc bnc" id="L481" title="All 2 branches missed.">                    if (renderNode.getNodeName().equalsIgnoreCase(&quot;render&quot;)) {</span>
+<span class="nc" id="L482">                        l.add(HtmlFormEntryUtil.getNodeAttributes(renderNode));</span>
+                    }
+                }
+<span class="nc" id="L485">                renderMaps.add(l);</span>
+<span class="nc" id="L486">            } else {</span>
+<span class="fc" id="L487">                loadRenderElementsForEachRepeatElement(n, renderMaps);</span>
+            }
+        }
+<span class="fc" id="L490">    }</span>
+
+    /**
+     * Handle the new, less-verbose version of the &lt;repeat&gt; tag:
+     *
+    * &lt;/pre&gt;
+    * &lt;p/&gt;
+    * Takes an XML string, finds each {@code &lt;repeat with=&quot;&quot;&gt;&lt;/repeat&gt;} sections in it, and applies those
+    * substitutions
+    * &lt;pre&gt;
+    * { @code
+    * &lt;repeat with=&quot;['664','No Complaints'], ['832','Weight Loss']&quot;&gt;
+    *    &lt;obs conceptId=&quot;1069&quot; answerConceptId=&quot;{0}&quot; answerLabel=&quot;{1}&quot; style=&quot;checkbox&quot; /&gt;&lt;br/&gt;
+    * &lt;/repeat&gt;
+    * }
+    * this will be replaced with,
+    * { @code
+    * &lt;obs conceptId=&quot;1069&quot; answerConceptId=&quot;644&quot; answerLabel=&quot;No Complaints&quot; style=&quot;checkbox&quot; /&gt;&lt;br/&gt;
+    * &lt;obs conceptId=&quot;1069&quot; answerConceptId=&quot;832&quot; answerLabel=&quot;Weight Loss&quot; style=&quot;checkbox&quot; /&gt;&lt;br/&gt;
+    * }
+    *
+    * &lt;/pre&gt;
+    *
+    * @param xml the xml string to process for repeat sections
+    * @return the xml string after repeat substitutions have been made
+    * @throws Exception
+    */
+    private String applyRepeatWithTags(String xml) throws Exception {
+
+<span class="pc bpc" id="L519" title="1 of 2 branches missed.">        while (xml.contains(&quot;&lt;repeat with=&quot;)) {</span>
+
+<span class="nc" id="L521">            int startIndex = xml.indexOf(&quot;&lt;repeat with=&quot;);</span>
+<span class="nc" id="L522">            int endIndex = xml.indexOf(&quot;&lt;/repeat&gt;&quot;, startIndex) + 9;</span>
+
+<span class="nc" id="L524">            String xmlToReplace = xml.substring(startIndex, endIndex);</span>
+
+<span class="nc" id="L526">            int substitutionSetsStartIndex = xmlToReplace.indexOf(&quot;with=&quot;) + 6;</span>
+<span class="nc" id="L527">            int substitutionSetsEndIndex =  xmlToReplace.indexOf(&quot;]\&quot;&gt;&quot;) + 1;</span>
+<span class="nc" id="L528">            List&lt;List&lt;String&gt;&gt; substitutionSets = getSubstitutionSets(xmlToReplace.substring(substitutionSetsStartIndex, substitutionSetsEndIndex));</span>
+
+<span class="nc" id="L530">            int templateStartIndex = xmlToReplace.indexOf(&quot;]\&quot;&gt;&quot;) + 3;</span>
+<span class="nc" id="L531">            int templateEndIndex = xmlToReplace.indexOf(&quot;&lt;/repeat&gt;&quot;);</span>
+<span class="nc" id="L532">            String template = xmlToReplace.substring(templateStartIndex, templateEndIndex);</span>
+
+<span class="nc" id="L534">            StringBuilder sb = new StringBuilder();</span>
+
+<span class="nc" id="L536">            String current = template;</span>
+<span class="nc bnc" id="L537" title="All 2 branches missed.">            for (List&lt;String&gt; substitutionSet : substitutionSets) {</span>
+
+<span class="nc" id="L539">                int i = 0;</span>
+
+<span class="nc bnc" id="L541" title="All 2 branches missed.">                for (String substitution : substitutionSet) {</span>
+<span class="nc" id="L542">                    current = current.replace(&quot;{&quot; + i + &quot;}&quot;, substitution);</span>
+<span class="nc" id="L543">                    i++;</span>
+<span class="nc" id="L544">                }</span>
+
+<span class="nc" id="L546">                sb.append(current);</span>
+<span class="nc" id="L547">                current = template;</span>
+<span class="nc" id="L548">            }</span>
+
+<span class="nc" id="L550">            xml = xml.substring(0, startIndex) + sb + xml.substring(endIndex);</span>
+<span class="nc" id="L551">         }</span>
+
+<span class="fc" id="L553">        return xml;</span>
+    }
+
+    /**
+     * Gets a string like [664,'No Complaints'], [832,'Weight Loss'] and splits it into separate string entries
+     * to be used in the repeated html elements
+     * @param val = the string to process and get the entires
+     * @return List of entries
+     */
+    private List&lt;List&lt;String&gt;&gt; getSubstitutionSets(String val) {
+
+<span class="nc" id="L564">        List&lt;List&lt;String&gt;&gt; substitutionSet = new ArrayList&lt;&gt;();</span>
+
+<span class="nc" id="L566">        val = val.trim();</span>
+
+        // strip the leading '[' and trailing ']', if present
+<span class="nc bnc" id="L569" title="All 2 branches missed.">        if (val.startsWith(&quot;[&quot;)) {</span>
+<span class="nc" id="L570">            val = val.substring(1);</span>
+        }
+<span class="nc bnc" id="L572" title="All 2 branches missed.">        if (val.endsWith(&quot;]&quot;)) {</span>
+<span class="nc" id="L573">            val = val.substring(0, val.length() - 1);</span>
+        }
+
+        // split on &quot;],[&quot; (tolerating whitespace immediately around the comma)
+<span class="nc bnc" id="L577" title="All 2 branches missed.">        for (String subVal : val.split(&quot;\\]\\s*,\\s*\\[&quot;)) {</span>
+
+<span class="nc" id="L579">            List&lt;String&gt; set = new ArrayList&lt;&gt;();</span>
+
+<span class="nc" id="L581">            subVal = subVal.trim();</span>
+
+            // strip the leading and trailing single quote, if present
+<span class="nc bnc" id="L584" title="All 2 branches missed.">            if (subVal.startsWith(&quot;'&quot;)) {</span>
+<span class="nc" id="L585">                subVal = subVal.substring(1);</span>
+            }
+<span class="nc bnc" id="L587" title="All 2 branches missed.">            if (subVal.endsWith(&quot;'&quot;)) {</span>
+<span class="nc" id="L588">                subVal = subVal.substring(0, subVal.length() - 1);</span>
+            }
+
+            // split on &quot;','&quot; (tolerating whitespace immediately around the comma)
+<span class="nc bnc" id="L592" title="All 2 branches missed.">            for (String str : subVal.split(&quot;'\\s*,\\s*'&quot;)) {</span>
+<span class="nc" id="L593">                set.add(str);</span>
+            }
+
+<span class="nc" id="L596">            substitutionSet.add(set);</span>
+        }
+
+<span class="nc" id="L599">        return substitutionSet;</span>
+    }
+
+    public String applyUnmatchedTags(FormEntrySession session, String xml) throws Exception {
+<span class="nc" id="L603">        List&lt;ObsGroupEntity&gt; obsGroupEntities = session.getContext().getUnmatchedObsGroupEntities();</span>
+
+<span class="nc bnc" id="L605" title="All 2 branches missed.">        for (ObsGroupEntity obsGroupEntity : obsGroupEntities) {</span>
+<span class="nc" id="L606">            StringWriter out = new StringWriter();</span>
+<span class="nc" id="L607">            applyTagsHelper(session, new PrintWriter(out), null, obsGroupEntity.getNode(), null);</span>
+<span class="nc" id="L608">            xml = xml.replaceAll(&quot;&lt;unmatched id=\&quot;&quot; + obsGroupEntity.getId() + &quot;\&quot; /&gt;&quot;, Matcher.quoteReplacement(out.toString()));</span>
+<span class="nc" id="L609">        }</span>
+
+<span class="nc" id="L611">        return xml;</span>
+    }
+
+    /**
+     * Applies all the HTML Form Entry tags in a specific XML file (excluding
+     * {@code &lt;macro&gt;, &lt;translations&gt;, and &lt;repeat&gt;)}, by calling the appropriate tag handler (see
+     * {@see org.openmrs.module.htmlformentry.handler}) for each tag
+     * &lt;p/&gt;
+     *
+     * @param session the current form entry session context
+     * @param xml     the xml string to process
+     * @return the xml string (which should now be html) after tag processing
+     * @throws Exception
+     */
+    public String applyTags(FormEntrySession session, String xml) throws Exception {
+<span class="fc" id="L626">        Document doc = HtmlFormEntryUtil.stringToDocument(xml);</span>
+<span class="fc" id="L627">        Node content = HtmlFormEntryUtil.findChild(doc, &quot;htmlform&quot;);</span>
+<span class="fc" id="L628">        StringWriter out = new StringWriter();</span>
+<span class="fc" id="L629">        applyTagsHelper(session, new PrintWriter(out), null, content, null);</span>
+<span class="fc" id="L630">        return out.toString();</span>
+    }
+
+    private void applyTagsHelper(FormEntrySession session, PrintWriter out, Node parent, Node node,
+                              Map&lt;String, TagHandler&gt; tagHandlerCache) {
+<span class="fc bfc" id="L635" title="All 2 branches covered.">        if (tagHandlerCache == null) {</span>
+<span class="fc" id="L636">            tagHandlerCache = new HashMap&lt;&gt;();</span>
+        }
+
+<span class="fc" id="L639">        TagHandler handler = null;</span>
+        // Find the handler for this node
+<span class="fc" id="L641">        String name = node.getNodeName();</span>
+<span class="pc bpc" id="L642" title="1 of 2 branches missed.">        if (name != null) {</span>
+<span class="fc bfc" id="L643" title="All 2 branches covered.">            if (tagHandlerCache.containsKey(name)) {</span>
+                // we've looked this up before (though it could be null)
+<span class="fc" id="L645">                handler = tagHandlerCache.get(name);</span>
+            } else {
+<span class="fc" id="L647">                handler = HtmlFormEntryUtil.getService().getHandlerByTagName(name);</span>
+<span class="fc" id="L648">                tagHandlerCache.put(name, handler);</span>
+            }
+        }
+
+<span class="fc bfc" id="L652" title="All 2 branches covered.">        if (handler == null) {</span>
+<span class="fc" id="L653">            handler = this; // do default actions</span>
+        }
+
+        try {
+<span class="fc" id="L657">            boolean handleContents = handler.doStartTag(session, out, parent, node);</span>
+
+            // Unless the handler told us to skip them, then iterate over any children
+<span class="fc bfc" id="L660" title="All 2 branches covered.">            if (handleContents) {</span>
+<span class="pc bpc" id="L661" title="1 of 2 branches missed.">                if (handler instanceof IteratingTagHandler) {</span>
+                    // recurse as many times as the tag wants
+<span class="nc" id="L663">                    IteratingTagHandler iteratingHandler = (IteratingTagHandler) handler;</span>
+<span class="nc bnc" id="L664" title="All 2 branches missed.">                    while (iteratingHandler.shouldRunAgain(session, out, parent, node)) {</span>
+<span class="nc" id="L665">                        NodeList list = node.getChildNodes();</span>
+<span class="nc bnc" id="L666" title="All 2 branches missed.">                        for (int i = 0; i &lt; list.getLength(); ++i) {</span>
+<span class="nc" id="L667">                            applyTagsHelper(session, out, node, list.item(i), tagHandlerCache);</span>
+                        }
+<span class="nc" id="L669">                    }</span>
+<span class="nc" id="L670">                } else { // recurse to contents once</span>
+<span class="fc" id="L671">                    NodeList list = node.getChildNodes();</span>
+<span class="fc bfc" id="L672" title="All 2 branches covered.">                    for (int i = 0; i &lt; list.getLength(); ++i) {</span>
+<span class="fc" id="L673">                        applyTagsHelper(session, out, node, list.item(i), tagHandlerCache);</span>
+                    }
+                }
+            }
+
+<span class="fc" id="L678">            handler.doEndTag(session, out, parent, node);</span>
+<span class="nc" id="L679">        } catch (BadFormDesignException e) {</span>
+<span class="nc" id="L680">            out.print(&quot;&lt;div class=\&quot;error\&quot;&gt;&quot; + handler + &quot; reported an error in the design of the form. Consult your administrator.&lt;br/&gt;&lt;pre&gt;&quot;);</span>
+<span class="nc" id="L681">            e.printStackTrace(out);</span>
+<span class="nc" id="L682">            out.print(&quot;&lt;/pre&gt;&lt;/div&gt;&quot;);</span>
+<span class="fc" id="L683">        }</span>
+<span class="fc" id="L684">    }</span>
+
+    /**
+     * Provides default getAttributeDescriptors handling (returns null)
+     */
+    @Override
+    public List&lt;AttributeDescriptor&gt; getAttributeDescriptors() {
+<span class="nc" id="L691">        return null;</span>
+    }
+
+    /**
+     * Provides default start tag handling for tags with no custom handler
+     * &lt;p/&gt;
+     * Default behavior is simply to leave the tag unprocessed. That is, any basic HTML tags are
+     * left as is.
+     *
+     * &lt;strong&gt;Should&lt;/strong&gt; close br tags
+     */
+    @Override
+    public boolean doStartTag(FormEntrySession session, PrintWriter out, Node parent, Node node) {
+<span class="fc bfc" id="L704" title="All 2 branches covered.">        if (node.getNodeType() == Node.TEXT_NODE) {</span>
+<span class="fc" id="L705">            out.print(node.getNodeValue());</span>
+<span class="pc bpc" id="L706" title="1 of 2 branches missed.">        } else if (node.getNodeType() == Node.COMMENT_NODE) {</span>
+            // do nothing
+        } else {
+<span class="fc" id="L709">            out.print(&quot;&lt;&quot;);</span>
+<span class="fc" id="L710">            out.print(node.getNodeName());</span>
+<span class="fc" id="L711">            NamedNodeMap attrs = node.getAttributes();</span>
+<span class="pc bpc" id="L712" title="1 of 2 branches missed.">            if (attrs != null) {</span>
+<span class="pc bpc" id="L713" title="1 of 2 branches missed.">                for (int i = 0; i &lt; attrs.getLength(); ++i) {</span>
+<span class="nc" id="L714">                    Node attr = attrs.item(i);</span>
+<span class="nc" id="L715">                    out.print(&quot; &quot;);</span>
+<span class="nc" id="L716">                    out.print(attr.getNodeName());</span>
+<span class="nc" id="L717">                    out.print(&quot;=\&quot;&quot;);</span>
+<span class="nc" id="L718">                    out.print(attr.getNodeValue());</span>
+<span class="nc" id="L719">                    out.print(&quot;\&quot;&quot;);</span>
+                }
+            }
+            // added so that a single &lt;br/&gt; tag isn't rendered as two line breaks: see HTML-342
+<span class="pc bpc" id="L723" title="1 of 2 branches missed.">            if (&quot;br&quot;.equalsIgnoreCase(node.getNodeName())) {</span>
+<span class="nc" id="L724">                out.print(&quot;/&gt;&quot;);</span>
+            } else {
+<span class="fc" id="L726">                out.print(&quot;&gt;&quot;);</span>
+            }
+        }
+<span class="fc" id="L729">        return true;</span>
+    }
+
+    /**
+     * Provides default end tag handling for tags with no custom handler
+     * &lt;p/&gt;
+     * Default behavior is simply to leave the tag unprocessed. That is, any basic HTML tags are
+     * left as is.
+     *
+     * &lt;strong&gt;Should&lt;/strong&gt; skip br tags
+     */
+    @Override
+    public void doEndTag(FormEntrySession session, PrintWriter out, Node parent, Node node) {
+<span class="fc bfc" id="L742" title="All 2 branches covered.">        if (node.getNodeType() == Node.TEXT_NODE) {</span>
+            // do nothing
+<span class="pc bpc" id="L744" title="1 of 2 branches missed.">        } else if (node.getNodeType() == Node.COMMENT_NODE) {</span>
+            // do nothing
+        } else {
+            // added so that a single &lt;br/&gt; tag isn't rendered as two line breaks: see HTML-342
+<span class="pc bpc" id="L748" title="1 of 2 branches missed.">            if (!&quot;br&quot;.equalsIgnoreCase(node.getNodeName())) {</span>
+<span class="fc" id="L749">                out.print(&quot;&lt;/&quot; + node.getNodeName() + &quot;&gt;&quot;);</span>
+            }
+        }
+<span class="fc" id="L752">    }</span>
+
+
+    /**
+     * Removes htmlform tag and wraps the form in the div tag.
+     *
+     * @param xml
+     * @return xml
+     * &lt;strong&gt;Should&lt;/strong&gt; remove htmlform tag and wrap form in div
+     */
+    public String wrapInDiv(String xml) {
+<span class="fc" id="L763">        xml = xml.trim();</span>
+<span class="fc" id="L764">        xml = xml.replaceAll(&quot;(?s)&lt;htmlform&gt;(.*)&lt;/htmlform&gt;&quot;, &quot;&lt;div class=\&quot;htmlform\&quot;&gt;$1&lt;/div&gt;&quot;);</span>
+<span class="fc" id="L765">        return xml;</span>
+    }
+
+
+    /**
+     * Takes an XML string, finds the {@code &lt;restrictByRole&gt;&lt;/restrictByRole&gt;} section in it, verifies whether
+     * the corresponding 'role' is included/excluded to view the content within
+     * For example the following input:
+     * &lt;p/&gt;
+     * &lt;pre&gt;
+     * {@code
+     * &lt;htmlform&gt;
+     * &lt;restrictByRole include=&quot;Provider&quot;&gt;
+     * &lt;obs conceptId=&quot;123&quot; labelText=&quot;Education&quot;/&gt;
+     * &lt;/includeIf&gt;
+     * &lt;/htmlform&gt;
+     * }
+     * &lt;/pre&gt;
+     * &lt;p/&gt;
+     * Would include the following only if the user is not assigned with &quot;Provider&quot; role
+     * &lt;p/&gt;
+     * &lt;pre&gt;
+     * {@code
+     * &lt;htmlform&gt;
+     * &lt;obs conceptId=&quot;123&quot; labelText=&quot;Education&quot;/&gt;
+     * &lt;/htmlform&gt;
+     * }
+     * &lt;/pre&gt;
+     *
+     * @param xml the xml string to process for restrictByRole tag
+     * @return the xml after applied restrictByRole tag
+     * @throws BadFormDesignException
+     * &lt;strong&gt;Should&lt;/strong&gt; return correct xml after apply restrictByRole tag
+     */
+    public String applyRoleRestrictions(String xml) throws BadFormDesignException {
+
+<span class="fc" id="L801">        StringBuilder sb = new StringBuilder(xml);</span>
+
+<span class="pc bpc" id="L803" title="1 of 2 branches missed.">        while (xml.contains(&quot;&lt;restrictByRole&quot;)) {</span>
+<span class="nc" id="L804">            int startIndex = sb.indexOf(&quot;&lt;restrictByRole&quot;) + 15;</span>
+<span class="nc" id="L805">            int endIndex = sb.substring(startIndex).indexOf(&quot;&gt;&quot;);</span>
+<span class="nc" id="L806">            String includeStr = sb.substring(startIndex, startIndex + endIndex + 1);</span>
+
+<span class="nc" id="L808">            boolean result = HtmlFormEntryGenerator.processRoleRestrictionLogic(includeStr);</span>
+<span class="nc" id="L809">            HtmlFormEntryGenerator.removeFirstTagOccurrence(sb, &quot;restrictByRole&quot;, result);</span>
+
+<span class="nc" id="L811">            xml = sb.toString();</span>
+<span class="nc" id="L812">        }</span>
+<span class="fc" id="L813">        return xml;</span>
+    }
+
+    /**
+     * given a test string, parse the string to return a boolean value for comparison of user role
+     * into a specified role
+     *
+     * @param includeStr for ex. = &quot;include= &quot;Provider&quot;&gt;&quot; or ex. = &quot;exclude= &quot;Provider&quot;&gt;&quot;
+     * @return a boolean value if this user has the &quot;Provider&quot; role assigned
+     * @throws BadFormDesignException
+     * &lt;strong&gt;Should&lt;/strong&gt; return a correct boolean value for user role test string
+     */
+    protected static boolean processRoleRestrictionLogic(String includeStr) throws BadFormDesignException {
+
+<span class="nc" id="L827">        int includeOrExcludeTestIndex = includeStr.indexOf(&quot;include&quot;);</span>
+<span class="nc" id="L828">        String testStr = &quot;&quot;;</span>
+<span class="nc" id="L829">        String[] testRoles = null;</span>
+<span class="nc" id="L830">        boolean includeresult = false;</span>
+<span class="nc" id="L831">        boolean excluderesult = true;</span>
+
+<span class="nc bnc" id="L833" title="All 2 branches missed.">        if (includeOrExcludeTestIndex &gt;= 0) { // contains list of roles in 'include'</span>
+<span class="nc" id="L834">            testStr = HtmlFormEntryUtil.getTestStr(includeStr.substring(includeOrExcludeTestIndex));</span>
+<span class="nc" id="L835">            testRoles = testStr.split(&quot;,&quot;);</span>
+<span class="nc" id="L836">            User currentUser = Context.getUserContext().getAuthenticatedUser();</span>
+            try {
+<span class="nc" id="L838">                Set&lt;Role&gt; assignedRoles = currentUser.getAllRoles();</span>
+<span class="nc bnc" id="L839" title="All 2 branches missed.">                for (Role role : assignedRoles) {</span>
+<span class="nc bnc" id="L840" title="All 2 branches missed.">                    for (String testRole : testRoles) {</span>
+<span class="nc bnc" id="L841" title="All 2 branches missed.">                        if (role.getRole().equals(testRole)) {</span>
+<span class="nc" id="L842">                            includeresult = true;</span>
+                        }
+                    }
+<span class="nc" id="L845">                }</span>
+<span class="nc" id="L846">            } catch (Exception ex) {</span>
+<span class="nc" id="L847">                throw new BadFormDesignException(&quot;The &quot; + testStr + &quot;contains an invalid user Role&quot;);</span>
+<span class="nc" id="L848">            }</span>
+
+<span class="nc" id="L850">            return includeresult;</span>
+        } else {
+<span class="nc" id="L852">            includeOrExcludeTestIndex = includeStr.indexOf(&quot;exclude&quot;);</span>
+<span class="nc bnc" id="L853" title="All 2 branches missed.">            if (includeOrExcludeTestIndex != -1) { // contains list of roles in 'exclude'</span>
+<span class="nc" id="L854">                testStr = HtmlFormEntryUtil.getTestStr(includeStr.substring(includeOrExcludeTestIndex)) ;</span>
+<span class="nc" id="L855">                testRoles = testStr.split(&quot;,&quot;);</span>
+<span class="nc" id="L856">                User currentUser = Context.getUserContext().getAuthenticatedUser();</span>
+                try {
+<span class="nc" id="L858">                    Set&lt;Role&gt; assignedRoles = currentUser.getAllRoles();</span>
+<span class="nc bnc" id="L859" title="All 2 branches missed.">                    for (Role role : assignedRoles) {</span>
+<span class="nc bnc" id="L860" title="All 2 branches missed.">                        for (String testRole : testRoles) {</span>
+<span class="nc bnc" id="L861" title="All 2 branches missed.">                            if (role.getRole().equals(testRole)) {</span>
+<span class="nc" id="L862">                                excluderesult = false;</span>
+                            }
+                        }
+<span class="nc" id="L865">                    }</span>
+<span class="nc" id="L866">                } catch (Exception ex) {</span>
+<span class="nc" id="L867">                    throw new BadFormDesignException(&quot;The &quot; + testStr + &quot;contains an invalid user Role&quot;);</span>
+<span class="nc" id="L868">                }</span>
+            }
+<span class="nc" id="L870">            return excluderesult;</span>
+        }
+    }
+
+    public static StringBuilder removeFirstTagOccurrence(StringBuilder sb, String tagName, boolean keepcontent) {
+<span class="nc" id="L875">        int startIndex = 0;</span>
+<span class="nc" id="L876">        int endIndex = 0;</span>
+<span class="nc" id="L877">        int tagLenth = tagName.length();</span>
+
+<span class="nc bnc" id="L879" title="All 2 branches missed.">        if (keepcontent) {</span>
+            //remove this pair of tag occurrences and keep the content within
+<span class="nc" id="L881">            startIndex = sb.indexOf(&quot;&lt;&quot; + tagName + &quot;&quot;);</span>
+<span class="nc" id="L882">            int startTemp = startIndex + 10;</span>
+<span class="nc" id="L883">            int indexOfOpeningQuote = sb.substring(startTemp).indexOf(&quot;\&quot;&quot;);</span>
+<span class="nc" id="L884">            int indexOfClosingQuote = sb.substring(startTemp).indexOf(&quot;\&quot;&quot;, indexOfOpeningQuote + 1);</span>
+<span class="nc" id="L885">            endIndex = sb.substring(startTemp).indexOf(&quot;&gt;&quot;, indexOfClosingQuote + 1);</span>
+            //endIndex = sb.substring(startIndex).indexOf(&quot;&gt;&quot;);
+<span class="nc" id="L887">            sb.replace(startIndex, startTemp + endIndex + 1, &quot;&quot;);// should remove the &lt;tagName ...&gt;</span>
+
+<span class="nc" id="L889">            startIndex = sb.indexOf(&quot;&lt;/&quot; + tagName + &quot;&gt;&quot;);</span>
+<span class="nc" id="L890">            endIndex = startIndex + tagLenth + 3;</span>
+<span class="nc" id="L891">            sb.replace(startIndex, endIndex, &quot;&quot;); //should remove the &lt;/tagName&gt;</span>
+<span class="nc" id="L892">        } else {</span>
+            //remove this part of xml
+<span class="nc" id="L894">            startIndex = sb.indexOf(&quot;&lt;&quot; + tagName + &quot;&quot;);</span>
+<span class="nc" id="L895">            endIndex = sb.indexOf(&quot;&lt;/&quot; + tagName + &quot;&gt;&quot;) + tagLenth + 3;</span>
+<span class="nc" id="L896">            sb.replace(startIndex, endIndex, &quot;&quot;);</span>
+
+        }
+
+<span class="nc" id="L900">        return sb;</span>
+    }
+
+
+    /**
+     * Deprecated methods
+     */
+
+    /**
+     * Old name of the &quot;applyRepeats&quot; tag
+     */
+    @Deprecated
+    public String applyTemplates(String xml) throws Exception {
+<span class="nc" id="L913">        return applyRepeats(xml);</span>
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.8.202204050719</span></div></body></html>

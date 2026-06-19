@@ -1,0 +1,902 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>FormSubmissionActions.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">HTML Form Entry API</a> &gt; <a href="index.source.html" class="el_package">org.openmrs.module.htmlformentry</a> &gt; <span class="el_source">FormSubmissionActions.java</span></div><h1>FormSubmissionActions.java</h1><pre class="source lang-java linenums">package org.openmrs.module.htmlformentry;
+
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Comparator;
+import java.util.Date;
+import java.util.List;
+import java.util.ListIterator;
+import java.util.Stack;
+import java.util.TreeSet;
+import java.util.UUID;
+import java.util.Vector;
+
+import org.apache.commons.lang.StringUtils;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+import org.openmrs.Concept;
+import org.openmrs.Encounter;
+import org.openmrs.Obs;
+import org.openmrs.Order;
+import org.openmrs.Patient;
+import org.openmrs.PatientIdentifier;
+import org.openmrs.PatientProgram;
+import org.openmrs.PatientState;
+import org.openmrs.Person;
+import org.openmrs.Program;
+import org.openmrs.ProgramWorkflowState;
+import org.openmrs.Relationship;
+import org.openmrs.api.context.Context;
+import org.openmrs.module.htmlformentry.property.ExitFromCareProperty;
+import org.openmrs.util.OpenmrsUtil;
+
+/**
+ * When you try to submit a form, this class is used to hold all the actions that will eventually be
+ * committed to the database in a unit. This class stores state about where in the form we are (e.g.
+ * Person-&gt;Encounter-&gt;ObsGroup) so that an &lt;obs/&gt; element just has to call createObs() on this
+ * class, and it will automatically be put in the correct encounter or obs group. This class is not
+ * responsible for applying its own actions. That is done elsewhere in the framework.
+ */
+public class FormSubmissionActions {
+	
+	/** Logger to use with this class */
+<span class="fc" id="L43">	protected final Log log = LogFactory.getLog(getClass());</span>
+	
+<span class="fc" id="L45">	private Boolean patientUpdateRequired = false;</span>
+	
+<span class="fc" id="L47">	private List&lt;Person&gt; personsToCreate = new Vector&lt;Person&gt;();</span>
+	
+<span class="fc" id="L49">	private List&lt;Encounter&gt; encountersToCreate = new Vector&lt;Encounter&gt;();</span>
+	
+<span class="fc" id="L51">	private List&lt;Encounter&gt; encountersToEdit = new Vector&lt;Encounter&gt;();</span>
+	
+<span class="fc" id="L53">	private List&lt;Obs&gt; obsToCreate = new Vector&lt;Obs&gt;();</span>
+	
+<span class="fc" id="L55">	private List&lt;Obs&gt; obsToVoid = new Vector&lt;Obs&gt;();</span>
+	
+<span class="fc" id="L57">	private List&lt;Order&gt; ordersToCreate = new Vector&lt;Order&gt;();</span>
+	
+<span class="fc" id="L59">	private List&lt;PatientProgram&gt; patientProgramsToCreate = new Vector&lt;PatientProgram&gt;();</span>
+	
+<span class="fc" id="L61">	private List&lt;PatientProgram&gt; patientProgramsToComplete = new Vector&lt;PatientProgram&gt;();</span>
+	
+<span class="fc" id="L63">	private List&lt;PatientProgram&gt; patientProgramsToUpdate = new Vector&lt;PatientProgram&gt;();</span>
+	
+<span class="fc" id="L65">	private List&lt;Relationship&gt; relationshipsToCreate = new Vector&lt;Relationship&gt;();</span>
+	
+<span class="fc" id="L67">	private List&lt;Relationship&gt; relationshipsToVoid = new Vector&lt;Relationship&gt;();</span>
+	
+<span class="fc" id="L69">	private List&lt;Relationship&gt; relationshipsToEdit = new Vector&lt;Relationship&gt;();</span>
+	
+<span class="fc" id="L71">	private List&lt;PatientIdentifier&gt; identifiersToVoid = new Vector&lt;PatientIdentifier&gt;();</span>
+	
+	private ExitFromCareProperty exitFromCareProperty;
+	
+	private List&lt;CustomFormSubmissionAction&gt; customFormSubmissionActions;
+	
+	/** The stack where state is stored */
+<span class="fc" id="L78">	private Stack&lt;Object&gt; stack = new Stack&lt;Object&gt;(); // a snapshot might look something like { Patient, Encounter, ObsGroup }</span>
+	
+<span class="fc" id="L80">	public FormSubmissionActions() {</span>
+<span class="fc" id="L81">	}</span>
+	
+	/**
+	 * Add a Person to the submission stack. A Person must be the first object added to the
+	 * submission stack.
+	 * 
+	 * @param Person person to add
+	 * @throws InvalidActionException
+	 */
+	public void beginPerson(Person person) throws InvalidActionException {
+		// person has to be at the top of the stack
+<span class="pc bpc" id="L92" title="1 of 2 branches missed.">		if (stack.size() &gt; 0)</span>
+<span class="nc" id="L93">			throw new InvalidActionException(&quot;Person can only go on the top of the stack&quot;);</span>
+<span class="pc bpc" id="L94" title="3 of 4 branches missed.">		if (person.getPersonId() == null &amp;&amp; !personsToCreate.contains(person))</span>
+<span class="nc" id="L95">			personsToCreate.add(person);</span>
+<span class="fc" id="L96">		stack.push(person);</span>
+<span class="fc" id="L97">	}</span>
+	
+	/**
+	 * Removes the most recently added Person from the submission stack. All other objects added
+	 * after that Person are removed as well.
+	 * &lt;p/&gt;
+	 * (So, in the current one-person-per-form model, this would empty the entire submission stack)
+	 * 
+	 * @throws InvalidActionException
+	 */
+	public void endPerson() throws InvalidActionException {
+<span class="nc bnc" id="L108" title="All 2 branches missed.">		if (!stackContains(Person.class))</span>
+<span class="nc" id="L109">			throw new InvalidActionException(&quot;No Person on the stack&quot;);</span>
+		while (true) {
+<span class="nc" id="L111">			Object o = stack.pop();</span>
+<span class="nc bnc" id="L112" title="All 2 branches missed.">			if (o instanceof Person)</span>
+<span class="nc" id="L113">				break;</span>
+<span class="nc" id="L114">		}</span>
+<span class="nc" id="L115">	}</span>
+	
+	/**
+	 * Adds an Encounter to the submission stack
+	 * 
+	 * @param encounter the Encounter to add
+	 * @throws InvalidActionException
+	 */
+	public void beginEncounter(Encounter encounter) throws InvalidActionException {
+		// there needs to be a Person on the stack before this
+<span class="pc bpc" id="L125" title="1 of 2 branches missed.">		if (!stackContains(Person.class))</span>
+<span class="nc" id="L126">			throw new InvalidActionException(&quot;No Person on the stack&quot;);</span>
+<span class="pc bpc" id="L127" title="1 of 4 branches missed.">		if (encounter.getEncounterId() == null &amp;&amp; !encountersToCreate.contains(encounter))</span>
+<span class="fc" id="L128">			encountersToCreate.add(encounter);</span>
+<span class="fc" id="L129">		encounter.setPatient(highestOnStack(Patient.class));</span>
+<span class="fc" id="L130">		stack.push(encounter);</span>
+<span class="fc" id="L131">	}</span>
+	
+	/**
+	 * Removes the most recently added Encounter from the submission stack. All objects added after
+	 * that Encounter are removed as well.
+	 * 
+	 * @throws InvalidActionException
+	 */
+	public void endEncounter() throws InvalidActionException {
+<span class="nc bnc" id="L140" title="All 2 branches missed.">		if (!stackContains(Encounter.class))</span>
+<span class="nc" id="L141">			throw new InvalidActionException(&quot;No Encounter on the stack&quot;);</span>
+		while (true) {
+<span class="nc" id="L143">			Object o = stack.pop();</span>
+<span class="nc bnc" id="L144" title="All 2 branches missed.">			if (o instanceof Encounter)</span>
+<span class="nc" id="L145">				break;</span>
+<span class="nc" id="L146">		}</span>
+<span class="nc" id="L147">	}</span>
+	
+	/**
+	 * Adds an Obs Group to the submission stack
+	 * 
+	 * @param group the Obs Group to add
+	 * @throws InvalidActionException
+	 */
+	public void beginObsGroup(Obs group) throws InvalidActionException {
+		// there needs to be a Person on the stack before this
+<span class="nc bnc" id="L157" title="All 2 branches missed.">		if (!stackContains(Person.class))</span>
+<span class="nc" id="L158">			throw new InvalidActionException(&quot;No Person on the stack&quot;);</span>
+<span class="nc bnc" id="L159" title="All 4 branches missed.">		if (group.getObsId() == null &amp;&amp; !obsToCreate.contains(group)) {</span>
+<span class="nc" id="L160">			obsToCreate.add(group);</span>
+		}
+<span class="nc" id="L162">		Person person = highestOnStack(Person.class);</span>
+<span class="nc" id="L163">		Encounter encounter = highestOnStack(Encounter.class);</span>
+<span class="nc" id="L164">		group.setPerson(person);</span>
+<span class="nc bnc" id="L165" title="All 2 branches missed.">		if (encounter != null) {</span>
+<span class="nc" id="L166">			addObsToEncounterIfNotAlreadyThere(encounter, group);</span>
+		}
+		//this is for obs groups within obs groups
+<span class="nc" id="L169">		Object o = stack.peek();</span>
+<span class="nc bnc" id="L170" title="All 2 branches missed.">		if (o instanceof Obs) {</span>
+<span class="nc" id="L171">			Obs oParent = (Obs) o;</span>
+<span class="nc" id="L172">			oParent.addGroupMember(group);</span>
+		}
+<span class="nc" id="L174">		stack.push(group);</span>
+		
+<span class="nc" id="L176">	}</span>
+	
+	/**
+	 * Utility function that adds a set of Obs to an Encounter, skipping Obs that are already part
+	 * of the Encounter
+	 * 
+	 * @param encounter
+	 * @param group
+	 */
+	private void addObsToEncounterIfNotAlreadyThere(Encounter encounter, Obs group) {
+<span class="nc bnc" id="L186" title="All 2 branches missed.">		for (Obs obs : encounter.getObsAtTopLevel(true)) {</span>
+<span class="nc bnc" id="L187" title="All 2 branches missed.">			if (obs.equals(group))</span>
+<span class="nc" id="L188">				return;</span>
+<span class="nc" id="L189">		}</span>
+<span class="nc" id="L190">		encounter.addObs(group);</span>
+<span class="nc" id="L191">	}</span>
+	
+	/**
+	 * Removes the most recently added ObsGroup from the submission stack. All objects added after
+	 * that ObsGroup are removed as well.
+	 * 
+	 * @throws InvalidActionException
+	 */
+	public void endObsGroup() throws InvalidActionException {
+		// there needs to be an Obs on the stack before this
+<span class="nc bnc" id="L201" title="All 2 branches missed.">		if (!stackContains(Obs.class))</span>
+<span class="nc" id="L202">			throw new InvalidActionException(&quot;No Obs on the stack&quot;);</span>
+		while (true) {
+<span class="nc" id="L204">			Object o = stack.pop();</span>
+<span class="nc bnc" id="L205" title="All 2 branches missed.">			if (o instanceof Obs)</span>
+<span class="nc" id="L206">				break;</span>
+<span class="nc" id="L207">		}</span>
+<span class="nc" id="L208">	}</span>
+	
+	/**
+	 * Returns the Person that was most recently added to the stack
+	 * 
+	 * @return the Person most recently added to the stack
+	 */
+	public Person getCurrentPerson() {
+<span class="nc" id="L216">		return highestOnStack(Person.class);</span>
+	}
+	
+	/**
+	 * Returns the Encounter that was most recently added to the stack
+	 * 
+	 * @return the Encounter most recently added to the stack
+	 */
+	public Encounter getCurrentEncounter() {
+<span class="fc" id="L225">		return highestOnStack(Encounter.class);</span>
+	}
+	
+	/**
+	 * Utility method that returns the object of a specified class that was most recently added to
+	 * the stack
+	 */
+	@SuppressWarnings(&quot;unchecked&quot;)
+	private &lt;T&gt; T highestOnStack(Class&lt;T&gt; clazz) {
+<span class="pc bpc" id="L234" title="1 of 2 branches missed.">		for (ListIterator&lt;Object&gt; iter = stack.listIterator(stack.size()); iter.hasPrevious();) {</span>
+<span class="fc" id="L235">			Object o = iter.previous();</span>
+<span class="pc bpc" id="L236" title="1 of 2 branches missed.">			if (clazz.isAssignableFrom(o.getClass()))</span>
+<span class="fc" id="L237">				return (T) o;</span>
+<span class="nc" id="L238">		}</span>
+<span class="nc" id="L239">		return null;</span>
+	}
+	
+	/**
+	 * Utility method that tests whether there is an object of the specified type on the stack
+	 */
+	private boolean stackContains(Class&lt;?&gt; clazz) {
+<span class="pc bpc" id="L246" title="1 of 2 branches missed.">		for (Object o : stack) {</span>
+<span class="pc bpc" id="L247" title="1 of 2 branches missed.">			if (clazz.isAssignableFrom(o.getClass()))</span>
+<span class="fc" id="L248">				return true;</span>
+<span class="nc" id="L249">		}</span>
+<span class="nc" id="L250">		return false;</span>
+	}
+	
+	/**
+	 * Creates an new Obs and associates with the most recently added Person, Encounter, and
+	 * ObsGroup (if applicable) on the stack.
+	 * &lt;p/&gt;
+	 * Note that this method does not actually commit the Obs to the database, but instead adds the
+	 * Obs to a list of Obs to be added. The changes are applied elsewhere in the framework.
+	 * 
+	 * @param concept concept associated with the Obs
+	 * @param value value for the Obs
+	 * @param datetime date information for the Obs
+	 * @param accessionNumber accession number for the Obs
+	 * @param comment comment for the obs
+	 * @return the Obs to create
+	 */
+	public Obs createObs(Concept concept, Object value, Date datetime, String accessionNumber, String comment) {
+<span class="nc bnc" id="L268" title="All 4 branches missed.">		if (value == null || &quot;&quot;.equals(value))</span>
+<span class="nc" id="L269">			throw new IllegalArgumentException(&quot;Cannot create Obs with null or blank value&quot;);</span>
+<span class="nc" id="L270">		Obs obs = HtmlFormEntryUtil.createObs(concept, value, datetime, accessionNumber);</span>
+		
+<span class="nc" id="L272">		Person person = highestOnStack(Person.class);</span>
+<span class="nc bnc" id="L273" title="All 2 branches missed.">		if (person == null)</span>
+<span class="nc" id="L274">			throw new IllegalArgumentException(&quot;Cannot create an Obs outside of a Person.&quot;);</span>
+<span class="nc" id="L275">		Encounter encounter = highestOnStack(Encounter.class);</span>
+<span class="nc" id="L276">		Obs obsGroup = highestOnStack(Obs.class);</span>
+		
+<span class="nc bnc" id="L278" title="All 2 branches missed.">		if (person != null)</span>
+<span class="nc" id="L279">			obs.setPerson(person);</span>
+		
+<span class="nc bnc" id="L281" title="All 2 branches missed.">		if (StringUtils.isNotBlank(comment))</span>
+<span class="nc" id="L282">			obs.setComment(comment);</span>
+		
+<span class="nc bnc" id="L284" title="All 2 branches missed.">		if (encounter != null)</span>
+<span class="nc" id="L285">			encounter.addObs(obs);</span>
+<span class="nc bnc" id="L286" title="All 2 branches missed.">		if (obsGroup != null) {</span>
+<span class="nc" id="L287">			obsGroup.addGroupMember(obs);</span>
+		} else {
+<span class="nc" id="L289">			obsToCreate.add(obs);</span>
+		}
+<span class="nc" id="L291">		return obs;</span>
+	}
+	
+	/**
+	 * Legacy createObs methods without the comment argument
+	 */
+	public Obs createObs(Concept concept, Object value, Date datetime, String accessionNumber) {
+<span class="nc" id="L298">		return createObs(concept, value, datetime, accessionNumber, null);</span>
+	}
+	
+	/**
+	 * Modifies an existing Obs.
+	 * &lt;p/&gt;
+	 * This method works by adding the current Obs to a list of Obs to void, and then adding the new
+	 * Obs to a list of Obs to create. Note that this method does not commit the changes to the
+	 * database--the changes are applied elsewhere in the framework.
+	 * 
+	 * @param existingObs the Obs to modify
+	 * @param concept concept associated with the Obs
+	 * @param newValue the new value of the Obs
+	 * @param newDatetime the new date information for the Obs
+	 * @param accessionNumber new accession number for the Obs
+	 * @param comment comment for the obs
+	 */
+	public void modifyObs(Obs existingObs, Concept concept, Object newValue, Date newDatetime, String accessionNumber,
+	        String comment) {
+<span class="nc bnc" id="L317" title="All 4 branches missed.">		if (newValue == null || &quot;&quot;.equals(newValue)) {</span>
+			// we want to delete the existing obs
+<span class="nc bnc" id="L319" title="All 2 branches missed.">			if (log.isDebugEnabled())</span>
+<span class="nc" id="L320">				log.debug(&quot;VOID: &quot; + printObsHelper(existingObs));</span>
+<span class="nc" id="L321">			obsToVoid.add(existingObs);</span>
+<span class="nc" id="L322">			return;</span>
+		}
+<span class="nc bnc" id="L324" title="All 2 branches missed.">		if (concept == null) {</span>
+			// we want to delete the existing obs
+<span class="nc bnc" id="L326" title="All 2 branches missed.">			if (log.isDebugEnabled())</span>
+<span class="nc" id="L327">				log.debug(&quot;VOID: &quot; + printObsHelper(existingObs));</span>
+<span class="nc" id="L328">			obsToVoid.add(existingObs);</span>
+<span class="nc" id="L329">			return;</span>
+		}
+<span class="nc" id="L331">		Obs newObs = HtmlFormEntryUtil.createObs(concept, newValue, newDatetime, accessionNumber);</span>
+<span class="nc" id="L332">		String oldString = existingObs.getValueAsString(Context.getLocale());</span>
+<span class="nc" id="L333">		String newString = newObs.getValueAsString(Context.getLocale());</span>
+<span class="nc bnc" id="L334" title="All 4 branches missed.">		if (log.isDebugEnabled() &amp;&amp; concept != null) {</span>
+<span class="nc" id="L335">			log.debug(&quot;For concept &quot; + concept.getName(Context.getLocale()) + &quot;: &quot; + oldString + &quot; -&gt; &quot; + newString);</span>
+		}
+<span class="nc bnc" id="L337" title="All 2 branches missed.">		boolean valueChanged = !newString.equals(oldString);</span>
+		// TODO: handle dates that may equal encounter date
+<span class="nc" id="L339">		boolean dateChanged = dateChangedHelper(existingObs.getObsDatetime(), newObs.getObsDatetime());</span>
+<span class="nc" id="L340">		boolean accessionNumberChanged = accessionNumberChangedHelper(existingObs.getAccessionNumber(),</span>
+<span class="nc" id="L341">		    newObs.getAccessionNumber());</span>
+<span class="nc" id="L342">		boolean conceptsHaveChanged = false;</span>
+<span class="nc bnc" id="L343" title="All 2 branches missed.">		if (!existingObs.getConcept().getConceptId().equals(concept.getConceptId())) {</span>
+<span class="nc" id="L344">			conceptsHaveChanged = true;</span>
+		}
+<span class="nc bnc" id="L346" title="All 8 branches missed.">		if (valueChanged || dateChanged || accessionNumberChanged || conceptsHaveChanged) {</span>
+<span class="nc bnc" id="L347" title="All 2 branches missed.">			if (log.isDebugEnabled()) {</span>
+<span class="nc" id="L348">				log.debug(&quot;CHANGED: &quot; + printObsHelper(existingObs));</span>
+			}
+			// TODO: really the voided obs should link to the new one, but this is a pain to implement due to the dreaded error: org.hibernate.NonUniqueObjectException: a different object with the same identifier value was already associated with the session
+<span class="nc" id="L351">			obsToVoid.add(existingObs);</span>
+			
+<span class="nc" id="L353">			newObs = createObs(concept, newValue, newDatetime, accessionNumber, comment);</span>
+<span class="nc" id="L354">			newObs.setPreviousVersion(existingObs);</span>
+		} else {
+<span class="nc bnc" id="L356" title="All 4 branches missed.">			if (existingObs != null &amp;&amp; StringUtils.isNotBlank(comment))</span>
+<span class="nc" id="L357">				existingObs.setComment(comment);</span>
+			
+<span class="nc bnc" id="L359" title="All 2 branches missed.">			if (log.isDebugEnabled()) {</span>
+<span class="nc" id="L360">				log.debug(&quot;SAME: &quot; + printObsHelper(existingObs));</span>
+			}
+		}
+<span class="nc" id="L363">	}</span>
+	
+	/**
+	 * Legacy modifyObs methods without the comment argument
+	 */
+	public void modifyObs(Obs existingObs, Concept concept, Object newValue, Date newDatetime, String accessionNumber) {
+<span class="nc" id="L369">		modifyObs(existingObs, concept, newValue, newDatetime, accessionNumber, null);</span>
+<span class="nc" id="L370">	}</span>
+	
+	/**
+	 * Enrolls the Patient most recently added to the stack in the specified Program.
+	 * &lt;p/&gt;
+	 * Note that this method does not commit the program enrollment to the database but instead adds
+	 * the Program to a list of programs to add. The changes are applied elsewhere in the framework
+	 * 
+	 * @param program Program to enroll the patient in
+	 * @see #enrollInProgram(Program, Date, List)
+	 */
+	public void enrollInProgram(Program program) {
+<span class="nc" id="L382">		enrollInProgram(program, null, null);</span>
+<span class="nc" id="L383">	}</span>
+	
+	/**
+	 * Enrolls the Patient most recently added to the stack in the specified Program setting the
+	 * enrollment date as the date specified and setting initial states from the specified state
+	 * &lt;p/&gt;
+	 * Note that this method does not commit the program enrollment to the database but instead adds
+	 * the Program to a list of programs to add. The changes are applied elsewhere in the framework
+	 * 
+	 * @param program Program to enroll the patient in
+	 * @param enrollmentDate the date to enroll the patient in the program
+	 * @param states list of states to set as initial in their workflows
+	 */
+	public void enrollInProgram(Program program, Date enrollmentDate, List&lt;ProgramWorkflowState&gt; states) {
+<span class="nc bnc" id="L397" title="All 2 branches missed.">		if (program == null)</span>
+<span class="nc" id="L398">			throw new IllegalArgumentException(&quot;Cannot enroll in a blank program&quot;);</span>
+		
+<span class="nc" id="L400">		Patient patient = highestOnStack(Patient.class);</span>
+<span class="nc bnc" id="L401" title="All 2 branches missed.">		if (patient == null)</span>
+<span class="nc" id="L402">			throw new IllegalArgumentException(&quot;Cannot enroll in a program outside of a Patient&quot;);</span>
+<span class="nc" id="L403">		Encounter encounter = highestOnStack(Encounter.class);</span>
+		
+		// if an enrollment date has not been specified, enrollment date is the encounter date
+<span class="nc bnc" id="L406" title="All 4 branches missed.">		enrollmentDate = (enrollmentDate != null) ? enrollmentDate</span>
+<span class="nc" id="L407">		        : (encounter != null) ? encounter.getEncounterDatetime() : null;</span>
+		
+<span class="nc bnc" id="L409" title="All 2 branches missed.">		if (enrollmentDate == null)</span>
+<span class="nc" id="L410">			throw new IllegalArgumentException(</span>
+			        &quot;Cannot enroll in a program without specifying an Encounter Date or Enrollment Date&quot;);
+		
+		// only need to do some if the patient is not enrolled in the specified program on the specified date
+<span class="nc bnc" id="L414" title="All 2 branches missed.">		if (!HtmlFormEntryUtil.isEnrolledInProgramOnDate(patient, program, enrollmentDate)) {</span>
+			
+			// see if the patient is enrolled in this program in the future
+<span class="nc" id="L417">			PatientProgram pp = HtmlFormEntryUtil.getClosestFutureProgramEnrollment(patient, program, enrollmentDate);</span>
+			
+<span class="nc bnc" id="L419" title="All 2 branches missed.">			if (pp != null) {</span>
+				//set the start dates of all states with a start date equal to the enrollment date to the selected date
+<span class="nc bnc" id="L421" title="All 2 branches missed.">				for (PatientState patientState : pp.getStates()) {</span>
+<span class="nc bnc" id="L422" title="All 2 branches missed.">					if (OpenmrsUtil.nullSafeEquals(patientState.getStartDate(), pp.getDateEnrolled())) {</span>
+<span class="nc" id="L423">						patientState.setStartDate(enrollmentDate);</span>
+					}
+<span class="nc" id="L425">				}</span>
+				
+				// set the program enrollment date to the newly selected date
+<span class="nc" id="L428">				pp.setDateEnrolled(enrollmentDate);</span>
+				
+<span class="nc" id="L430">				patientProgramsToUpdate.add(pp);</span>
+			}
+			// otherwise, create the new program
+			else {
+<span class="nc" id="L434">				pp = new PatientProgram();</span>
+<span class="nc" id="L435">				pp.setPatient(patient);</span>
+<span class="nc" id="L436">				pp.setProgram(program);</span>
+<span class="nc bnc" id="L437" title="All 2 branches missed.">				if (enrollmentDate != null)</span>
+<span class="nc" id="L438">					pp.setDateEnrolled(enrollmentDate);</span>
+				
+<span class="nc bnc" id="L440" title="All 2 branches missed.">				if (states != null) {</span>
+<span class="nc bnc" id="L441" title="All 2 branches missed.">					for (ProgramWorkflowState programWorkflowState : states) {</span>
+<span class="nc" id="L442">						pp.transitionToState(programWorkflowState, enrollmentDate);</span>
+<span class="nc" id="L443">					}</span>
+				}
+<span class="nc" id="L445">				patientProgramsToCreate.add(pp);</span>
+			}
+			
+		}
+<span class="nc" id="L449">	}</span>
+	
+	/**
+	 * Ends a Patient program.
+	 * &lt;p/&gt;
+	 * Note that this method does not commit the program enrollment change to the database but
+	 * instead adds the Program to a list of programs to remove. The changes are applied elsewhere
+	 * in the framework
+	 * 
+	 * @param program Program to end the enrollment for the patient in
+	 */
+	public void completeProgram(Program program) {
+<span class="nc bnc" id="L461" title="All 2 branches missed.">		if (program == null)</span>
+<span class="nc" id="L462">			throw new IllegalArgumentException(&quot;Cannot end a blank program&quot;);</span>
+		
+<span class="nc" id="L464">		Patient patient = highestOnStack(Patient.class);</span>
+<span class="nc bnc" id="L465" title="All 2 branches missed.">		if (patient == null)</span>
+<span class="nc" id="L466">			throw new IllegalArgumentException(&quot;Cannot find program without a patient&quot;);</span>
+<span class="nc" id="L467">		Encounter encounter = highestOnStack(Encounter.class);</span>
+<span class="nc bnc" id="L468" title="All 2 branches missed.">		if (encounter == null)</span>
+<span class="nc" id="L469">			throw new IllegalArgumentException(&quot;Cannot end enrollment in a program outside of an Encounter&quot;);</span>
+		
+<span class="nc" id="L471">		List&lt;PatientProgram&gt; pp = Context.getProgramWorkflowService().getPatientPrograms(patient, program, null,</span>
+<span class="nc" id="L472">		    encounter.getEncounterDatetime(), new Date(), null, false);</span>
+		
+<span class="nc" id="L474">		patientProgramsToComplete.addAll(pp);</span>
+<span class="nc" id="L475">	}</span>
+	
+	public void transitionToState(ProgramWorkflowState state) {
+<span class="nc bnc" id="L478" title="All 2 branches missed.">		if (state == null)</span>
+<span class="nc" id="L479">			throw new IllegalArgumentException(&quot;Cannot change to a blank state&quot;);</span>
+		
+<span class="nc" id="L481">		Patient patient = highestOnStack(Patient.class);</span>
+<span class="nc bnc" id="L482" title="All 2 branches missed.">		if (patient == null)</span>
+<span class="nc" id="L483">			throw new IllegalArgumentException(&quot;Cannot change state without a patient&quot;);</span>
+<span class="nc" id="L484">		Encounter encounter = highestOnStack(Encounter.class);</span>
+<span class="nc bnc" id="L485" title="All 2 branches missed.">		if (encounter == null)</span>
+<span class="nc" id="L486">			throw new IllegalArgumentException(&quot;Cannot change state without an Encounter&quot;);</span>
+		
+		// fetch any existing patient program with a state from this workflow
+<span class="nc" id="L489">		PatientProgram patientProgram = HtmlFormEntryUtil.getPatientProgramByWorkflow(patient, state.getProgramWorkflow());</span>
+		
+		// if no existing patient program, see if a patient program for this program is already set to be created at part of this submission (HTML-416)
+<span class="nc bnc" id="L492" title="All 2 branches missed.">		if (patientProgram == null) {</span>
+<span class="nc" id="L493">			patientProgram = HtmlFormEntryUtil.getPatientProgramByProgram(patientProgramsToCreate,</span>
+<span class="nc" id="L494">			    state.getProgramWorkflow().getProgram());</span>
+		}
+		
+<span class="nc bnc" id="L497" title="All 2 branches missed.">		if (patientProgram == null) {</span>
+<span class="nc" id="L498">			patientProgram = HtmlFormEntryUtil.getPatientProgramByProgram(patientProgramsToUpdate,</span>
+<span class="nc" id="L499">			    state.getProgramWorkflow().getProgram());</span>
+		}
+		
+		// if patient program is still null, we need to create a new program
+<span class="nc bnc" id="L503" title="All 2 branches missed.">		if (patientProgram == null) {</span>
+<span class="nc" id="L504">			patientProgram = new PatientProgram();</span>
+<span class="nc" id="L505">			patientProgram.setPatient(patient);</span>
+<span class="nc" id="L506">			patientProgram.setProgram(state.getProgramWorkflow().getProgram());</span>
+<span class="nc" id="L507">			patientProgram.setDateEnrolled(encounter.getEncounterDatetime());</span>
+			// HACK: we need to set the date created, creator, and uuid here as a hack around a hibernate flushing issue
+			// (should be able to remove this once we move to Hibernate Interceptors instead of Spring AOP to set these parameters)
+<span class="nc" id="L510">			patientProgram.setDateCreated(new Date());</span>
+<span class="nc" id="L511">			patientProgram.setCreator(Context.getAuthenticatedUser());</span>
+<span class="nc" id="L512">			patientProgram.setUuid(UUID.randomUUID().toString());</span>
+			
+		}
+		
+<span class="nc bnc" id="L516" title="All 2 branches missed.">		for (PatientState patientState : patientProgram.statesInWorkflow(state.getProgramWorkflow(), false)) {</span>
+<span class="nc bnc" id="L517" title="All 2 branches missed.">			if (patientState.getActive(encounter.getEncounterDatetime())) {</span>
+<span class="nc bnc" id="L518" title="All 2 branches missed.">				if (patientState.getState().equals(state)) {</span>
+<span class="nc" id="L519">					return;</span>
+				}
+			}
+<span class="nc" id="L522">		}</span>
+		
+<span class="nc" id="L524">		PatientState previousState = null;</span>
+<span class="nc" id="L525">		PatientState nextState = null;</span>
+<span class="nc" id="L526">		PatientState newState = new PatientState();</span>
+<span class="nc" id="L527">		newState.setPatientProgram(patientProgram);</span>
+<span class="nc" id="L528">		newState.setState(state);</span>
+<span class="nc" id="L529">		newState.setStartDate(encounter.getEncounterDatetime());</span>
+		// HACK: we need to set the date created, creator, and uuid here as a hack around a hibernate flushing issue
+		// (should be able to remove this once we move to Hibernate Interceptors instead of Spring AOP to set these parameters)
+<span class="nc" id="L532">		newState.setDateCreated(new Date());</span>
+<span class="nc" id="L533">		newState.setCreator(Context.getAuthenticatedUser());</span>
+<span class="nc" id="L534">		newState.setUuid(UUID.randomUUID().toString());</span>
+		
+<span class="nc" id="L536">		Collection&lt;PatientState&gt; sortedStates = new TreeSet&lt;PatientState&gt;(new Comparator&lt;PatientState&gt;() {</span>
+			
+			@Override
+			public int compare(PatientState o1, PatientState o2) {
+<span class="nc" id="L540">				int result = OpenmrsUtil.compareWithNullAsEarliest(o1.getStartDate(), o2.getStartDate());</span>
+<span class="nc bnc" id="L541" title="All 2 branches missed.">				if (result == 0) {</span>
+<span class="nc" id="L542">					result = OpenmrsUtil.compareWithNullAsLatest(o1.getEndDate(), o2.getEndDate());</span>
+				}
+<span class="nc" id="L544">				return result;</span>
+			}
+			
+		});
+<span class="nc" id="L548">		sortedStates.addAll(patientProgram.statesInWorkflow(state.getProgramWorkflow(), false));</span>
+<span class="nc bnc" id="L549" title="All 2 branches missed.">		for (PatientState currentState : sortedStates) {</span>
+			
+<span class="nc" id="L551">			Date newStartDate = newState.getStartDate();</span>
+<span class="nc" id="L552">			Date currentStartDate = currentState.getStartDate();</span>
+<span class="nc" id="L553">			Date currentEndDate = currentState.getEndDate();</span>
+			
+<span class="nc bnc" id="L555" title="All 2 branches missed.">			if (currentEndDate != null) {</span>
+<span class="nc bnc" id="L556" title="All 2 branches missed.">				if (currentEndDate.after(newStartDate)) {</span>
+<span class="nc bnc" id="L557" title="All 2 branches missed.">					if (currentStartDate.after(newStartDate)) {</span>
+<span class="nc" id="L558">						nextState = currentState;</span>
+<span class="nc" id="L559">						break;</span>
+					} else {
+<span class="nc" id="L561">						previousState = currentState;</span>
+					}
+				} else {
+<span class="nc" id="L564">					previousState = currentState;</span>
+				}
+<span class="nc bnc" id="L566" title="All 2 branches missed.">			} else if (currentStartDate.after(newStartDate)) {</span>
+<span class="nc" id="L567">				nextState = currentState;</span>
+<span class="nc" id="L568">				break;</span>
+			} else {
+<span class="nc" id="L570">				previousState = currentState;</span>
+<span class="nc" id="L571">				nextState = null;</span>
+<span class="nc" id="L572">				break;</span>
+			}
+<span class="nc" id="L574">		}</span>
+		
+<span class="nc bnc" id="L576" title="All 2 branches missed.">		if (nextState == null) {</span>
+<span class="nc bnc" id="L577" title="All 2 branches missed.">			if (previousState != null) {</span>
+<span class="nc" id="L578">				previousState.setEndDate(newState.getStartDate());</span>
+			}
+		} else {
+<span class="nc bnc" id="L581" title="All 2 branches missed.">			if (previousState != null) {</span>
+<span class="nc" id="L582">				previousState.setEndDate(newState.getStartDate());</span>
+			}
+<span class="nc" id="L584">			newState.setEndDate(nextState.getStartDate());</span>
+		}
+		
+<span class="nc" id="L587">		patientProgram.getStates().add(newState);</span>
+		
+<span class="nc bnc" id="L589" title="All 2 branches missed.">		if (encounter.getEncounterDatetime().before(patientProgram.getDateEnrolled())) {</span>
+<span class="nc" id="L590">			patientProgram.setDateEnrolled(encounter.getEncounterDatetime());</span>
+		}
+		
+<span class="nc" id="L593">		patientProgramsToUpdate.add(patientProgram);</span>
+<span class="nc" id="L594">	}</span>
+	
+	/**
+	 * Prepares data to be sent for exiting the given patient from care
+	 * 
+	 * @param date - the date of exit
+	 * @param exitReasonConcept - reason the patient is exited from care
+	 * @param causeOfDeathConcept -the concept that corresponds with the reason the patient died
+	 * @param otherReason - in case the causeOfDeath is 'other', a place to store more info
+	 */
+	public void exitFromCare(Date date, Concept exitReasonConcept, Concept causeOfDeathConcept, String otherReason) {
+		
+<span class="nc bnc" id="L606" title="All 4 branches missed.">		if (date != null &amp;&amp; exitReasonConcept != null) {</span>
+<span class="nc" id="L607">			this.exitFromCareProperty = new ExitFromCareProperty(date, exitReasonConcept, causeOfDeathConcept, otherReason);</span>
+		} else {
+<span class="nc" id="L609">			throw new IllegalArgumentException(&quot;Exit From Care: date and exitReasonConcept cannot be null&quot;);</span>
+		}
+<span class="nc" id="L611">	}</span>
+	
+	public void addCustomFormSubmissionAction(CustomFormSubmissionAction action) {
+<span class="nc bnc" id="L614" title="All 2 branches missed.">		if (customFormSubmissionActions == null) {</span>
+<span class="nc" id="L615">			customFormSubmissionActions = new ArrayList&lt;CustomFormSubmissionAction&gt;();</span>
+		}
+		
+<span class="nc" id="L618">		customFormSubmissionActions.add(action);</span>
+<span class="nc" id="L619">	}</span>
+	
+	/**
+	 * This method compares Timestamps to plain Dates by dropping the nanosecond precision
+	 */
+	private boolean dateChangedHelper(Date oldVal, Date newVal) {
+<span class="nc bnc" id="L625" title="All 2 branches missed.">		if (newVal == null)</span>
+<span class="nc" id="L626">			return false;</span>
+		else
+<span class="nc bnc" id="L628" title="All 2 branches missed.">			return oldVal.getTime() != newVal.getTime();</span>
+	}
+	
+	private boolean accessionNumberChangedHelper(String oldVal, String newVal) {
+<span class="nc bnc" id="L632" title="All 2 branches missed.">		return !OpenmrsUtil.nullSafeEquals(oldVal, newVal);</span>
+	}
+	
+	private String printObsHelper(Obs obs) {
+<span class="nc" id="L636">		return obs.getConcept().getName(Context.getLocale()) + &quot; = &quot; + obs.getValueAsString(Context.getLocale());</span>
+	}
+	
+	/**
+	 * Returns true/false if we need to save the patient record during form submissiosn
+	 * 
+	 * @return
+	 */
+	public Boolean getPatientUpdateRequired() {
+<span class="fc" id="L645">		return patientUpdateRequired;</span>
+	}
+	
+	/**
+	 * Set whether we need to save the patient record during form submission
+	 *
+	 * @param patientUpdateRequired
+	 */
+	public void setPatientUpdateRequired(Boolean patientUpdateRequired) {
+<span class="nc" id="L654">		this.patientUpdateRequired = patientUpdateRequired;</span>
+<span class="nc" id="L655">	}</span>
+	
+	/**
+	 * Returns a list of all the Persons that need to be created to process form submission
+	 * 
+	 * @return a list of all Persons to create
+	 */
+	public List&lt;Person&gt; getPersonsToCreate() {
+<span class="fc" id="L663">		return personsToCreate;</span>
+	}
+	
+	/**
+	 * Sets the list of Persons that need to be created to process form submission
+	 * 
+	 * @param personsToCreate the list of Persons to create
+	 */
+	public void setPersonsToCreate(List&lt;Person&gt; personsToCreate) {
+<span class="nc" id="L672">		this.personsToCreate = personsToCreate;</span>
+<span class="nc" id="L673">	}</span>
+	
+	/**
+	 * Returns a list of all the Encounters that need to be created to process form submissions
+	 * 
+	 * @return a list of Encounters to create
+	 */
+	public List&lt;Encounter&gt; getEncountersToCreate() {
+<span class="fc" id="L681">		return encountersToCreate;</span>
+	}
+	
+	/**
+	 * Sets the list of Encounters that need to be created to process form submission
+	 * 
+	 * @param encountersToCreate the list of Encounters to create
+	 */
+	public void setEncountersToCreate(List&lt;Encounter&gt; encountersToCreate) {
+<span class="nc" id="L690">		this.encountersToCreate = encountersToCreate;</span>
+<span class="nc" id="L691">	}</span>
+	
+	/**
+	 * Returns the list of Encounters that need to be edited to process form submission
+	 * 
+	 * @return the list of Encounters to edit
+	 */
+	public List&lt;Encounter&gt; getEncountersToEdit() {
+<span class="nc" id="L699">		return encountersToEdit;</span>
+	}
+	
+	/**
+	 * Sets the list of Encounters that need to be editing to process form submission
+	 * 
+	 * @param encountersToEdit the list of Encounters to edit
+	 */
+	public void setEncountersToEdit(List&lt;Encounter&gt; encountersToEdit) {
+<span class="nc" id="L708">		this.encountersToEdit = encountersToEdit;</span>
+<span class="nc" id="L709">	}</span>
+	
+	/**
+	 * Returns the list of Obs that need to be created to process form submission
+	 * 
+	 * @return the list of Obs to create
+	 */
+	public List&lt;Obs&gt; getObsToCreate() {
+<span class="fc" id="L717">		return obsToCreate;</span>
+	}
+	
+	/**
+	 * Sets the list of Obs that need to be created to process form submission
+	 * 
+	 * @param obsToCreate the list of Obs to create
+	 */
+	public void setObsToCreate(List&lt;Obs&gt; obsToCreate) {
+<span class="nc" id="L726">		this.obsToCreate = obsToCreate;</span>
+<span class="nc" id="L727">	}</span>
+	
+	/**
+	 * Returns the list of Os that need to be voided to process form submission
+	 * 
+	 * @return the list of Obs to void
+	 */
+	public List&lt;Obs&gt; getObsToVoid() {
+<span class="fc" id="L735">		return obsToVoid;</span>
+	}
+	
+	/**
+	 * Sets the list Obs that need to be voided to process form submission
+	 * 
+	 * @param obsToVoid the list of Obs to void
+	 */
+	public void setObsToVoid(List&lt;Obs&gt; obsToVoid) {
+<span class="nc" id="L744">		this.obsToVoid = obsToVoid;</span>
+<span class="nc" id="L745">	}</span>
+	
+	/**
+	 * Returns the list of Orders that need to be created to process form submission
+	 * 
+	 * @return the list of Orders to create
+	 */
+	public List&lt;Order&gt; getOrdersToCreate() {
+<span class="nc" id="L753">		return ordersToCreate;</span>
+	}
+	
+	/**
+	 * Sets the list of Orders that need to be created to process form submission
+	 * 
+	 * @param ordersToCreate the list of Orders to create
+	 */
+	public void setOrdersToCreate(List&lt;Order&gt; ordersToCreate) {
+<span class="nc" id="L762">		this.ordersToCreate = ordersToCreate;</span>
+<span class="nc" id="L763">	}</span>
+	
+	/**
+	 * Returns the list of Patient Programs that need to be created to process form submission
+	 * 
+	 * @return the patientProgramsToCreate the list of Programs to create
+	 */
+	public List&lt;PatientProgram&gt; getPatientProgramsToCreate() {
+<span class="fc" id="L771">		return patientProgramsToCreate;</span>
+	}
+	
+	/**
+	 * Sets the list of Patient Programs that need to be created to process form submission
+	 * 
+	 * @param patientProgramsToCreate the list of Programs to create
+	 */
+	public void setPatientProgramsToCreate(List&lt;PatientProgram&gt; patientProgramsToCreate) {
+<span class="nc" id="L780">		this.patientProgramsToCreate = patientProgramsToCreate;</span>
+<span class="nc" id="L781">	}</span>
+	
+	/**
+	 * Returns the list of Patient Programs that need to be completed to process form submission
+	 * 
+	 * @return the patientProgramsToComplete the list of Programs to completed
+	 */
+	public List&lt;PatientProgram&gt; getPatientProgramsToComplete() {
+<span class="fc" id="L789">		return patientProgramsToComplete;</span>
+	}
+	
+	/**
+	 * Sets the list of Patient Programs that need to be completed to process form submission
+	 * 
+	 * @param patientProgramsToComplete the list of Programs to completed
+	 */
+	public void setPatientProgramsToComplete(List&lt;PatientProgram&gt; patientProgramsToComplete) {
+<span class="nc" id="L798">		this.patientProgramsToComplete = patientProgramsToComplete;</span>
+<span class="nc" id="L799">	}</span>
+	
+	/**
+	 * Returns the list of Relationships that need to be created to process form submission
+	 * 
+	 * @return the relationshipsToCreate
+	 */
+	public List&lt;Relationship&gt; getRelationshipsToCreate() {
+<span class="fc" id="L807">		return relationshipsToCreate;</span>
+	}
+	
+	/**
+	 * Sets the list of Relationships that need to be creatd to process form submission
+	 * 
+	 * @param relationshipsToCreate the relationshipsToCreate to set
+	 */
+	public void setRelationshipsToCreate(List&lt;Relationship&gt; relationshipsToCreate) {
+<span class="nc" id="L816">		this.relationshipsToCreate = relationshipsToCreate;</span>
+<span class="nc" id="L817">	}</span>
+	
+	/**
+	 * Returns the list of Relationships that need to be voided to process form submission
+	 * 
+	 * @return the relationshipsToVoid
+	 */
+	public List&lt;Relationship&gt; getRelationshipsToVoid() {
+<span class="fc" id="L825">		return relationshipsToVoid;</span>
+	}
+	
+	/**
+	 * Sets the list of Relationships that need to be voided to process form submission
+	 * 
+	 * @param relationshipsToVoid the relationshipsToVoid to set
+	 */
+	public void setRelationshipsToVoid(List&lt;Relationship&gt; relationshipsToVoid) {
+<span class="nc" id="L834">		this.relationshipsToVoid = relationshipsToVoid;</span>
+<span class="nc" id="L835">	}</span>
+	
+	/**
+	 * Returns the list of Relationships that need to be edited to process form submission
+	 * 
+	 * @return the relationshipsToEdit
+	 */
+	public List&lt;Relationship&gt; getRelationshipsToEdit() {
+<span class="fc" id="L843">		return relationshipsToEdit;</span>
+	}
+	
+	/**
+	 * Sets the list of Relationships that need to be edited to process form submission
+	 * 
+	 * @param relationshipsToEdit the relationshipsToEdit to set
+	 */
+	public void setRelationshipsToEdit(List&lt;Relationship&gt; relationshipsToEdit) {
+<span class="nc" id="L852">		this.relationshipsToEdit = relationshipsToEdit;</span>
+<span class="nc" id="L853">	}</span>
+	
+	/**
+	 * @return the patientProgramsToUpdate
+	 */
+	public List&lt;PatientProgram&gt; getPatientProgramsToUpdate() {
+<span class="fc" id="L859">		return patientProgramsToUpdate;</span>
+	}
+	
+	/**
+	 * @param patientProgramsToUpdate the patientProgramsToUpdate to set
+	 */
+	public void setPatientProgramsToUpdate(List&lt;PatientProgram&gt; patientProgramsToUpdate) {
+<span class="nc" id="L866">		this.patientProgramsToUpdate = patientProgramsToUpdate;</span>
+<span class="nc" id="L867">	}</span>
+	
+	/**
+	 * @return the identifiersToVoid
+	 */
+	public List&lt;PatientIdentifier&gt; getIdentifiersToVoid() {
+<span class="fc" id="L873">		return identifiersToVoid;</span>
+	}
+	
+	/**
+	 * @param identifiersToVoid the identifiersToVoid to set
+	 */
+	public void setIdentifiersToVoid(List&lt;PatientIdentifier&gt; identifiersToVoid) {
+<span class="nc" id="L880">		this.identifiersToVoid = identifiersToVoid;</span>
+<span class="nc" id="L881">	}</span>
+	
+	/**
+	 * @return the exitFromCareProperty
+	 */
+	public ExitFromCareProperty getExitFromCareProperty() {
+<span class="fc" id="L887">		return exitFromCareProperty;</span>
+	}
+	
+	public void setExitFromCareProperty(ExitFromCareProperty exitFromCareProperty) {
+<span class="nc" id="L891">		this.exitFromCareProperty = exitFromCareProperty;</span>
+<span class="nc" id="L892">	}</span>
+	
+	public List&lt;CustomFormSubmissionAction&gt; getCustomFormSubmissionActions() {
+<span class="fc" id="L895">		return customFormSubmissionActions;</span>
+	}
+	
+	public void setCustomFormSubmissionActions(List&lt;CustomFormSubmissionAction&gt; customFormSubmissionActions) {
+<span class="nc" id="L899">		this.customFormSubmissionActions = customFormSubmissionActions;</span>
+<span class="nc" id="L900">	}</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.8.202204050719</span></div></body></html>

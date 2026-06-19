@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>CompleteProgramElement.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">HTML Form Entry API</a> &gt; <a href="index.source.html" class="el_package">org.openmrs.module.htmlformentry.element</a> &gt; <span class="el_source">CompleteProgramElement.java</span></div><h1>CompleteProgramElement.java</h1><pre class="source lang-java linenums">package org.openmrs.module.htmlformentry.element;
+
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Map;
+
+import javax.servlet.http.HttpServletRequest;
+
+import org.openmrs.Program;
+import org.openmrs.module.htmlformentry.FormEntryContext;
+import org.openmrs.module.htmlformentry.FormEntryContext.Mode;
+import org.openmrs.module.htmlformentry.FormEntrySession;
+import org.openmrs.module.htmlformentry.FormSubmissionError;
+import org.openmrs.module.htmlformentry.HtmlFormEntryUtil;
+import org.openmrs.module.htmlformentry.action.FormSubmissionControllerAction;
+
+/**
+ * Serves as both the HtmlGeneratorElement and the FormSubmissionControllerAction
+ * for a Program Enrollment.
+ */
+public class CompleteProgramElement implements HtmlGeneratorElement, FormSubmissionControllerAction {
+	
+	private Program program;
+
+<span class="nc" id="L25">	public CompleteProgramElement(FormEntryContext context, Map&lt;String, String&gt; parameters) {</span>
+		try {
+<span class="nc" id="L27">			program = HtmlFormEntryUtil.getProgram(parameters.get(&quot;programId&quot;));</span>
+<span class="nc" id="L28">		} catch (Exception ex) {</span>
+<span class="nc" id="L29">			throw new IllegalArgumentException(&quot;Couldn't find program in: &quot; + parameters);</span>
+<span class="nc" id="L30">		}</span>
+<span class="nc" id="L31">    }</span>
+
+	/**
+	 * @see org.openmrs.module.htmlformentry.element.HtmlGeneratorElement#generateHtml(org.openmrs.module.htmlformentry.FormEntryContext)
+	 */
+	@Override
+    public String generateHtml(FormEntryContext context) {
+<span class="nc" id="L38">	    return &quot;&quot;;</span>
+    }
+
+	/**
+	 * @see org.openmrs.module.htmlformentry.action.FormSubmissionControllerAction#handleSubmission(org.openmrs.module.htmlformentry.FormEntrySession, javax.servlet.http.HttpServletRequest)
+	 */
+	@Override
+    public void handleSubmission(FormEntrySession session, HttpServletRequest submission) {
+<span class="nc bnc" id="L46" title="All 2 branches missed.">	    if (session.getContext().getMode() == Mode.ENTER) {</span>
+<span class="nc" id="L47">	    	session.getSubmissionActions().completeProgram(program);</span>
+	    }
+<span class="nc" id="L49">    }</span>
+
+	/**
+	 * @see org.openmrs.module.htmlformentry.action.FormSubmissionControllerAction#validateSubmission(org.openmrs.module.htmlformentry.FormEntryContext, javax.servlet.http.HttpServletRequest)
+	 */
+	@Override
+    public Collection&lt;FormSubmissionError&gt; validateSubmission(FormEntryContext context, HttpServletRequest submission) {
+<span class="nc" id="L56">	    return Collections.emptySet();</span>
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.8.202204050719</span></div></body></html>

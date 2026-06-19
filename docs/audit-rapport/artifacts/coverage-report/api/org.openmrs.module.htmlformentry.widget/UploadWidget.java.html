@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>UploadWidget.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">HTML Form Entry API</a> &gt; <a href="index.source.html" class="el_package">org.openmrs.module.htmlformentry.widget</a> &gt; <span class="el_source">UploadWidget.java</span></div><h1>UploadWidget.java</h1><pre class="source lang-java linenums">package org.openmrs.module.htmlformentry.widget;
+
+import javax.servlet.http.HttpServletRequest;
+
+import org.openmrs.Obs;
+import org.openmrs.api.context.Context;
+import org.openmrs.module.htmlformentry.FormEntryContext;
+import org.openmrs.module.htmlformentry.HtmlFormEntryUtil;
+import org.openmrs.obs.ComplexData;
+
+/**
+ * A widget that implements a upload button to upload images/files, like
+ * {@code &lt;input type=&quot;file&quot;/&gt;}, or as a {@code &lt;obs conceptId=&quot;1234&quot;&gt;}. The attribute conceptId
+ * mentioned in the obs tag has to be the id of a concept with datatype 'complex'.
+ * 
+ * @author Jibesh
+ */
+<span class="fc" id="L18">public class UploadWidget implements Widget {</span>
+	
+	private Obs initialValue;
+	
+	@Override
+	public void setInitialValue(Object initialValue) {
+<span class="fc" id="L24">		this.initialValue = (Obs) initialValue;</span>
+<span class="fc" id="L25">	}</span>
+	
+	@Override
+	public String generateHtml(FormEntryContext context) {
+<span class="pc bpc" id="L29" title="1 of 2 branches missed.">		if (context.getMode() == FormEntryContext.Mode.VIEW) {</span>
+<span class="nc bnc" id="L30" title="All 2 branches missed.">			if (initialValue != null) {</span>
+<span class="nc" id="L31">				return WidgetFactory.displayComplexValue(initialValue);</span>
+			} else {
+<span class="nc" id="L33">				return WidgetFactory.displayEmptyValue(&quot;&quot;);</span>
+			}
+		}
+		
+<span class="fc" id="L37">		String id = context.getFieldName(this);</span>
+<span class="fc" id="L38">		StringBuilder sb = new StringBuilder();</span>
+<span class="fc" id="L39">		sb.append(&quot;&lt;input type=\&quot;file\&quot; class=\&quot;uploadWidget\&quot; id=\&quot;&quot; + id + &quot;\&quot; name=\&quot;&quot; + id + &quot;\&quot;&quot;);</span>
+		
+<span class="pc bpc" id="L41" title="1 of 2 branches missed.">		if (context.getMode() == FormEntryContext.Mode.EDIT) {</span>
+<span class="nc bnc" id="L42" title="All 2 branches missed.">			if (initialValue != null) {</span>
+<span class="nc" id="L43">				sb.append(&quot;/&gt;&quot;);</span>
+<span class="nc" id="L44">				String complexValueHtml = WidgetFactory.displayComplexValue(initialValue);</span>
+<span class="nc" id="L45">				return &quot;&lt;p&gt;&quot; + complexValueHtml + &quot;&lt;/p&gt;&quot; + sb.toString() + &quot;&lt;input type=\&quot;checkbox\&quot; name=\&quot;&quot; + id</span>
+				        + &quot;_delete\&quot; id=\&quot;&quot; + id + &quot;_delete\&quot; /&gt;&quot;
+<span class="nc" id="L47">				        + Context.getMessageSourceService().getMessage(&quot;htmlformentry.form.complex.delete&quot;) + &quot;&lt;br/&gt;&quot;;</span>
+			} else {
+<span class="nc" id="L49">				sb.append(&quot;/&gt;&quot;);</span>
+<span class="nc" id="L50">				return WidgetFactory.displayEmptyValue(&quot;&quot;) + sb.toString();</span>
+			}
+			
+		}
+<span class="fc" id="L54">		sb.append(&quot;/&gt;&quot;);</span>
+<span class="fc" id="L55">		return sb.toString();</span>
+	}
+	
+	/**
+	 * @param context
+	 * @param request
+	 * @return Complex Data associated with the Obs
+	 */
+	@Override
+	public ComplexData getValue(FormEntryContext context, HttpServletRequest request) {
+		try {
+<span class="nc" id="L66">			return (ComplexData) HtmlFormEntryUtil</span>
+<span class="nc" id="L67">			        .getParameterAsType(request, context.getFieldName(this), ComplexData.class);</span>
+		}
+<span class="nc" id="L69">		catch (Exception ex) {</span>
+<span class="nc" id="L70">			throw new IllegalArgumentException(&quot;Illegal value&quot;);</span>
+		}
+	}
+	
+	/**
+	 * @param context
+	 * @param request
+	 * @return boolean to indicate if obs is to be deleted
+	 */
+	public boolean shouldDelete(FormEntryContext context, HttpServletRequest request) {
+<span class="nc" id="L80">		String deleteStr = request.getParameter(context.getFieldName(this) + &quot;_delete&quot;);</span>
+<span class="nc bnc" id="L81" title="All 2 branches missed.">		if (&quot;on&quot;.equals(deleteStr)) {</span>
+<span class="nc" id="L82">			return true;</span>
+		} else {
+<span class="nc" id="L84">			return false;</span>
+		}
+	}
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.8.202204050719</span></div></body></html>

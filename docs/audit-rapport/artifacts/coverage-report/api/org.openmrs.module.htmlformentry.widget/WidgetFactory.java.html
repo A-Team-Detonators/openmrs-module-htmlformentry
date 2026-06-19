@@ -1,0 +1,185 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>WidgetFactory.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">HTML Form Entry API</a> &gt; <a href="index.source.html" class="el_package">org.openmrs.module.htmlformentry.widget</a> &gt; <span class="el_source">WidgetFactory.java</span></div><h1>WidgetFactory.java</h1><pre class="source lang-java linenums">package org.openmrs.module.htmlformentry.widget;
+
+import java.io.File;
+
+import org.openmrs.ConceptComplex;
+import org.openmrs.ConceptDatatype;
+import org.openmrs.FormField;
+import org.openmrs.Obs;
+import org.openmrs.api.context.Context;
+import org.openmrs.module.ModuleUtil;
+import org.openmrs.module.htmlformentry.HtmlFormEntryConstants;
+import org.openmrs.obs.handler.AbstractHandler;
+import org.openmrs.obs.handler.ImageHandler;
+import org.openmrs.util.OpenmrsConstants;
+import org.openmrs.web.WebConstants;
+
+/**
+ * Contains shortcut methods to instantiate Widgets, and related utility methods.
+ */
+<span class="nc" id="L20">public class WidgetFactory {</span>
+
+	/**
+	 * Used by {@see inferWidgetTypeHint(FormField)}.
+	 */
+<span class="nc" id="L25">    public enum WidgetTypeHint {</span>
+<span class="nc" id="L26">        NUMBER,</span>
+<span class="nc" id="L27">        TEXT,</span>
+<span class="nc" id="L28">        TEXTAREA,</span>
+<span class="nc" id="L29">        CHECKBOX,</span>
+<span class="nc" id="L30">        RADIO_BUTTONS,</span>
+<span class="nc" id="L31">        DROPDOWN,</span>
+<span class="nc" id="L32">        CHECKBOX_LIST,</span>
+<span class="nc" id="L33">        MULTISELECT,</span>
+<span class="nc" id="L34">        UPLOAD_WIDGET,</span>
+<span class="nc" id="L35">        DATE,</span>
+<span class="nc" id="L36">        DATE_TIME</span>
+    }
+
+    /**
+     * Given a FormField, infers the related widget from the ConceptDatatype associated with that FormField.
+     */
+    public static WidgetTypeHint inferWidgetTypeHint(FormField formField) {
+<span class="nc" id="L43">        ConceptDatatype dt = formField.getField().getConcept().getDatatype();</span>
+<span class="nc bnc" id="L44" title="All 2 branches missed.">        if (dt.isText()) {</span>
+<span class="nc" id="L45">            return WidgetTypeHint.TEXT;</span>
+<span class="nc bnc" id="L46" title="All 2 branches missed.">        } else if (dt.isNumeric()) {</span>
+<span class="nc" id="L47">            return WidgetTypeHint.NUMBER;</span>
+<span class="nc bnc" id="L48" title="All 2 branches missed.">        } else if (dt.isDate()) {</span>
+<span class="nc" id="L49">            return WidgetTypeHint.DATE;</span>
+<span class="nc bnc" id="L50" title="All 2 branches missed.">        } else if (dt.isCoded()) {</span>
+<span class="nc bnc" id="L51" title="All 2 branches missed.">            if (formField.getField().isSelectMultiple())</span>
+<span class="nc" id="L52">                return WidgetTypeHint.CHECKBOX_LIST;</span>
+<span class="nc bnc" id="L53" title="All 2 branches missed.">            else if (formField.getField().getDefaultValue() != null)</span>
+<span class="nc" id="L54">                return WidgetTypeHint.CHECKBOX;</span>
+            else
+<span class="nc" id="L56">                return WidgetTypeHint.DROPDOWN;</span>
+<span class="nc bnc" id="L57" title="All 2 branches missed.">        } else if (HtmlFormEntryConstants.COMPLEX_UUID.equals(dt.getUuid())) {</span>
+<span class="nc" id="L58">			return WidgetTypeHint.UPLOAD_WIDGET;</span>
+		} else {
+<span class="nc" id="L60">            throw new IllegalArgumentException(</span>
+                    &quot;Autodetecting widget type from concept datatype not yet implemented for &quot;
+<span class="nc" id="L62">                            + dt.getName());</span>
+        }
+    }
+
+    /*
+    public static Widget createWidget(FormEntryContext context, Map&lt;String, Object&gt; hints) {
+        if (hints == null)
+            throw new NullPointerException(&quot;hints must be provided&quot;);
+        WidgetTypeHint typeHint = (WidgetTypeHint) hints.get(&quot;widgetType&quot;);
+        if (typeHint == WidgetTypeHint.TEXT) {
+            Widget w = new TextFieldWidget();
+            context.registerWidget(w);
+            return w;
+        } else if (typeHint == WidgetTypeHint.DATE) {
+            Widget w = new DateWidget();
+            context.registerWidget(w);
+            return w;
+        } else if (typeHint == WidgetTypeHint.CHECKBOX) {
+            String value = &quot;true&quot;;
+            String label = &quot;&quot;;
+            if (hints.containsKey(&quot;value&quot;))
+                value = hints.get(&quot;value&quot;).toString();
+            if (hints.containsKey(&quot;label&quot;))
+                label = hints.get(&quot;label&quot;).toString();
+            Widget w = new CheckboxWidget(label, value);
+            context.registerWidget(w);
+            return w;
+        } else if (typeHint == WidgetTypeHint.NUMBER) {
+            NumberFieldWidget w = new NumberFieldWidget((ConceptNumeric) hints.get(&quot;concept&quot;));
+            context.registerWidget(w);
+            return w;
+        } else if (typeHint == WidgetTypeHint.DROPDOWN) {
+            DropdownWidget w = new DropdownWidget((Concept) hints.get(&quot;concept&quot;));
+            context.registerWidget(w);
+            return w;
+        } else {
+            throw new IllegalArgumentException(typeHint + &quot; not yet implemented&quot;);
+        }
+    }
+
+    public static Widget createWidget(FormEntryContext context, WidgetTypeHint widgetType) {
+        Map&lt;String, Object&gt; hints = new HashMap&lt;String, Object&gt;();
+        hints.put(&quot;widgetType&quot;, widgetType);
+        return createWidget(context, hints);
+    }
+    */
+    
+    /**
+     * Formats a value for display as HTML.
+     * 
+     * @param the value to display
+     * @return the HTML to display the value
+     */
+    public static String displayValue(String value) {
+<span class="fc" id="L116">        value = value.replace(&quot;&lt;&quot;, &quot;&amp;lt;&quot;);</span>
+<span class="fc" id="L117">        value = value.replace(&quot;&gt;&quot;, &quot;&amp;gt;&quot;);</span>
+<span class="fc" id="L118">        value = value.replace(&quot;\n&quot;, &quot;&lt;br/&gt;&quot;);</span>
+<span class="fc" id="L119">        return &quot;&lt;span class=\&quot;value\&quot;&gt;&quot; + value + &quot;&lt;/span&gt;&quot;;</span>
+    }
+    
+    /** 
+     * Returns the HTML to display an empty value.
+     * 
+     * @param value
+     * @return the HTML to display the empty value
+     */
+    public static String displayEmptyValue(String value) {
+<span class="nc" id="L129">        value = value.replace(&quot;&lt;&quot;, &quot;&amp;lt;&quot;);</span>
+<span class="nc" id="L130">        value = value.replace(&quot;&gt;&quot;, &quot;&amp;gt;&quot;);</span>
+<span class="nc" id="L131">        value = value.replace(&quot;\n&quot;, &quot;&lt;br/&gt;&quot;);</span>
+<span class="nc" id="L132">        return &quot;&lt;span class=\&quot;emptyValue\&quot;&gt;&quot; + value + &quot;&lt;/span&gt;&quot;;</span>
+    }
+
+    public static String displayDefaultEmptyValue() {
+<span class="nc" id="L136">        return displayEmptyValue(&quot;____________&quot;);</span>
+    }
+    
+    /**
+	 * Returns the HTML to display the complex value. If the value is an image it is displayed by
+	 * &lt;img&gt; &lt;/img&gt; tag else it is displayed as hyperlink that can be downloaded by the user.
+	 * 
+	 * @param obs the obs whose complex value needs to be displayed
+	 * @return the HTML code that renders the complex obs
+	 */
+	public static String displayComplexValue(Obs obs) {
+<span class="nc" id="L147">		String hyperlink = getViewHyperlink(obs);</span>
+		
+		// check if concept is complex and uses ImageHandler. If so, display image
+<span class="nc" id="L150">		ConceptComplex complex = Context.getConceptService().getConceptComplex(obs.getConcept().getId());</span>
+<span class="nc bnc" id="L151" title="All 2 branches missed.">		if (complex != null) {</span>
+			try {
+<span class="nc bnc" id="L153" title="All 2 branches missed.">				if (ImageHandler.class.isAssignableFrom(Class.forName(AbstractHandler.class.getPackage().getName() + &quot;.&quot;</span>
+<span class="nc" id="L154">				        + complex.getHandler()))) {</span>
+<span class="nc" id="L155">					String imgTag = &quot;&lt;img src='&quot; + hyperlink + &quot;' class=\&quot;complexImage\&quot; /&gt;&quot;;</span>
+<span class="nc" id="L156">					return &quot;&lt;a href=\&quot;&quot; + hyperlink + &quot;\&quot; target=\&quot;_blank\&quot;&gt;&quot; + imgTag + &quot;&lt;/a&gt;&lt;br/&gt;&lt;a href=\&quot;&quot; + getDownloadHyperlink(obs)</span>
+<span class="nc" id="L157">					        + &quot;\&quot; target=\&quot;_blank\&quot;&gt;&quot; + Context.getMessageSourceService().getMessage(&quot;htmlformentry.form.complex.download&quot;)</span>
+					        + &quot;&lt;/a&gt;&quot;;
+				}
+			}
+<span class="nc" id="L161">			catch (ClassNotFoundException e) {}</span>
+		}
+		
+<span class="nc" id="L164">		File file = AbstractHandler.getComplexDataFile(obs);</span>
+<span class="nc" id="L165">		String fileName = file.getName();</span>
+<span class="nc" id="L166">		String value = &quot;&lt;p class=\&quot;value\&quot;&gt;&quot; + fileName + &quot;&lt;br/&gt;&lt;a href=\&quot;&quot; + hyperlink + &quot;\&quot; target=\&quot;_blank\&quot;&gt;&quot;</span>
+<span class="nc" id="L167">		        + Context.getMessageSourceService().getMessage(&quot;htmlformentry.form.complex.view&quot;) + &quot;&lt;/a&gt; | &lt;a href=\&quot;&quot;</span>
+<span class="nc" id="L168">		        + getDownloadHyperlink(obs) + &quot;\&quot; target=\&quot;_blank\&quot;&gt;&quot;</span>
+<span class="nc" id="L169">		        + Context.getMessageSourceService().getMessage(&quot;htmlformentry.form.complex.download&quot;) + &quot;&lt;/a&gt;&lt;/p&gt;&quot;;</span>
+<span class="nc" id="L170">		return &quot;&lt;span&gt;&quot; + value + &quot;&lt;/span&gt;&quot;;</span>
+	}
+	
+	private static String getViewHyperlink(Obs obs) {
+<span class="nc" id="L174">		String prefix = &quot;/moduleServlet/legacyui&quot;;</span>
+<span class="nc bnc" id="L175" title="All 2 branches missed.">		if (ModuleUtil.compareVersion(OpenmrsConstants.OPENMRS_VERSION_SHORT, &quot;2.0&quot;) &lt; 0) {</span>
+<span class="nc" id="L176">			prefix = &quot;&quot;;</span>
+		}
+<span class="nc" id="L178">		return &quot;/&quot; + WebConstants.WEBAPP_NAME + prefix + &quot;/complexObsServlet?obsId=&quot; + obs.getObsId();</span>
+	}
+	
+	private static String getDownloadHyperlink(Obs obs) {
+<span class="nc" id="L182">		return getViewHyperlink(obs) + &quot;&amp;view=download&amp;viewType=download&quot;;</span>
+	}
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.8.202204050719</span></div></body></html>
