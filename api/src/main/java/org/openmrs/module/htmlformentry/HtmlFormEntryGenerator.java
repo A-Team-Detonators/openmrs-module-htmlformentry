@@ -564,20 +564,20 @@ public class HtmlFormEntryGenerator implements TagHandler {
         List<List<String>> substitutionSet = new ArrayList<>();
 
         // first, strip off the leading and trailing brackets
-        val = val.replaceFirst("\\s*\\[\\s*", "");
-        val = val.replaceFirst("\\s*\\]\\s*$", "");
+        val = val.replaceFirst("\\s*+\\[\\s*+", "");
+        val = val.replaceFirst("\\s*+\\]\\s*+$", "");
 
         // split on " ] , [ "
-        for (String subVal : val.split("\\s*\\]\\s*\\,\\s*\\[\\s*")) {
+        for (String subVal : val.split("\\s*+\\]\\s*+,\\s*+\\[\\s*+")) {
 
-            List<String> set= new ArrayList<>();
+            List<String> set = new ArrayList<>();
 
             // trim off the leading quote and trailing quote
-            subVal = subVal.replaceFirst("\\s*\\'", "");
-            subVal = subVal.replaceFirst("\\s*'\\s*$","");
+            subVal = subVal.replaceFirst("\\s*+'", "");
+            subVal = subVal.replaceFirst("\\s*+'\\s*+$", "");
 
             // split on " ',' "
-            for (String str : subVal.split("\\s*\\'\\s*\\,\\s*\\'\\s*")) {
+            for (String str : subVal.split("\\s*+'\\s*+,\\s*+'\\s*+")) {
                 set.add(str);
             }
 
