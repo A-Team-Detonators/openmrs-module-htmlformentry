@@ -563,21 +563,33 @@ public class HtmlFormEntryGenerator implements TagHandler {
 
         List<List<String>> substitutionSet = new ArrayList<>();
 
-        // first, strip off the leading and trailing brackets
-        val = val.replaceFirst("\\s*+\\[\\s*+", "");
-        val = val.replaceFirst("\\s*+\\]\\s*+$", "");
+        val = val.trim();
 
-        // split on " ] , [ "
-        for (String subVal : val.split("\\s*+\\]\\s*+,\\s*+\\[\\s*+")) {
+        // strip the leading '[' and trailing ']', if present
+        if (val.startsWith("[")) {
+            val = val.substring(1);
+        }
+        if (val.endsWith("]")) {
+            val = val.substring(0, val.length() - 1);
+        }
+
+        // split on "],[" (tolerating whitespace immediately around the comma)
+        for (String subVal : val.split("\\]\\s*,\\s*\\[")) {
 
             List<String> set = new ArrayList<>();
 
-            // trim off the leading quote and trailing quote
-            subVal = subVal.replaceFirst("\\s*+'", "");
-            subVal = subVal.replaceFirst("\\s*+'\\s*+$", "");
+            subVal = subVal.trim();
 
-            // split on " ',' "
-            for (String str : subVal.split("\\s*+'\\s*+,\\s*+'\\s*+")) {
+            // strip the leading and trailing single quote, if present
+            if (subVal.startsWith("'")) {
+                subVal = subVal.substring(1);
+            }
+            if (subVal.endsWith("'")) {
+                subVal = subVal.substring(0, subVal.length() - 1);
+            }
+
+            // split on "','" (tolerating whitespace immediately around the comma)
+            for (String str : subVal.split("'\\s*,\\s*'")) {
                 set.add(str);
             }
 
