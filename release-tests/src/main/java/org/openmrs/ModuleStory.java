@@ -31,8 +31,12 @@ public class ModuleStory {
         String databaseUserName =  System.getProperty("database_user_name", "root");
         String databaseRootPassword = System.getProperty("database_root_password","password");
         Runtime runtime = Runtime.getRuntime();
-        runtime.exec("curl http://localhost:8080/openmrs/auto_run_openmrs?local=en&remember=true" +
-                "&database_user_name="+databaseUserName+"&database_root_password="+databaseRootPassword);
+        runtime.exec(new String[] {
+            "curl",
+            "http://localhost:8080/openmrs/auto_run_openmrs?local=en&remember=true" +
+            "&database_user_name=" + databaseUserName +
+            "&database_root_password=" + databaseRootPassword
+        });
         log.debug("Waiting 10 minutes for OpenMRS installation to complete!!");
         Thread.sleep(1000*60*10);  //Waiting 10 minutes for installation to complete
         }

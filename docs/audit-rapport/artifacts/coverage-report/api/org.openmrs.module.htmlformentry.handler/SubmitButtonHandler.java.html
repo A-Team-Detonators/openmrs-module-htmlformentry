@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>SubmitButtonHandler.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">HTML Form Entry API</a> &gt; <a href="index.source.html" class="el_package">org.openmrs.module.htmlformentry.handler</a> &gt; <span class="el_source">SubmitButtonHandler.java</span></div><h1>SubmitButtonHandler.java</h1><pre class="source lang-java linenums">package org.openmrs.module.htmlformentry.handler;
+
+import java.util.Map;
+
+import org.openmrs.api.context.Context;
+import org.openmrs.module.htmlformentry.FormEntryContext.Mode;
+import org.openmrs.module.htmlformentry.FormEntrySession;
+import org.openmrs.module.htmlformentry.FormSubmissionController;
+import org.openmrs.module.htmlformentry.Translator;
+
+/**
+ * Handles the {@code &lt;submit&gt;} tag
+ */
+<span class="fc" id="L14">public class SubmitButtonHandler extends SubstitutionTagHandler {</span>
+
+    @Override
+    protected String getSubstitution(FormEntrySession session, FormSubmissionController controllerActions,
+            Map&lt;String, String&gt; parameters) {
+
+<span class="fc" id="L20">        String submitLabel = null;</span>
+<span class="fc" id="L21">        String submitClass = &quot;submitButton&quot;;</span>
+
+    	//handle defaults
+<span class="fc bfc" id="L24" title="All 2 branches covered.">    	if (session.getContext().getMode() == Mode.VIEW) {</span>
+<span class="fc" id="L25">            return &quot;&quot;;</span>
+        }
+<span class="fc bfc" id="L27" title="All 2 branches covered.">    	else if (session.getContext().getMode() == Mode.EDIT) {</span>
+<span class="fc" id="L28">    		submitLabel = Context.getMessageSourceService().getMessage(&quot;htmlformentry.saveChangesButton&quot;);</span>
+        } else {
+<span class="fc" id="L30">        	submitLabel = Context.getMessageSourceService().getMessage(&quot;htmlformentry.enterFormButton&quot;);</span>
+        }
+
+    	//check for custom label &amp; style
+<span class="pc bpc" id="L34" title="1 of 2 branches missed.">        if (parameters.containsKey(&quot;submitLabel&quot;)) {</span>
+<span class="nc" id="L35">        	submitLabel =  parameters.get(&quot;submitLabel&quot;);</span>
+        }
+<span class="pc bpc" id="L37" title="1 of 2 branches missed.">        if (parameters.containsKey(&quot;submitCode&quot;)) {</span>
+<span class="nc" id="L38">	    	Translator trans = session.getContext().getTranslator();</span>
+<span class="nc" id="L39">	    	submitLabel = trans.translate(Context.getLocale().toString(), parameters.get(&quot;submitCode&quot;));</span>
+        }
+<span class="pc bpc" id="L41" title="1 of 2 branches missed.">        if (parameters.containsKey(&quot;submitClass&quot;)) {</span>
+<span class="nc" id="L42">	    	submitClass = submitClass + &quot; &quot; + parameters.get(&quot;submitClass&quot;);  //append any other classes specified</span>
+        }
+<span class="pc bpc" id="L44" title="1 of 2 branches missed.">        if (parameters.containsKey(&quot;class&quot;)) {</span>
+<span class="nc" id="L45">            submitClass = submitClass + &quot; &quot; + parameters.get(&quot;class&quot;);  // append any other classes specified</span>
+        }
+	
+        //render it
+<span class="fc" id="L49">    	return &quot;&lt;input type=\&quot;button\&quot; class=\&quot;&quot; + submitClass + &quot;\&quot; value=\&quot;&quot; + submitLabel + &quot;\&quot; onClick=\&quot;submitHtmlForm()\&quot;/&gt;&quot;;</span>
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.8.202204050719</span></div></body></html>

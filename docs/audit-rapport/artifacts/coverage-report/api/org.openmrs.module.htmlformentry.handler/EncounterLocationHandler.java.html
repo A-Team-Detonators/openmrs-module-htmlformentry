@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>EncounterLocationHandler.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">HTML Form Entry API</a> &gt; <a href="index.source.html" class="el_package">org.openmrs.module.htmlformentry.handler</a> &gt; <span class="el_source">EncounterLocationHandler.java</span></div><h1>EncounterLocationHandler.java</h1><pre class="source lang-java linenums">package org.openmrs.module.htmlformentry.handler;
+
+import org.openmrs.Location;
+import org.openmrs.LocationTag;
+import org.openmrs.module.htmlformentry.FormEntrySession;
+import org.openmrs.module.htmlformentry.FormSubmissionController;
+import org.openmrs.module.htmlformentry.element.EncounterDetailSubmissionElement;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+/**
+ * Handles the {@code &lt;encounterLocation&gt;} tag
+ */
+<span class="fc" id="L18">public class EncounterLocationHandler extends SubstitutionTagHandler {</span>
+
+	@Override
+    protected List&lt;AttributeDescriptor&gt; createAttributeDescriptors() {
+<span class="fc" id="L22">		List&lt;AttributeDescriptor&gt; attributeDescriptors = new ArrayList&lt;AttributeDescriptor&gt;();</span>
+<span class="fc" id="L23">		attributeDescriptors.add(new AttributeDescriptor(&quot;order&quot;, Location.class));</span>
+<span class="fc" id="L24">		attributeDescriptors.add(new AttributeDescriptor(&quot;default&quot;, Location.class));</span>
+<span class="fc" id="L25">        attributeDescriptors.add(new AttributeDescriptor(&quot;tags&quot;, LocationTag.class));</span>
+<span class="fc" id="L26">		attributeDescriptors.add(new AttributeDescriptor(&quot;required&quot;, String.class));</span>
+<span class="fc" id="L27">		return Collections.unmodifiableList(attributeDescriptors);</span>
+	}
+	
+    @Override
+    protected String getSubstitution(FormEntrySession session, FormSubmissionController controllerActions,
+            Map&lt;String, String&gt; parameters) {
+
+<span class="fc" id="L34">        Map&lt;String, Object&gt; temp = new HashMap&lt;String, Object&gt;();</span>
+<span class="fc" id="L35">        temp.putAll(parameters);</span>
+<span class="fc" id="L36">        temp.put(&quot;location&quot;, true);</span>
+<span class="fc" id="L37">        EncounterDetailSubmissionElement element = new EncounterDetailSubmissionElement(session.getContext(), temp);</span>
+<span class="fc" id="L38">        session.getSubmissionController().addAction(element);</span>
+        
+<span class="fc" id="L40">        return element.generateHtml(session.getContext());</span>
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.8.202204050719</span></div></body></html>

@@ -1,0 +1,221 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>RelationshipWidget.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">HTML Form Entry API</a> &gt; <a href="index.source.html" class="el_package">org.openmrs.module.htmlformentry.widget</a> &gt; <span class="el_source">RelationshipWidget.java</span></div><h1>RelationshipWidget.java</h1><pre class="source lang-java linenums">package org.openmrs.module.htmlformentry.widget;
+
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.List;
+
+import javax.servlet.http.HttpServletRequest;
+
+import org.openmrs.Relationship;
+import org.openmrs.RelationshipType;
+import org.openmrs.api.context.Context;
+import org.openmrs.module.htmlformentry.FormEntryContext;
+import org.openmrs.module.htmlformentry.FormEntryContext.Mode;
+import org.openmrs.module.htmlformentry.HtmlFormEntryUtil;
+
+/**
+ * A widget that allows for the selection of a Person.  Implemented uses a pop-up to display person 
+ * search.
+ */
+public class RelationshipWidget implements Widget {
+	
+<span class="nc" id="L22">	private List&lt;RelationshipType&gt; relationshipsToCreate = new ArrayList&lt;RelationshipType&gt;();</span>
+<span class="nc" id="L23">	private List&lt;String&gt; roleInRelationship = new ArrayList&lt;String&gt;();</span>
+<span class="nc" id="L24">	private boolean allRelationshipsFullfilled = true;</span>
+    private String parentId;
+
+<span class="nc" id="L27">	public RelationshipWidget() { }</span>
+
+	@Override
+    public void setInitialValue(Object initialValue) {
+	 
+<span class="nc" id="L32">    }</span>
+	
+	
+	@Override
+    public String generateHtml(FormEntryContext context) {
+     
+<span class="nc" id="L38">        StringBuilder sb = new StringBuilder();</span>
+        
+        //this check is needed or else the code falls over when generating preview for editing form
+		//TODO: probably need a new mode for previewing to better deal with this sort of stuff.
+<span class="nc bnc" id="L42" title="All 4 branches missed.">		if(context.getExistingPatient() != null &amp;&amp; context.getExistingPatient().getId() != null)</span>
+		{
+<span class="nc" id="L44">			sb.append(&quot;&lt;table border=1 style=\&quot;border-collapse:collapse;border:1px solid black\&quot;&gt;&lt;tr&gt;&lt;th colspan=2&gt;&quot;);</span>
+<span class="nc" id="L45">			sb.append(&quot;&lt;strong&gt;&quot;);</span>
+<span class="nc" id="L46">			sb.append(Context.getMessageSourceService().getMessage(&quot;htmlformentry.existingRelationshipsLabel&quot;));</span>
+<span class="nc" id="L47">			sb.append(&quot; &lt;/strong&gt;&quot;);</span>
+<span class="nc" id="L48">			sb.append(&quot;&lt;/th&gt;&lt;/tr&gt;&quot;);</span>
+			//okay we need to first display any existing relationships
+<span class="nc" id="L50">			List&lt;Relationship&gt; existingRelationships = Context.getPersonService().getRelationshipsByPerson(context.getExistingPatient());</span>
+<span class="nc bnc" id="L51" title="All 2 branches missed.">			for(int i=0; i &lt; relationshipsToCreate.size(); i++)</span>
+			{
+<span class="nc bnc" id="L53" title="All 2 branches missed.">				if(i &gt; 0)</span>
+				{
+<span class="nc" id="L55">					sb.append(&quot;&lt;br /&gt;&quot;);</span>
+				}
+				
+<span class="nc" id="L58">				RelationshipType rt = relationshipsToCreate.get(i);</span>
+<span class="nc" id="L59">				String side = roleInRelationship.get(i);</span>
+<span class="nc" id="L60">				sb.append(&quot;&lt;tr&gt;&lt;td&gt;&quot; +&quot; &quot; );</span>
+				String rl;
+<span class="nc" id="L62">				StringBuilder val = new StringBuilder();</span>
+<span class="nc bnc" id="L63" title="All 2 branches missed.">				if(side.equals(&quot;A&quot;))</span>
+				{
+<span class="nc" id="L65">					rl=rt.getbIsToA();</span>
+				}
+				else
+				{
+<span class="nc" id="L69">					rl=rt.getaIsToB();</span>
+				}
+<span class="nc" id="L71">				sb.append(rl);</span>
+<span class="nc" id="L72">				sb.append(&quot;: &quot;);</span>
+<span class="nc" id="L73">				sb.append(&quot;&lt;/td&gt;&quot;);</span>
+<span class="nc" id="L74">				sb.append(&quot;&lt;td&gt;&quot; + &quot; &quot;);</span>
+<span class="nc" id="L75">				boolean addComma = false;</span>
+				
+<span class="nc bnc" id="L77" title="All 2 branches missed.">				for(Relationship r: existingRelationships)</span>
+				{
+<span class="nc bnc" id="L79" title="All 2 branches missed.">					if(r.getRelationshipType().getId().equals(rt.getId()))</span>
+					{
+<span class="nc bnc" id="L81" title="All 2 branches missed.">						if(side.equals(&quot;A&quot;))</span>
+	    				{
+<span class="nc bnc" id="L83" title="All 2 branches missed.">	    					if(r.getPersonA().equals(context.getExistingPatient()))</span>
+	    					{
+<span class="nc bnc" id="L85" title="All 2 branches missed.">	    						if(addComma)</span>
+	    						{
+<span class="nc" id="L87">	    							sb.append(&quot;,&quot;);</span>
+<span class="nc" id="L88">	    							val.append(&quot;,&quot;);</span>
+	    						}
+	    						else
+	    						{
+<span class="nc" id="L92">	    							addComma = true;</span>
+	    						}
+<span class="nc" id="L94">	    						String s = r.getPersonB().getGivenName()+&quot; &quot;+r.getPersonB().getFamilyName();	    						</span>
+<span class="nc" id="L95">	    						sb.append(s);	    	</span>
+<span class="nc" id="L96">	    						val.append(s);</span>
+<span class="nc bnc" id="L97" title="All 2 branches missed.">	    						if (context.getMode() == Mode.VIEW) {</span>
+<span class="nc" id="L98">	    							sb.append(&quot; &quot;);</span>
+<span class="nc" id="L99">	    							sb.append(Context.getMessageSourceService().getMessage(&quot;htmlformentry.existingRelationshipsAdded&quot;));</span>
+<span class="nc" id="L100">	    							sb.append(&quot; - &quot;);</span>
+<span class="nc" id="L101">	    							sb.append(new SimpleDateFormat(&quot;yyyy-MM-dd&quot;).format(r.getDateCreated()));</span>
+	    						}
+	    						
+	    					}
+	    				}
+<span class="nc bnc" id="L106" title="All 2 branches missed.">	    				if(side.equals(&quot;B&quot;))</span>
+	    				{
+<span class="nc bnc" id="L108" title="All 2 branches missed.">	    					if(r.getPersonB().equals(context.getExistingPatient()))</span>
+	    					{
+<span class="nc bnc" id="L110" title="All 2 branches missed.">	    						if(addComma)</span>
+	    						{
+<span class="nc" id="L112">	    							sb.append(&quot;,&quot;);</span>
+<span class="nc" id="L113">	    							val.append(&quot;,&quot;);</span>
+	    						}
+	    						else
+	    						{
+<span class="nc" id="L117">	    							addComma = true;</span>
+	    						}
+<span class="nc" id="L119">	    						String s =r.getPersonA().getGivenName()+&quot; &quot;+r.getPersonA().getFamilyName();</span>
+<span class="nc" id="L120">	    						sb.append(s);</span>
+<span class="nc" id="L121">	    						val.append(s);</span>
+<span class="nc bnc" id="L122" title="All 2 branches missed.">	    						if (context.getMode() == Mode.VIEW) {</span>
+<span class="nc" id="L123">	    							sb.append(&quot; &quot;);</span>
+<span class="nc" id="L124">	    							sb.append(Context.getMessageSourceService().getMessage(&quot;htmlformentry.existingRelationshipsAdded&quot;));</span>
+<span class="nc" id="L125">	    							sb.append(&quot; - &quot;);</span>
+<span class="nc" id="L126">	    							sb.append(new SimpleDateFormat(&quot;yyyy-MM-dd&quot;).format(r.getDateCreated()));</span>
+	    						}
+	    					}
+	    				}
+					}
+<span class="nc" id="L131">				}</span>
+
+                // store the current relationships in hidden fields and register them as property accessors
+                // these hidden fields *are not* used at all during form submittal; they are just used to provide
+                // access to existing relationships for javascript validation (for instance, to validate on submittal
+                // that a patient as at least one relationship of type x)
+
+<span class="nc" id="L138">				sb.append(&quot;&lt;input name='&quot;);</span>
+<span class="nc" id="L139">		    	sb.append(context.getFieldName(this));</span>
+<span class="nc" id="L140">		    	sb.append(&quot;' id='&quot;);</span>
+<span class="nc" id="L141">		    	sb.append(parentId+&quot;.&quot;+HtmlFormEntryUtil.toCamelCase(rl));</span>
+<span class="nc" id="L142">		    	sb.append(&quot;' value='&quot;);</span>
+<span class="nc" id="L143">		    	sb.append(val);</span>
+<span class="nc" id="L144">		    	sb.append(&quot;' type='hidden'&gt;&quot;);</span>
+<span class="nc" id="L145">		    	context.registerPropertyAccessorInfo(parentId+&quot;.&quot;+HtmlFormEntryUtil.toCamelCase(rl) + &quot;.value&quot;, context.getFieldNameIfRegistered(this), null,null, null);</span>
+<span class="nc" id="L146">				sb.append(&quot;&lt;/td&gt;&quot;);</span>
+<span class="nc" id="L147">				sb.append(&quot;&lt;/tr&gt;&quot;);</span>
+<span class="nc bnc" id="L148" title="All 2 branches missed.">				if(!addComma)</span>
+				{
+<span class="nc" id="L150">					allRelationshipsFullfilled = false;</span>
+				}
+			}
+<span class="nc" id="L153">			sb.append(&quot;&lt;/table&gt;&quot;);</span>
+		}
+    	
+<span class="nc" id="L156">        return sb.toString();</span>
+    }
+
+	@Override
+    public Object getValue(FormEntryContext context, HttpServletRequest request) {
+		
+<span class="nc" id="L162">        return null;</span>
+    }
+
+	
+    /**
+     * @return the relationshipsToCreate
+     */
+    public List&lt;RelationshipType&gt; getRelationshipsToCreate() {
+<span class="nc" id="L170">    	return relationshipsToCreate;</span>
+    }
+
+	
+    /**
+     * @param relationshipsToCreate the relationshipsToCreate to set
+     */
+    public void setRelationshipsToCreate(List&lt;RelationshipType&gt; relationshipsToCreate) {
+<span class="nc" id="L178">    	this.relationshipsToCreate = relationshipsToCreate;</span>
+<span class="nc" id="L179">    }</span>
+
+	
+    /**
+     * @return the roleInRelationship
+     */
+    public List&lt;String&gt; getRoleInRelationship() {
+<span class="nc" id="L186">    	return roleInRelationship;</span>
+    }
+
+	
+    /**
+     * @param roleInRelationship the roleInRelationship to set
+     */
+    public void setRoleInRelationship(List&lt;String&gt; roleInRelationship) {
+<span class="nc" id="L194">    	this.roleInRelationship = roleInRelationship;</span>
+<span class="nc" id="L195">    }</span>
+
+	
+    /**
+     * @return the allRelationshipsFullfilled
+     */
+    public boolean isAllRelationshipsFullfilled() {
+<span class="nc" id="L202">    	return allRelationshipsFullfilled;</span>
+    }
+
+	
+    /**
+     * @param allRelationshipsFullfilled the allRelationshipsFullfilled to set
+     */
+    public void setAllRelationshipsFullfilled(boolean allRelationshipsFullfilled) {
+<span class="nc" id="L210">    	this.allRelationshipsFullfilled = allRelationshipsFullfilled;</span>
+<span class="nc" id="L211">    }</span>
+
+	public String getParentId() {
+<span class="nc" id="L214">		return parentId;</span>
+	}
+
+	public void setParentId(String parentId) {
+<span class="nc" id="L218">		this.parentId = parentId;</span>
+<span class="nc" id="L219">	}</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.8.202204050719</span></div></body></html>

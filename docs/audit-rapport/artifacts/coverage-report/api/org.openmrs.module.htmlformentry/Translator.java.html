@@ -1,0 +1,180 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Translator.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">HTML Form Entry API</a> &gt; <a href="index.source.html" class="el_package">org.openmrs.module.htmlformentry</a> &gt; <span class="el_source">Translator.java</span></div><h1>Translator.java</h1><pre class="source lang-java linenums">package org.openmrs.module.htmlformentry;
+
+import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang.WordUtils;
+import org.openmrs.api.context.Context;
+import org.openmrs.util.LocaleUtility;
+
+import java.util.HashMap;
+import java.util.Locale;
+import java.util.Map;
+import java.util.regex.Pattern;
+
+/**
+ * Encapsulates Translator functionality (see {@see HtmlFormEntryGenerator#applyTranslations(String, FormEntryContext)})
+ */
+public class Translator {
+
+<span class="fc" id="L18">	private String defaultLocaleStr = &quot;en&quot;;</span>
+<span class="fc" id="L19">	private Map&lt;String, Map&lt;String, String&gt;&gt; translations = new HashMap&lt;String, Map&lt;String, String&gt;&gt;();</span>
+	
+	/**
+	 * Allowed formats for {@see translate(String, String, Format)}
+	 */
+<span class="nc" id="L24">	public static enum Format {</span>
+		/** Set all characters to lower-case */
+<span class="nc" id="L26">		LOWERCASE, </span>
+		/** Set all characters to upper-case */
+<span class="nc" id="L28">		UPPERCASE, </span>
+		/** Capitalize the first word (set the first letter of the first word to upper-case */
+<span class="nc" id="L30">		CAPITALIZE, </span>
+		/** Capitalize all words (set first letter of each word to upper-case)*/
+<span class="nc" id="L32">		CAPITALIZE_ALL</span>
+	}
+	
+	/**
+	 * Default Constructor
+	 */
+<span class="fc" id="L38">	public Translator() {}</span>
+
+	/**
+	 * Returns the translation mappings associated with this Translator
+	 * 
+	 * @return the translations
+	 */
+	public Map&lt;String, Map&lt;String, String&gt;&gt; getTranslations() {
+<span class="nc" id="L46">		return translations;</span>
+	}
+
+	/**
+	 * Sets the translation mappings associated with this Translator
+	 * 
+	 * @param translations the translations to set
+	 */
+	public void setTranslations(Map&lt;String, Map&lt;String, String&gt;&gt; translations) {
+<span class="nc" id="L55">		this.translations = translations;</span>
+<span class="nc" id="L56">	}</span>
+	
+	/**
+	 * Return the default locale used by this Translator
+	 * 
+	 * @return the defaultLocaleStr
+	 */
+	public String getDefaultLocaleStr() {
+<span class="nc" id="L64">		return defaultLocaleStr;</span>
+	}
+
+	/**
+	 * Sets the default locale used by this Translator
+	 * 
+	 * @param defaultLocaleStr the defaultLocaleStr to set
+	 */
+	public void setDefaultLocaleStr(String defaultLocaleStr) {
+<span class="fc" id="L73">		this.defaultLocaleStr = defaultLocaleStr;</span>
+<span class="fc" id="L74">	}</span>
+
+	/**
+	 * Adds a translation for the given code and locale
+	 * &lt;p&gt;
+	 * (see {@see HtmlFormEntryGenerator#applyTranslations(String, FormEntryContext)})
+	 * 
+	 * @param localeStr the name of the locale that this translation is for
+	 * @param code the code that we are translating
+	 * @param translation the translation for the specified code for the specified locale
+	 */
+	public void addTranslation(String localeStr, String code, String translation) {
+<span class="nc bnc" id="L86" title="All 2 branches missed.">		if (translations == null) {</span>
+<span class="nc" id="L87">			translations = new HashMap&lt;String, Map&lt;String, String&gt;&gt;();</span>
+		}
+<span class="nc bnc" id="L89" title="All 2 branches missed.">		if (localeStr == null) {</span>
+<span class="nc" id="L90">			localeStr = defaultLocaleStr;</span>
+		}
+<span class="nc" id="L92">		Map&lt;String, String&gt; localeMap = translations.get(localeStr);</span>
+<span class="nc bnc" id="L93" title="All 2 branches missed.">		if (localeMap == null) {</span>
+<span class="nc" id="L94">			localeMap = new HashMap&lt;String, String&gt;();</span>
+<span class="nc" id="L95">			translations.put(localeStr, localeMap);</span>
+		}
+<span class="nc" id="L97">		localeMap.put(code, translation);</span>
+<span class="nc" id="L98">	}</span>
+	
+	/**
+	 * Gets the translation map associated with a particular locale
+	 * 
+	 * @param locale the name of the locale
+	 * @return the translation map for that locale
+	 */
+	public Map&lt;String, String&gt; getTranslations(String localeStr) {
+	
+<span class="nc" id="L108">		Map&lt;String, String&gt; ret = new HashMap&lt;String, String&gt;();</span>
+		
+		// First add all translations from the default locale.  Then gradually build up variants
+<span class="nc bnc" id="L111" title="All 2 branches missed.">		if (translations.get(defaultLocaleStr) != null) {</span>
+<span class="nc" id="L112">			ret.putAll(translations.get(defaultLocaleStr));</span>
+		}
+		
+<span class="nc bnc" id="L115" title="All 2 branches missed.">		if (localeStr != null) {</span>
+<span class="nc" id="L116">			String[] split = localeStr.split(Pattern.quote(&quot;_&quot;));</span>
+<span class="nc" id="L117">			String currLocaleStr = &quot;&quot;;</span>
+<span class="nc bnc" id="L118" title="All 2 branches missed.">			for (int i=0; i&lt;split.length; i++) {</span>
+<span class="nc bnc" id="L119" title="All 2 branches missed.">				currLocaleStr += (i &gt; 0 ? &quot;_&quot; : &quot;&quot;) + split[i];</span>
+<span class="nc" id="L120">				Map&lt;String, String&gt; m = translations.get(currLocaleStr);</span>
+<span class="nc bnc" id="L121" title="All 2 branches missed.">				if (m != null) {</span>
+<span class="nc" id="L122">					ret.putAll(m);</span>
+				}
+			}
+		}
+		
+<span class="nc" id="L127">		return ret;</span>
+	}
+	
+	/**
+	 * Gets the translation map associated with a particular locale
+	 * 
+	 * @param locale the locale
+	 * @return the translation map for that locale
+	 */
+	public Map&lt;String, String&gt; getTranslations(Locale locale) {
+<span class="nc bnc" id="L137" title="All 2 branches missed.">		return getTranslations(locale == null ? null : locale.toString());</span>
+	}
+	
+	/**
+	 * Gets the translation for a specific code and locale
+	 * 
+	 * @param localeStr the name of the locale
+	 * @param key the code 
+	 * @return the translation associated with that code and locale
+	 */
+	public String translate(String localeStr, String key) {
+<span class="nc" id="L148">		Map&lt;String, String&gt; translations = getTranslations(localeStr);</span>
+<span class="nc" id="L149">		String ret = translations.get(key);</span>
+<span class="nc bnc" id="L150" title="All 2 branches missed.">		if (StringUtils.isEmpty(ret)) {</span>
+<span class="nc" id="L151">			ret = Context.getMessageSourceService().getMessage(key, null, LocaleUtility.fromSpecification(localeStr));</span>
+		}
+<span class="nc bnc" id="L153" title="All 2 branches missed.">		return (ret == null ? key : ret);</span>
+	}
+	
+	/**
+	 * Gets the translation for a specific code and locale, returning the
+	 * translation in a specified format
+	 * 
+	 * @param localeStr the name of the locale
+	 * @param key the code 
+	 * @param format to return the translation in (see {@see Format})
+	 * @return the translation associated with that code and locale
+	 */
+	public String translate(String localeStr, String key, Format format) {
+<span class="nc" id="L166">		String text = translate(localeStr, key);</span>
+<span class="nc bnc" id="L167" title="All 2 branches missed.">		if (format == Format.UPPERCASE) {</span>
+<span class="nc" id="L168">			return text.toUpperCase();</span>
+		}
+<span class="nc" id="L170">		text = text.toLowerCase();</span>
+<span class="nc bnc" id="L171" title="All 2 branches missed.">		if (format == Format.CAPITALIZE) {</span>
+<span class="nc" id="L172">			return StringUtils.capitalize(text);</span>
+		}
+<span class="nc bnc" id="L174" title="All 2 branches missed.">		if (format == Format.CAPITALIZE_ALL) {</span>
+<span class="nc" id="L175">			return WordUtils.capitalizeFully(text);</span>
+		}
+<span class="nc" id="L177">		return text;</span>
+	}
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.8.202204050719</span></div></body></html>

@@ -24,6 +24,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.multipart.MultipartHttpServletRequest;
+import org.openmrs.module.htmlformentry.web.util.HtmlFormFileValidator;
 
 /**
  * The controller for previewing a HtmlForm by loading the xml file that defines that HtmlForm from
@@ -59,8 +60,9 @@ public class HtmlFormFromFileController {
 				MultipartFile multipartFile = multipartRequest.getFile("htmlFormFile");
 				if (multipartFile != null) {
 					//use the same file for the logged in user
-					f = new File(SystemUtils.JAVA_IO_TMPDIR, TEMP_HTML_FORM_FILE_PREFIX
-					        + Context.getAuthenticatedUser().getSystemId());
+					f = File.createTempFile(
+					TEMP_HTML_FORM_FILE_PREFIX + Context.getAuthenticatedUser().getSystemId(),
+					".xml");
 					if (!f.exists())
 						f.createNewFile();
 					
@@ -71,7 +73,7 @@ public class HtmlFormFromFileController {
 				}
 			} else {
 				if (StringUtils.hasText(filePath)) {
-					f = new File(filePath);
+					f = HtmlFormFileValidator.validate(filePath);	
 				} else {
 					message = "You must specify a file path to preview from file";
 				}

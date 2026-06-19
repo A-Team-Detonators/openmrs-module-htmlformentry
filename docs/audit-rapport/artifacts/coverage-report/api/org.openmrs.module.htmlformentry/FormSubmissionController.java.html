@@ -1,0 +1,202 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>FormSubmissionController.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">HTML Form Entry API</a> &gt; <a href="index.source.html" class="el_package">org.openmrs.module.htmlformentry</a> &gt; <span class="el_source">FormSubmissionController.java</span></div><h1>FormSubmissionController.java</h1><pre class="source lang-java linenums">package org.openmrs.module.htmlformentry;
+
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+import org.openmrs.Encounter;
+import org.openmrs.Patient;
+import org.openmrs.api.APIException;
+import org.openmrs.api.context.Context;
+import org.openmrs.module.htmlformentry.action.FormSubmissionControllerAction;
+import org.openmrs.module.htmlformentry.action.RepeatControllerAction;
+import org.openmrs.util.OpenmrsUtil;
+
+import javax.servlet.http.HttpServletRequest;
+import java.io.File;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+
+/**
+ * Encapsulates how to validate and submit a form.
+ * &lt;p/&gt;
+ * When going through XML/HTML substitution to build a form, one of these is created as a side-effect.
+ */
+public class FormSubmissionController {
+    
+<span class="fc" id="L26">    private List&lt;FormSubmissionControllerAction&gt; actions = new ArrayList&lt;FormSubmissionControllerAction&gt;();</span>
+    private transient List&lt;FormSubmissionError&gt; lastSubmissionErrors;
+    private transient HttpServletRequest lastSubmission;
+<span class="fc" id="L29">    private RepeatControllerAction repeat = null;</span>
+
+<span class="fc" id="L31">    private static Log log = LogFactory.getLog(FormSubmissionController.class);</span>
+    
+<span class="fc" id="L33">    public FormSubmissionController() {</span>
+<span class="fc" id="L34">    }</span>
+    
+    /**
+     * Adds a {@see RepeatControllerAction} to the list of submission actions.
+     * 
+     * @param repeat the repeat controller action to add
+     */
+    public void startRepeat(RepeatControllerAction repeat) {
+<span class="nc bnc" id="L42" title="All 2 branches missed.">        if (this.repeat != null)</span>
+<span class="nc" id="L43">            throw new IllegalArgumentException(&quot;Nested Repeating elements are not yet implemented&quot;);</span>
+<span class="nc" id="L44">        addAction(repeat);</span>
+<span class="nc" id="L45">        this.repeat = repeat;</span>
+<span class="nc" id="L46">    }</span>
+    
+    /**
+     * Marks the end of the a repeat. This has to be specified because nested repeating elements are not yet implemented.
+     */
+    public void endRepeat() {
+<span class="nc bnc" id="L52" title="All 2 branches missed.">        if (this.repeat == null)</span>
+<span class="nc" id="L53">            throw new IllegalArgumentException(&quot;No Repeating element is open now&quot;);</span>
+<span class="nc" id="L54">        this.repeat = null;</span>
+<span class="nc" id="L55">    }</span>
+    
+    /**
+     * Adds a FormSubmissionControllerAction to the list of submission actions.
+     * 
+     * @param the form submission controller action to add
+     */
+    public void addAction(FormSubmissionControllerAction action) {
+<span class="fc" id="L63">        actions.add(action);</span>
+<span class="fc" id="L64">    }</span>
+    
+    /**
+     * Validates a form submission, given a Form Entry Context.
+     * &lt;p/&gt;
+     * This method cycles through all the FormSubmissionControllerActions and calls their validateSubmission method, 
+     * adding any errors to the error list.
+     * 
+     * @param context the Form Entry Context 
+     * @param submission the submission to validate
+     * @return list of all validation errors
+     */
+    public List&lt;FormSubmissionError&gt; validateSubmission(FormEntryContext context, HttpServletRequest submission) {
+<span class="fc" id="L77">        lastSubmission = submission;</span>
+<span class="fc" id="L78">        lastSubmissionErrors = new ArrayList&lt;FormSubmissionError&gt;();</span>
+<span class="fc bfc" id="L79" title="All 2 branches covered.">        for (FormSubmissionControllerAction element : actions) {</span>
+            
+<span class="fc" id="L81">            Collection&lt;FormSubmissionError&gt; errs = element.validateSubmission(context, submission);</span>
+<span class="fc bfc" id="L82" title="All 2 branches covered.">            if (errs != null) {</span>
+<span class="fc" id="L83">                lastSubmissionErrors.addAll(errs);</span>
+            }
+<span class="fc" id="L85">        }</span>
+<span class="fc bfc" id="L86" title="All 2 branches covered.">        if (!lastSubmissionErrors.isEmpty()) {</span>
+            // AUDIT | NEN-7510 8.15 — formulierindiening mislukt door validatiefouten
+<span class="fc" id="L88">            log.warn(&quot;AUDIT | action=FORM_SUBMIT_FAILED&quot;</span>
+<span class="pc bpc" id="L89" title="1 of 2 branches missed.">                    + &quot; | userId=&quot; + (Context.getAuthenticatedUser() != null ? Context.getAuthenticatedUser().getId() : &quot;anonymous&quot;)</span>
+<span class="fc" id="L90">                    + &quot; | errorCount=&quot; + lastSubmissionErrors.size());</span>
+        }
+<span class="fc" id="L92">        return lastSubmissionErrors;</span>
+    }
+    
+    /**
+     * Processes a form submission, given a Form Entry Session.
+     * &lt;p/&gt;
+     * This method cycles through all the FormSubmissionControllerActions and calls all their handleSubmission methods.
+     * 
+     * @param session the Form Entry Session
+     * @param submission
+     */
+    public void handleFormSubmission(FormEntrySession session, HttpServletRequest submission) throws Exception{
+<span class="fc" id="L104">        lastSubmission = submission;</span>
+        //Serialize when opted in.
+<span class="fc" id="L106">        String optedIn = Context.getAdministrationService().getGlobalProperty(&quot;htmlformentry.archiveHtmlForms&quot;,&quot;No&quot;);</span>
+<span class="pc bpc" id="L107" title="1 of 2 branches missed.">        if(Boolean.parseBoolean(optedIn)) {</span>
+            //Try to serialize
+            try {
+<span class="nc" id="L110">                Patient patient = session.getPatient();</span>
+<span class="nc" id="L111">                Encounter encounter = session.getEncounter();</span>
+<span class="nc" id="L112">                SerializableFormObject formObject = null;</span>
+<span class="nc bnc" id="L113" title="All 4 branches missed.">                if (patient != null &amp;&amp; encounter != null) {</span>
+<span class="nc" id="L114">                    formObject = new SerializableFormObject(session.getXmlDefinition(),</span>
+<span class="nc" id="L115">                            submission.getParameterMap(), patient.getPatientIdentifier().getIdentifier(),</span>
+<span class="nc" id="L116">                            patient.getUuid(), encounter.getUuid(),session.getHtmlFormId());</span>
+<span class="nc bnc" id="L117" title="All 4 branches missed.">                } else if(patient==null || encounter==null) {</span>
+<span class="nc bnc" id="L118" title="All 2 branches missed.">                    if(log.isDebugEnabled()) log.debug(&quot;Either patient or encounter or both are null&quot;);</span>
+
+                    //Serialize anyway
+<span class="nc" id="L121">                    formObject = new SerializableFormObject(session.getXmlDefinition(), submission.getParameterMap(),</span>
+<span class="nc" id="L122">                                    session.getHtmlFormId());</span>
+                }
+<span class="nc bnc" id="L124" title="All 2 branches missed.">                if (formObject != null) {</span>
+<span class="nc" id="L125">                    serializeFormData(formObject);</span>
+                }
+            } finally {
+                //Submit even when you are not able to serialize.
+<span class="nc bnc" id="L129" title="All 2 branches missed.">                for (FormSubmissionControllerAction element : actions) {</span>
+<span class="nc" id="L130">                    element.handleSubmission(session, submission);</span>
+<span class="nc" id="L131">                }</span>
+<span class="nc" id="L132">            }</span>
+        } else {  //Just submit
+<span class="fc bfc" id="L134" title="All 2 branches covered.">            for (FormSubmissionControllerAction element : actions) {</span>
+<span class="fc" id="L135">                element.handleSubmission(session, submission);</span>
+<span class="fc" id="L136">            }</span>
+        }
+<span class="fc" id="L138">    }</span>
+    
+    /**
+     * Returns the last submission processed by handleFormSubmission.
+     * 
+     * @return the last submission processed
+     */
+    public HttpServletRequest getLastSubmission() {
+<span class="nc" id="L146">        return lastSubmission;</span>
+    }
+
+    /**
+     * Returns the last set of submission errors generated by validateSubmission
+     * 
+     * @return the last set of submission errors
+     */
+    public List&lt;FormSubmissionError&gt; getLastSubmissionErrors() {
+<span class="nc" id="L155">        return lastSubmissionErrors;</span>
+    }
+    
+    /**
+     * 
+     * Returns the List of FormSubmissionControllerActions
+     * 
+     * @return the FormSubmissionControllerAction List
+     */
+    public List&lt;FormSubmissionControllerAction&gt; getActions() {
+<span class="nc" id="L165">               return actions;</span>
+    }
+
+    /**
+     * Serializes an object formed by pairing the HttpServletRequest &amp; FormEntrySession objects necessary for form
+     * submission
+     * @param submittedData  SerializableFormObject
+     * @throws Exception
+     */
+    protected void serializeFormData(final SerializableFormObject submittedData) throws Exception {
+        //Get archive Directory
+<span class="nc" id="L176">        String path = HtmlFormEntryUtil.getArchiveDirPath();</span>
+
+        //Ignore if no path specified
+<span class="nc bnc" id="L179" title="All 2 branches missed.">        if(path==null)return;</span>
+
+<span class="nc" id="L181">        File   file = new File(path);</span>
+<span class="nc bnc" id="L182" title="All 2 branches missed.">        if(file.exists()) {</span>
+<span class="nc bnc" id="L183" title="All 2 branches missed.">            if(!file.isDirectory()) {</span>
+<span class="nc" id="L184">                throw new APIException(&quot;The specified archive is not a directory, please use a proper directory&quot;);</span>
+            }
+            //Proceed if it is a directory
+<span class="nc bnc" id="L187" title="All 2 branches missed.">            if(!file.canWrite()) {</span>
+<span class="nc" id="L188">                throw new APIException(&quot;The Archive directory is not writable, check the directory permissions&quot;);</span>
+            }
+        }else{
+            //Try to create the directory if it does not exist.
+<span class="nc bnc" id="L192" title="All 2 branches missed.">            if(!file.mkdirs()) {</span>
+<span class="nc" id="L193">                throw new APIException(&quot;Failed to create subdirectories. Make sure you have proper write &quot; +</span>
+                        &quot;permission set on the archive directory&quot;);
+            }
+        }
+
+        //All exceptions have been accounted for
+<span class="nc" id="L199">        submittedData.serializeToXml(path);</span>
+<span class="nc" id="L200">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.8.202204050719</span></div></body></html>

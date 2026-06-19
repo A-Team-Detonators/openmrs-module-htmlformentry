@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>EncounterVoidHandler.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">HTML Form Entry API</a> &gt; <a href="index.source.html" class="el_package">org.openmrs.module.htmlformentry.handler</a> &gt; <span class="el_source">EncounterVoidHandler.java</span></div><h1>EncounterVoidHandler.java</h1><pre class="source lang-java linenums">package org.openmrs.module.htmlformentry.handler;
+
+import java.util.HashMap;
+import java.util.Map;
+
+import org.openmrs.module.htmlformentry.FormEntrySession;
+import org.openmrs.module.htmlformentry.FormSubmissionController;
+import org.openmrs.module.htmlformentry.element.EncounterDetailSubmissionElement;
+
+<span class="fc" id="L10">public class EncounterVoidHandler extends SubstitutionTagHandler {</span>
+
+	@Override
+	protected String getSubstitution(FormEntrySession session,
+			FormSubmissionController controllerActions,
+			Map&lt;String, String&gt; parameters) {
+		
+<span class="nc" id="L17">		Map&lt;String, Object&gt; temp = new HashMap&lt;String, Object&gt;();</span>
+<span class="nc" id="L18">        temp.putAll(parameters);</span>
+<span class="nc" id="L19">        temp.put(&quot;showVoidEncounter&quot;, true);</span>
+<span class="nc" id="L20">        EncounterDetailSubmissionElement element = new EncounterDetailSubmissionElement(session.getContext(), temp);</span>
+<span class="nc" id="L21">        session.getSubmissionController().addAction(element);</span>
+        
+<span class="nc" id="L23">		return element.generateHtml(session.getContext());</span>
+	}
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.8.202204050719</span></div></body></html>

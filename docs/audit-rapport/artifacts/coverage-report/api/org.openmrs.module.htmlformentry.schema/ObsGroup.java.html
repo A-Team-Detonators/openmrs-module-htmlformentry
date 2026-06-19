@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ObsGroup.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">HTML Form Entry API</a> &gt; <a href="index.source.html" class="el_package">org.openmrs.module.htmlformentry.schema</a> &gt; <span class="el_source">ObsGroup.java</span></div><h1>ObsGroup.java</h1><pre class="source lang-java linenums">package org.openmrs.module.htmlformentry.schema;
+
+import java.util.ArrayList;
+import java.util.List;
+
+import org.openmrs.Concept;
+
+/**
+ * Represents an ObsGroup in the HTML Form Schema
+ */
+public class ObsGroup implements HtmlFormField {
+
+	private Concept concept;
+<span class="nc" id="L14">	private List&lt;HtmlFormField&gt; children = new ArrayList&lt;HtmlFormField&gt;();</span>
+	private String label;
+    
+<span class="nc" id="L17">    public ObsGroup(Concept concept) {</span>
+<span class="nc" id="L18">    	this.concept = concept;</span>
+<span class="nc" id="L19">    }</span>
+    
+<span class="nc" id="L21">    public ObsGroup(Concept concept, String label) {</span>
+<span class="nc" id="L22">    	this.concept = concept;</span>
+<span class="nc" id="L23">    	this.label = label;</span>
+<span class="nc" id="L24">    }</span>
+
+	/**
+	 * Gets the parent concept associated with this ObsGroup
+	 * 
+	 * @return the concept
+	 */
+	public Concept getConcept() {
+<span class="nc" id="L32">		return concept;</span>
+	}
+
+	/**
+	 * Sets the parent concept associated with this ObsGroup
+	 * 
+	 * @param concept the concept to set
+	 */
+	public void setConcept(Concept concept) {
+<span class="nc" id="L41">		this.concept = concept;</span>
+<span class="nc" id="L42">	}</span>
+
+    public List&lt;HtmlFormField&gt; getChildren() {
+<span class="nc" id="L45">        return children;</span>
+    }
+    
+    public void setChildren(List&lt;HtmlFormField&gt; children) {
+<span class="nc bnc" id="L49" title="All 2 branches missed.">        for (HtmlFormField hff : children){</span>
+<span class="nc bnc" id="L50" title="All 4 branches missed.">            if (hff instanceof ObsField == false &amp;&amp; hff instanceof ObsGroup == false)</span>
+<span class="nc" id="L51">                throw new RuntimeException(&quot;You can only add an ObsField or an ObsGroup to an ObsGroup&quot;);</span>
+<span class="nc" id="L52">        }</span>
+<span class="nc" id="L53">        this.children = children;</span>
+<span class="nc" id="L54">    }</span>
+    
+    public void addChild(HtmlFormField hff){
+<span class="nc bnc" id="L57" title="All 4 branches missed.">        if (hff instanceof ObsField || hff instanceof ObsGroup)</span>
+<span class="nc" id="L58">            this.children.add(hff);</span>
+        else 
+<span class="nc" id="L60">            throw new RuntimeException(&quot;You can only add an ObsField or an ObsGroup to an ObsGroup&quot;);</span>
+<span class="nc" id="L61">    }</span>
+
+	
+    public String getLabel() {
+<span class="nc" id="L65">    	return label;</span>
+    }
+
+	
+    public void setLabel(String label) {
+<span class="nc" id="L70">    	this.label = label;</span>
+<span class="nc" id="L71">    }	</span>
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.8.202204050719</span></div></body></html>

@@ -1,0 +1,982 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>FormEntryContext.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">HTML Form Entry API</a> &gt; <a href="index.source.html" class="el_package">org.openmrs.module.htmlformentry</a> &gt; <span class="el_source">FormEntryContext.java</span></div><h1>FormEntryContext.java</h1><pre class="source lang-java linenums">package org.openmrs.module.htmlformentry;
+
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+import org.openmrs.Concept;
+import org.openmrs.Drug;
+import org.openmrs.DrugOrder;
+import org.openmrs.Encounter;
+import org.openmrs.Location;
+import org.openmrs.Obs;
+import org.openmrs.Order;
+import org.openmrs.Patient;
+import org.openmrs.api.context.Context;
+import org.openmrs.module.htmlformentry.matching.ObsGroupEntity;
+import org.openmrs.module.htmlformentry.schema.HtmlFormField;
+import org.openmrs.module.htmlformentry.schema.HtmlFormSchema;
+import org.openmrs.module.htmlformentry.schema.HtmlFormSection;
+import org.openmrs.module.htmlformentry.schema.ObsGroup;
+import org.openmrs.module.htmlformentry.widget.ErrorWidget;
+import org.openmrs.module.htmlformentry.widget.Widget;
+import org.openmrs.util.LocaleUtility;
+import org.openmrs.util.OpenmrsUtil;
+
+import javax.servlet.http.HttpSession;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.Stack;
+
+/**
+ * This class holds the context data around generating html widgets from tags in an HtmlForm.
+ * &lt;p/&gt;
+ * It allows you to register widgets, which assigns them an id/name in the generated html, and allows you to
+ * look up those id/names later. It allows you specify which error widget goes to which widget, so that error
+ * messages get displayed in the right place.
+ * &lt;p/&gt;
+ * It also holds existing data for an encounter in View mode, so that widgets can be set with
+ * their appropriate values.
+ * &lt;p/&gt;
+ * TODO rename this class: it's really more of the html generation context than a form entry context
+ * &lt;/p&gt;
+ * TODO move Mode class up to FormEntrySession instead?
+ * &lt;p&gt;
+ * 'automaticClientSideValidation' means that elements and widgets should generate HTML that does things like numeric range
+ * checking when you blur a text field.
+ * 'clientSideValidationHints' means that elements and widgets should generate HTML where inputs have classes like &quot;required&quot;
+ * and &quot;numeric-range&quot;, and attributes like &quot;min&quot; and &quot;max&quot;.
+ * &lt;/p&gt;
+ */
+public class FormEntryContext {
+
+    /** Logger for this class and subclasses */
+<span class="fc" id="L62">    protected final Log log = LogFactory.getLog(getClass());</span>
+    
+    private Mode mode;
+<span class="fc" id="L65">    private Map&lt;Widget, String&gt; fieldNames = new HashMap&lt;Widget, String&gt;();</span>
+<span class="fc" id="L66">    private Map&lt;Widget, ErrorWidget&gt; errorWidgets = new HashMap&lt;Widget, ErrorWidget&gt;();</span>
+<span class="fc" id="L67">    private Map&lt;String, String&gt; javascriptFieldAccessorInfo = new LinkedHashMap&lt;String, String&gt;();</span>
+<span class="fc" id="L68">    private Translator translator = new Translator();</span>
+<span class="fc" id="L69">    private HtmlFormSchema schema = new HtmlFormSchema();</span>
+<span class="fc" id="L70">    private Stack&lt;HtmlFormSection&gt; sectionsStack = new Stack&lt;HtmlFormSection&gt;();</span>
+<span class="fc" id="L71">    private Stack&lt;Map&lt;ObsGroup, List&lt;Obs&gt;&gt;&gt; obsGroupStack = new Stack&lt;Map&lt;ObsGroup, List&lt;Obs&gt;&gt;&gt;();</span>
+    private ObsGroup activeObsGroup;
+    
+    private Patient existingPatient;
+    private Encounter existingEncounter;
+    private Map&lt;Concept, List&lt;Obs&gt;&gt; existingObs;
+    private Map&lt;Concept, List&lt;Order&gt;&gt; existingOrders;
+    private Map&lt;Obs, Set&lt;Obs&gt;&gt; existingObsInGroups;
+
+<span class="fc" id="L80">    private Stack&lt;Concept&gt; currentObsGroupConcepts = new Stack&lt;Concept&gt;();</span>
+    private List&lt;Obs&gt; currentObsGroupMembers;
+    
+    private Date previousEncounterDate;  // if the encounter has been edited on a form, this stores the prior encounter date
+
+    private Location defaultLocation;
+    private Date defaultEncounterDate;
+
+<span class="fc" id="L88">    private List&lt;ObsGroupEntity&gt; unmatchedObsGroupEntities = null;</span>
+<span class="fc" id="L89">    private boolean unmatchedMode = false;</span>
+    
+<span class="fc" id="L91">    private boolean guessingInd = false;</span>
+    private HttpSession httpSession;
+
+<span class="fc" id="L94">    private boolean automaticClientSideValidation = true;</span>
+<span class="fc" id="L95">    private boolean clientSideValidationHints = false;</span>
+
+<span class="fc" id="L97">    private Stack&lt;Object&gt; stack = new Stack&lt;Object&gt;();</span>
+
+    // TODO once Html Form Entry no longer supports older core versions that don't have visits, we should:
+    // TODO 1) change the type of this variable to visit
+    // TODO 2) change HtmlFormEntryController so that it correctly populates the context with the relevant visit (if available)
+    private Object visit;
+
+<span class="fc" id="L104">    public FormEntryContext(Mode mode) {</span>
+<span class="fc" id="L105">        this.mode = mode;</span>
+<span class="fc" id="L106">        setupExistingData((Encounter) null);</span>
+<span class="fc" id="L107">        translator.setDefaultLocaleStr(LocaleUtility.getDefaultLocale().toString());</span>
+<span class="fc" id="L108">    }</span>
+    
+    /**
+     * Gets the {@see Mode} associated with this Context
+     * @return the {@see Mode} associated with this Context
+     */
+    public Mode getMode() {
+<span class="fc" id="L115">        return mode;</span>
+    }
+    
+<span class="fc" id="L118">    private Integer sequenceNextVal = 1;</span>
+    
+    /**
+     * Registers a widget within the Context
+     *  
+     * @param widget the widget to register
+     * @return the field id used to identify this widget in the HTML Form
+     */
+    public String registerWidget(Widget widget) {
+<span class="pc bpc" id="L127" title="1 of 2 branches missed.">        if (fieldNames.containsKey(widget))</span>
+<span class="nc" id="L128">            throw new IllegalArgumentException(&quot;This widget is already registered&quot;);</span>
+<span class="fc" id="L129">        int thisVal = 0;</span>
+<span class="fc" id="L130">        synchronized (sequenceNextVal) {</span>
+<span class="fc" id="L131">            thisVal = sequenceNextVal;</span>
+<span class="fc" id="L132">            sequenceNextVal = sequenceNextVal + 1;            </span>
+<span class="fc" id="L133">        }</span>
+<span class="fc" id="L134">        String fieldName = &quot;w&quot; + thisVal;</span>
+<span class="fc" id="L135">        fieldNames.put(widget, fieldName);</span>
+<span class="pc bpc" id="L136" title="1 of 2 branches missed.">        if (log.isTraceEnabled())</span>
+<span class="fc" id="L137">        	log.trace(&quot;Registered widget &quot; + widget.getClass() + &quot; as &quot; + fieldName);</span>
+<span class="fc" id="L138">        return fieldName;</span>
+    }
+    
+    /**
+     * Registers an error widget within the Context
+     * 
+     * @param widget: the widget to associate this error widget with
+     * @param errorWidget: the error widget to register
+     * @return the field id used to identify this widget in the HTML Form
+     */
+    public String registerErrorWidget(Widget widget, ErrorWidget errorWidget) {
+        String errorWidgetId;
+<span class="pc bpc" id="L150" title="1 of 2 branches missed.">        if (!fieldNames.containsKey(errorWidget)) {</span>
+<span class="fc" id="L151">            errorWidgetId = registerWidget(errorWidget);</span>
+        } else {
+<span class="nc" id="L153">            errorWidgetId = getFieldName(errorWidget);</span>
+        }
+<span class="fc" id="L155">        errorWidgets.put(widget, errorWidget);</span>
+        
+<span class="fc" id="L157">        return errorWidgetId;</span>
+    }
+
+    /**
+     * Gets the field id used to identify a specific widget within the HTML Form
+     * 
+     * @param widget the widget
+     * @return the field id associated with the widget in the HTML Form
+     * @throws IllegalArgumentException if the given widget is not registered
+     */
+    public String getFieldName(Widget widget) {
+<span class="fc" id="L168">        String fieldName = fieldNames.get(widget);</span>
+<span class="pc bpc" id="L169" title="1 of 2 branches missed.">        if (fieldName == null)</span>
+<span class="nc" id="L170">            throw new IllegalArgumentException(&quot;Widget not registered&quot;);</span>
+        else
+<span class="fc" id="L172">            return fieldName;</span>
+    }
+    
+    /**
+     * Like {@link #getFieldName(Widget)} but returns null if the widget is not registered (instead
+     * of throwing an exception).
+     * @param widget
+     * @return
+     */
+    public String getFieldNameIfRegistered(Widget widget) {
+<span class="fc" id="L182">        return fieldNames.get(widget);</span>
+    }
+    
+    /**
+     * @return the widget that is registered for the given field name, or null if there is none
+     */
+	public Widget getWidgetByFieldName(String fieldName) {
+<span class="fc bfc" id="L189" title="All 2 branches covered.">		for (Map.Entry&lt;Widget, String&gt; e : fieldNames.entrySet()) {</span>
+<span class="pc bpc" id="L190" title="1 of 2 branches missed.">			if (e.getValue().equals(fieldName))</span>
+<span class="fc" id="L191">				return e.getKey();</span>
+<span class="nc" id="L192">		}</span>
+<span class="fc" id="L193">		return null;</span>
+    }
+    
+    /**
+     * Gets the field id used to identify a specific error widget within the HTML Form
+     * 
+     * @param widget the widget
+     * @return the field id associated with the error widget in the HTML Form
+     */
+    public String getErrorFieldId(Widget widget) {
+<span class="nc" id="L203">        return getFieldName(errorWidgets.get(widget));</span>
+    }
+    
+    /**
+     * Gets the fields ids for all currently registered error widgets
+     * 
+     * @return a set of all the field ids for all currently registered error widgets
+     */
+    public Collection&lt;String&gt; getErrorDivIds() {
+<span class="fc" id="L212">        Set&lt;String&gt; ret = new HashSet&lt;String&gt;();</span>
+<span class="fc bfc" id="L213" title="All 2 branches covered.">        for (ErrorWidget e : errorWidgets.values())</span>
+<span class="fc" id="L214">            ret.add(getFieldName(e));</span>
+<span class="fc" id="L215">        return ret;</span>
+    }
+
+    /**
+     * Adds a new section
+     */
+    public void beginSection(HtmlFormSection section) {
+
+        // is this a top-level section or it is a child of the existing section
+<span class="nc bnc" id="L224" title="All 2 branches missed.">        if (sectionsStack.size() &gt; 0) {</span>
+<span class="nc" id="L225">            sectionsStack.peek().addChildSection(section);</span>
+        }
+        else {
+<span class="nc" id="L228">            schema.getSections().add(section);</span>
+        }
+
+<span class="nc" id="L231">        sectionsStack.push(section);</span>
+<span class="nc" id="L232">    }</span>
+
+    public void beginSection() {
+<span class="nc" id="L235">        beginSection(new HtmlFormSection());</span>
+<span class="nc" id="L236">    }</span>
+
+    public HtmlFormSection getActiveSection() {
+<span class="nc bnc" id="L239" title="All 2 branches missed.">        if (sectionsStack.size() &gt; 0) {</span>
+<span class="nc" id="L240">            return sectionsStack.peek();</span>
+        }
+        else {
+<span class="nc" id="L243">            return null;</span>
+        }
+    }
+
+    /**
+     * Adds an HTML Form Field to the schema
+     *
+     * @param field the field to add
+     */
+    public void addFieldToActiveSection(HtmlFormField field) {
+<span class="nc bnc" id="L253" title="All 2 branches missed.">        if (sectionsStack.size() &gt; 0) {</span>
+<span class="nc" id="L254">            sectionsStack.peek().addField(field);</span>
+        }
+        else {
+<span class="nc" id="L257">            schema.getFields().add(field);</span>
+        }
+<span class="nc" id="L259">    }</span>
+
+    public void endSection(){
+<span class="nc" id="L262">        sectionsStack.pop();</span>
+<span class="nc" id="L263">    }</span>
+       
+    /**
+     * Marks the start of a new {@see ObsGroup} within current Context
+     */
+    public void beginObsGroup(Concept conceptSet, Obs thisGroup, ObsGroup obsGroupSchemaObj) {
+<span class="nc" id="L269">        setObsGroup(thisGroup);</span>
+<span class="nc" id="L270">        currentObsGroupConcepts.push(conceptSet);</span>
+<span class="nc" id="L271">        activeObsGroup = obsGroupSchemaObj;</span>
+<span class="nc" id="L272">        Map&lt;ObsGroup, List&lt;Obs&gt;&gt; map = new HashMap&lt;ObsGroup, List&lt;Obs&gt;&gt;();</span>
+<span class="nc" id="L273">        map.put(this.getActiveObsGroup(), currentObsGroupMembers);</span>
+<span class="nc" id="L274">        obsGroupStack.push(map);</span>
+<span class="nc" id="L275">    }</span>
+    
+    /**
+     * Gets the {@see ObsGroup} that is currently active within the current Context
+     * 
+     * @return the currently active {@see ObsGroup}
+     */
+    public ObsGroup getActiveObsGroup() {
+<span class="nc" id="L283">    	return activeObsGroup;</span>
+    }
+
+    public void addFieldToActiveObsGroup(HtmlFormField field) {
+<span class="nc" id="L287">        getActiveObsGroup().getChildren().add(field);</span>
+<span class="nc" id="L288">    }</span>
+
+        /**
+         * Sets the active Obs group members to the Obs that are associated with the Obs passed as a parameter
+         *
+         * @param group an Obs that should have group members
+         */
+    public void setObsGroup(Obs group) {
+<span class="nc bnc" id="L296" title="All 2 branches missed.">        if (group == null) {</span>
+<span class="nc" id="L297">            currentObsGroupMembers = null;</span>
+        } else {
+<span class="nc" id="L299">            currentObsGroupMembers = new ArrayList&lt;Obs&gt;();</span>
+<span class="nc bnc" id="L300" title="All 2 branches missed.">            for (Obs o : group.getGroupMembers())</span>
+<span class="nc" id="L301">                currentObsGroupMembers.add(o);</span>
+        }
+<span class="nc" id="L303">    }</span>
+    
+    /**
+     * Closes the active {@see ObsGroup} and adds it to the Html Form Schema
+     */
+    public void endObsGroup() {
+        //remove itself
+    	
+<span class="nc bnc" id="L311" title="All 2 branches missed.">        if (!obsGroupStack.isEmpty()){</span>
+<span class="nc" id="L312">            obsGroupStack.pop();</span>
+<span class="nc" id="L313">            currentObsGroupConcepts.pop();</span>
+        }
+
+        //set the activeObsGroup back to parent, if there is one.
+<span class="nc bnc" id="L317" title="All 2 branches missed.">        if (!obsGroupStack.isEmpty()){</span>
+<span class="nc" id="L318">            Map&lt;ObsGroup, List&lt;Obs&gt;&gt; map = obsGroupStack.peek();</span>
+<span class="nc bnc" id="L319" title="All 2 branches missed.">            for (Map.Entry&lt;ObsGroup, List&lt;Obs&gt;&gt; e : map.entrySet()){</span>
+<span class="nc" id="L320">                e.getKey().addChild(activeObsGroup);</span>
+<span class="nc" id="L321">                currentObsGroupMembers = e.getValue();</span>
+<span class="nc" id="L322">                activeObsGroup = e.getKey();</span>
+<span class="nc" id="L323">                break;</span>
+            }
+<span class="nc" id="L325">        } else {</span>
+<span class="nc" id="L326">            currentObsGroupMembers = null;</span>
+<span class="nc" id="L327">            addFieldToActiveSection(activeObsGroup);</span>
+<span class="nc" id="L328">            activeObsGroup = null;</span>
+        }
+<span class="nc" id="L330">    }</span>
+    
+    /**
+     * Returns the concepts associated with the active {@see ObsGroup}
+     * 
+     * @return a list of the concepts associated with the active {@see ObsGroup}
+     */
+    public List&lt;Concept&gt; getCurrentObsGroupConcepts() {
+<span class="nc" id="L338">        return Collections.unmodifiableList(currentObsGroupConcepts);</span>
+    }
+        
+    /**
+     * Returns (and removes) the Obs from the current {@see ObsGroup} with the specified concept and answer concept
+     * 
+     * @param concept the concept associated with the Obs we are looking for
+     * @param answerConcept the concept associated with the coded value of the Obs we are looking for (may be null)
+     * @return the Obs from the current {@see ObsGroup} with the specified concept and answer concept
+     */
+    public Obs getObsFromCurrentGroup(Concept concept, Concept answerConcept) {
+<span class="nc bnc" id="L349" title="All 2 branches missed.">        if (currentObsGroupMembers == null)</span>
+<span class="nc" id="L350">            return null;</span>
+<span class="nc bnc" id="L351" title="All 2 branches missed.">        for (Iterator&lt;Obs&gt; iter = currentObsGroupMembers.iterator(); iter.hasNext(); ) {</span>
+<span class="nc" id="L352">            Obs obs = iter.next();</span>
+<span class="nc bnc" id="L353" title="All 8 branches missed.">            if (!obs.isVoided() &amp;&amp; (concept == null || concept.getConceptId().equals(obs.getConcept().getConceptId())) &amp;&amp;</span>
+<span class="nc bnc" id="L354" title="All 2 branches missed.">                    (answerConcept == null || equalConcepts(answerConcept, obs.getValueCoded()))) {</span>
+<span class="nc" id="L355">                iter.remove();</span>
+<span class="nc" id="L356">                return obs;</span>
+            }
+<span class="nc" id="L358">        }</span>
+<span class="nc" id="L359">        return null;</span>
+    }
+
+    /**
+     * Returns (and removes) the Obs from the current {@see ObsGroup} with the specified concept and answer Drug
+     *
+     * @param concept the concept associated with the Obs we are looking for
+     * @param answerDrug the Drug associated with the coded value of the Obs we are looking for (may be null)
+     * @return the Obs from the current {@see ObsGroup} with the specified concept and answer concept
+     */
+    public Obs getObsFromCurrentGroup(Concept concept, Drug answerDrug) {
+<span class="nc bnc" id="L370" title="All 2 branches missed.">        if (currentObsGroupMembers == null)</span>
+<span class="nc" id="L371">            return null;</span>
+<span class="nc bnc" id="L372" title="All 2 branches missed.">        for (Iterator&lt;Obs&gt; iter = currentObsGroupMembers.iterator(); iter.hasNext(); ) {</span>
+<span class="nc" id="L373">            Obs obs = iter.next();</span>
+<span class="nc bnc" id="L374" title="All 8 branches missed.">            if (!obs.isVoided() &amp;&amp; (concept == null || concept.getConceptId().equals(obs.getConcept().getConceptId())) &amp;&amp;</span>
+<span class="nc bnc" id="L375" title="All 2 branches missed.">                    (answerDrug == null || equalDrug(answerDrug, obs.getValueDrug()))) {</span>
+<span class="nc" id="L376">                iter.remove();</span>
+<span class="nc" id="L377">                return obs;</span>
+            }
+<span class="nc" id="L379">        }</span>
+<span class="nc" id="L380">        return null;</span>
+    }
+    
+    /**
+     * Sets the Patient to associate with the context
+     * 
+     * @param patient patient to associate with the context
+     */
+    public void setupExistingData(Patient patient) {
+<span class="fc" id="L389">    	existingPatient = patient;</span>
+<span class="fc" id="L390">    }</span>
+        
+    /**
+     * Sets the existing Encounter to associate with the context.
+     * Also sets all the Obs associated with this Encounter as existing Obs
+     * Also sets all the Orders associated with this Encounter as existing Orders
+     * 
+     * @param encounter encounter to associate with the context
+     */
+	public void setupExistingData(Encounter encounter) {
+<span class="fc" id="L400">		existingEncounter = encounter;</span>
+<span class="fc" id="L401">		existingObs = new HashMap&lt;Concept, List&lt;Obs&gt;&gt;();</span>
+<span class="fc" id="L402">		existingOrders = new HashMap&lt;Concept, List&lt;Order&gt;&gt;();</span>
+<span class="fc bfc" id="L403" title="All 2 branches covered.">		if (encounter != null) {</span>
+<span class="pc bpc" id="L404" title="1 of 2 branches missed.">			for (Obs obs : encounter.getObsAtTopLevel(false)) {</span>
+<span class="nc" id="L405">				List&lt;Obs&gt; list = existingObs.get(obs.getConcept());</span>
+<span class="nc bnc" id="L406" title="All 2 branches missed.">				if (list == null) {</span>
+<span class="nc" id="L407">					list = new LinkedList&lt;Obs&gt;();</span>
+<span class="nc" id="L408">					existingObs.put(obs.getConcept(), list);</span>
+				}
+<span class="nc" id="L410">				list.add(obs);</span>
+<span class="nc" id="L411">			}</span>
+<span class="pc bpc" id="L412" title="1 of 2 branches missed.">			for (Order order : encounter.getOrders()) {</span>
+<span class="nc bnc" id="L413" title="All 2 branches missed.">			    if (!order.isVoided()){</span>
+    			  //load subclasses for later retrieval
+<span class="nc" id="L415">                    order = (Order) Context.getOrderService().getOrder(order.getOrderId());</span>
+<span class="nc" id="L416">    			    List&lt;Order&gt; list = existingOrders.get(order.getConcept());</span>
+<span class="nc bnc" id="L417" title="All 2 branches missed.">    				if (list == null) {</span>
+<span class="nc" id="L418">    					list = new LinkedList&lt;Order&gt;();</span>
+<span class="nc" id="L419">    					existingOrders.put(order.getConcept(), list);</span>
+    				}
+<span class="nc" id="L421">    				list.add(order);</span>
+			    }
+<span class="nc" id="L423">			}</span>
+		}
+<span class="fc" id="L425">		guessingInd = false;</span>
+<span class="fc" id="L426">		existingObsInGroups = new LinkedHashMap&lt;Obs, Set&lt;Obs&gt;&gt;();</span>
+<span class="fc bfc" id="L427" title="All 2 branches covered.">		if (encounter != null)</span>
+<span class="fc" id="L428">			setupExistingObsInGroups(encounter.getObsAtTopLevel(false));</span>
+<span class="fc" id="L429">	}</span>
+    
+    /**
+     *
+     * Sets obs associated with an obs groups in existing obs groups.
+     * 
+     * @param Set the obsGroup to add to existingObsInGroups
+     */     
+    public void setupExistingObsInGroups(Set&lt;Obs&gt; oSet){
+<span class="pc bpc" id="L438" title="1 of 2 branches missed.">        for (Obs parent : oSet)       </span>
+<span class="nc bnc" id="L439" title="All 2 branches missed.">            if (parent.isObsGrouping()){</span>
+<span class="nc" id="L440">                existingObsInGroups.put(parent, parent.getGroupMembers());</span>
+<span class="nc" id="L441">                setupExistingObsInGroups(parent.getGroupMembers());</span>
+            }    
+<span class="fc" id="L443">    }</span>
+
+    /**
+     * Removes an Obs or ObsGroup of the relevant Drug from existing Obs, and returns it.
+     * @param question the Concept associated with the Obs to remove
+     * @param answer the Drug that serves as the answer for Obs to remove
+     * @return
+     */
+    public Obs removeExistingObs(Concept question, Drug answer) {
+<span class="nc" id="L452">        List&lt;Obs&gt; list = existingObs.get(question);</span>
+<span class="nc bnc" id="L453" title="All 2 branches missed.">        if (list != null) {</span>
+<span class="nc bnc" id="L454" title="All 2 branches missed.">            for (Iterator&lt;Obs&gt; iter = list.iterator(); iter.hasNext(); ) {</span>
+<span class="nc" id="L455">                Obs test = iter.next();</span>
+<span class="nc bnc" id="L456" title="All 4 branches missed.">                if (answer == null || equalDrug(answer, test.getValueDrug())) {</span>
+<span class="nc" id="L457">                    iter.remove();</span>
+<span class="nc bnc" id="L458" title="All 2 branches missed.">                    if (list.size() == 0)</span>
+<span class="nc" id="L459">                        existingObs.remove(question);</span>
+<span class="nc" id="L460">                    return test;</span>
+                }
+<span class="nc" id="L462">            }</span>
+        }
+<span class="nc" id="L464">        return null;</span>
+    }
+     /**
+      * Removes an Obs or ObsGroup of the relevant Concept from existingObs, and returns it. Use this version
+      * for obs whose concept's datatype is not boolean.
+     * 
+     * @param question the concept associated with the Obs to remove
+     * @param answer the concept that serves as the answer for Obs to remove (may be null)
+     * @return
+     */
+    public Obs removeExistingObs(Concept question, Concept answer) {
+<span class="nc" id="L475">        List&lt;Obs&gt; list = existingObs.get(question);</span>
+<span class="nc bnc" id="L476" title="All 2 branches missed.">        if (list != null) {</span>
+<span class="nc bnc" id="L477" title="All 2 branches missed.">            for (Iterator&lt;Obs&gt; iter = list.iterator(); iter.hasNext(); ) {</span>
+<span class="nc" id="L478">                Obs test = iter.next();</span>
+<span class="nc bnc" id="L479" title="All 4 branches missed.">                if (answer == null || equalConcepts(answer, test.getValueCoded())) {</span>
+<span class="nc" id="L480">                    iter.remove();</span>
+<span class="nc bnc" id="L481" title="All 2 branches missed.">                    if (list.size() == 0)</span>
+<span class="nc" id="L482">                        existingObs.remove(question);</span>
+<span class="nc" id="L483">                    return test;</span>
+                }
+<span class="nc" id="L485">            }</span>
+        }
+<span class="nc" id="L487">        return null;</span>
+    }
+    
+    /**
+     * Removes an Obs or ObsGroup of the relevant Concept from existingObs, and returns it. Use this version
+     * for ConceptSelect obs tags.
+    * 
+    * @param questions the concepts associated with the Obs to remove
+    * @param answer the concept that serves as the answer for Obs to remove (may NOT be null)
+    * @return
+    */
+    public Obs removeExistingObs(List&lt;Concept&gt; questions, Concept answer) {
+<span class="nc bnc" id="L499" title="All 2 branches missed.">        for (Concept question:questions){</span>
+<span class="nc" id="L500">            Obs ret = removeExistingObs(question, answer);</span>
+<span class="nc bnc" id="L501" title="All 2 branches missed.">            if (ret != null)</span>
+<span class="nc" id="L502">                return ret;</span>
+<span class="nc" id="L503">        }</span>
+<span class="nc" id="L504">        return null;</span>
+    }
+
+    /**
+     * Finds whether there is existing obs created for the question concept and numeric answer,
+     * returns that &lt;obs&gt; if any, Use this only when datatype is numeric and style=&quot;checkbox&quot;
+     *
+     * @param question - the concept associated with the Obs to acquire
+     * @param numericAns - numeric answer given with &lt;obs/&gt; declaration
+     * @return the matching Obs, if any
+     */
+    public Obs removeExistingObs(Concept question, String numericAns) {
+
+<span class="nc" id="L517">        Number numVal = Double.valueOf(numericAns);</span>
+<span class="nc" id="L518">        List&lt;Obs&gt; list = existingObs.get(question);</span>
+<span class="nc bnc" id="L519" title="All 2 branches missed.">        if (list != null) {</span>
+<span class="nc bnc" id="L520" title="All 2 branches missed.">            for (Iterator&lt;Obs&gt; iter = list.iterator(); iter.hasNext(); ) {</span>
+<span class="nc" id="L521">                Obs test = iter.next();</span>
+<span class="nc bnc" id="L522" title="All 2 branches missed.">                if (test.getValueNumeric().equals(numVal)) {</span>
+<span class="nc" id="L523">                    iter.remove();</span>
+<span class="nc bnc" id="L524" title="All 2 branches missed.">                    if (list.size() == 0) {</span>
+<span class="nc" id="L525">                        existingObs.remove(question);</span>
+                    }
+<span class="nc" id="L527">                    return test;</span>
+                }
+<span class="nc" id="L529">            }</span>
+        }
+
+<span class="nc" id="L532">        return null;</span>
+    }
+
+    /**
+	 * Removes an Obs or ObsGroup of the relevant Concept from existingObs, and returns the list for
+	 * the question. Use this version for obtaining the whole list of obs saved for the single
+	 * Question concept.Presently used for dynamic lists.
+	 * 
+	 * @param question concept associated with the Obs to remove
+	 * @return the list of obs associated with it
+	 */
+	public List&lt;Obs&gt; removeExistingObs(Concept question) {
+<span class="nc" id="L544">		List&lt;Obs&gt; list = existingObs.get(question);</span>
+<span class="nc" id="L545">		existingObs.remove(question);</span>
+<span class="nc" id="L546">		return list;</span>
+	}
+    
+    
+    /**
+	 * Removes an Order of the relevant Concept from existingOrders, and returns it.
+	 * 
+	 * @param concept - question the concept associated with the Obs to remove
+	 * @return
+	 */
+	public Order removeExistingOrder(Concept concept) {
+<span class="nc" id="L557">		List&lt;Order&gt; list = existingOrders.get(concept);</span>
+<span class="nc bnc" id="L558" title="All 2 branches missed.">		if (list != null) {</span>
+<span class="nc bnc" id="L559" title="All 2 branches missed.">			for (Iterator&lt;Order&gt; iter = list.iterator(); iter.hasNext();) {</span>
+<span class="nc" id="L560">				Order test = iter.next();</span>
+<span class="nc bnc" id="L561" title="All 2 branches missed.">				if (equalConcepts(concept, test.getConcept())) {</span>
+<span class="nc" id="L562">					iter.remove();</span>
+<span class="nc bnc" id="L563" title="All 2 branches missed.">					if (list.size() == 0)</span>
+<span class="nc" id="L564">						existingOrders.remove(concept);</span>
+<span class="nc" id="L565">					return test;</span>
+				}
+<span class="nc" id="L567">			}</span>
+		}
+<span class="nc" id="L569">		return null;</span>
+	}
+	
+	/**
+	 * checks the existing orders property and return a list of all as-of-yet unmatched orders
+	 * @return the list of orders
+	 */
+	public List&lt;Order&gt; getRemainingExistingOrders(){
+<span class="nc" id="L577">		List&lt;Order&gt; ret = new ArrayList&lt;Order&gt;();</span>
+<span class="nc bnc" id="L578" title="All 2 branches missed.">		if (this.getExistingOrders() != null){</span>
+<span class="nc bnc" id="L579" title="All 2 branches missed.">			for (Map.Entry&lt;Concept, List&lt;Order&gt;&gt; e : this.getExistingOrders().entrySet()){</span>
+<span class="nc" id="L580">				List&lt;Order&gt; ords = e.getValue();</span>
+<span class="nc bnc" id="L581" title="All 2 branches missed.">				for (Order o : ords)</span>
+<span class="nc" id="L582">					ret.add(o);</span>
+<span class="nc" id="L583">			}</span>
+		}
+<span class="nc" id="L585">		return ret;</span>
+	}
+	
+	
+	/**
+     * Removes a DrugOrder of the relevant Drug.Concept from existingOrders, and returns it.
+     * 
+     * @param drug- the drug associated with the DrugOrder to remove
+     * @return
+     */
+    public DrugOrder removeExistingDrugOrder(Drug drug) {
+<span class="nc bnc" id="L596" title="All 2 branches missed.">        if (drug != null){</span>
+<span class="nc" id="L597">            Concept concept = drug.getConcept();</span>
+<span class="nc" id="L598">            List&lt;Order&gt; list = existingOrders.get(concept);</span>
+<span class="nc bnc" id="L599" title="All 2 branches missed.">            if (list != null) {</span>
+<span class="nc bnc" id="L600" title="All 2 branches missed.">                for (Iterator&lt;Order&gt; iter = list.iterator(); iter.hasNext();) {</span>
+<span class="nc" id="L601">                    Order test = iter.next();</span>
+<span class="nc bnc" id="L602" title="All 2 branches missed.">                    if (test instanceof DrugOrder){</span>
+<span class="nc" id="L603">                        DrugOrder testDrugOrder = (DrugOrder) test;</span>
+<span class="nc bnc" id="L604" title="All 2 branches missed.">                        if (equalDrug(testDrugOrder.getDrug(), drug)) {</span>
+<span class="nc" id="L605">                            iter.remove();</span>
+<span class="nc bnc" id="L606" title="All 2 branches missed.">                            if (list.size() == 0)</span>
+<span class="nc" id="L607">                                existingOrders.remove(concept);</span>
+<span class="nc" id="L608">                            return testDrugOrder;</span>
+                        }
+                    }
+                    
+                    
+<span class="nc" id="L613">                }</span>
+            }
+        }
+<span class="nc" id="L616">        return null;</span>
+    }
+    
+    /**
+     * This method exists because of the stupid bug where Concept.equals(Concept) doesn't always work.
+     * TODO: Fix the bug where Concept.equals(Concept) doesn't always work
+     */
+    private boolean equalDrug(Drug c1, Drug c2) {
+<span class="nc bnc" id="L624" title="All 4 branches missed.">        return OpenmrsUtil.nullSafeEquals(c1 == null ? null : c1.getDrugId(), c2 == null ? null : c2.getDrugId());</span>
+    }
+    
+   /**
+     * This method exists because of the stupid bug where Concept.equals(Concept) doesn't always work.
+     */
+    private boolean equalConcepts(Concept c1, Concept c2) {
+<span class="nc bnc" id="L631" title="All 4 branches missed.">    	return OpenmrsUtil.nullSafeEquals(c1 == null ? null : c1.getConceptId(), c2 == null ? null : c2.getConceptId());</span>
+    }
+
+	/**
+     * Removes (and returns) an Obs or ObsGroup associated with a specified Concept from existingObs.
+     * Use this version for obs whose concept's datatype is boolean that are checkbox-style.
+     * 
+     * @param question - the concept associated with the Obs to remove
+     * @param answer - the boolean value of the Obs
+     * @return
+     */
+    public Obs removeExistingObs(Concept question, Boolean answer) {
+<span class="nc" id="L643">        List&lt;Obs&gt; list = existingObs.get(question);</span>
+<span class="nc bnc" id="L644" title="All 2 branches missed.">        if (list != null) {</span>
+<span class="nc bnc" id="L645" title="All 2 branches missed.">            for (Iterator&lt;Obs&gt; iter = list.iterator(); iter.hasNext(); ) {</span>
+<span class="nc" id="L646">                Obs test = iter.next();</span>
+<span class="nc bnc" id="L647" title="All 2 branches missed.">                if (test.getValueAsBoolean() == null) {</span>
+<span class="nc" id="L648">                	throw new RuntimeException(&quot;Invalid boolean value for concept &quot; + question + &quot;; possibly caused by TRUNK-3150&quot;);</span>
+                }
+<span class="nc bnc" id="L650" title="All 2 branches missed.">                if (answer == test.getValueAsBoolean()) {</span>
+<span class="nc" id="L651">                    iter.remove();</span>
+<span class="nc bnc" id="L652" title="All 2 branches missed.">                    if (list.size() == 0)</span>
+<span class="nc" id="L653">                        existingObs.remove(question);</span>
+<span class="nc" id="L654">                    return test;</span>
+                }
+<span class="nc" id="L656">            }</span>
+        }
+<span class="nc" id="L658">        return null;</span>
+    }
+
+    public Obs getNextUnmatchedObsGroup(String path) {
+<span class="nc" id="L662">        Obs ret = null;</span>
+<span class="nc" id="L663">    	int unmatchedContenterCount = 0;</span>
+<span class="nc bnc" id="L664" title="All 2 branches missed.">        for (Map.Entry&lt;Obs, Set&lt;Obs&gt;&gt; e : existingObsInGroups.entrySet() ) {</span>
+<span class="nc bnc" id="L665" title="All 2 branches missed.">    		if (path.equals(ObsGroupComponent.getObsGroupPath(e.getKey()))) {</span>
+<span class="nc bnc" id="L666" title="All 2 branches missed.">    			if (ret == null) ret = e.getKey();</span>
+<span class="nc" id="L667">    			unmatchedContenterCount++;</span>
+    		}
+<span class="nc" id="L669">    	}</span>
+<span class="nc bnc" id="L670" title="All 2 branches missed.">        if (ret != null){</span>
+<span class="nc bnc" id="L671" title="All 2 branches missed.">        	if (unmatchedContenterCount &gt; 1) {</span>
+<span class="nc" id="L672">                guessingInd = true;</span>
+            }
+<span class="nc" id="L674">            existingObsInGroups.remove(ret);</span>
+<span class="nc" id="L675">            existingObs.remove(ret);</span>
+<span class="nc" id="L676">            return ret;</span>
+        }
+<span class="nc" id="L678">        return null;</span>
+    }
+    
+    public int getExistingObsInGroupsCount() {
+<span class="nc bnc" id="L682" title="All 2 branches missed.">    	if (existingObsInGroups != null) {</span>
+<span class="nc" id="L683">            return existingObsInGroups.size();</span>
+        }
+<span class="nc" id="L685">    	return 0;</span>
+    }
+    
+    /**
+     * Finds the best matching obsGroup at the right obsGroup hierarchy level
+     *  &lt;p/&gt;
+     * 
+     * @param groupConcept the grouping concept associated with the {@see ObsGroups}
+     * @param requiredQuestionsAndAnswers the questions and answered associate with the {@see ObsGroup}
+     * @param obsGroupDepth  the depth level of the obsGroup in the xml
+     * @return the first matching {@see ObsGroup}
+     */
+   public Obs findBestMatchingObsGroup(List&lt;ObsGroupComponent&gt; questionsAndAnswers, String xmlObsGroupConcept, String path) {
+<span class="nc" id="L698">        Set&lt;Obs&gt; contenders = new HashSet&lt;Obs&gt;();</span>
+        // first all obsGroups matching parentObs.concept at the right obsGroup hierarchy level in the encounter are 
+        // saved as contenders
+<span class="nc bnc" id="L701" title="All 2 branches missed.">        for (Map.Entry&lt;Obs, Set&lt;Obs&gt;&gt; e : existingObsInGroups.entrySet() ) {</span>
+
+<span class="nc" id="L703">            log.debug(&quot;Comparing obsVal &quot; + ObsGroupComponent.getObsGroupPath(e.getKey()) + &quot; to xmlval &quot; + path);</span>
+
+<span class="nc bnc" id="L705" title="All 2 branches missed.">            if (path.equals(ObsGroupComponent.getObsGroupPath(e.getKey())) ) {</span>
+<span class="nc" id="L706">                contenders.add(e.getKey());</span>
+            }
+<span class="nc" id="L708">         }</span>
+
+<span class="nc" id="L710">        Obs ret = null;</span>
+        
+<span class="nc bnc" id="L712" title="All 2 branches missed.">        if (contenders.size() &gt; 0){</span>
+<span class="nc" id="L713">            List&lt;Obs&gt; rankTable = new ArrayList&lt;Obs&gt;();</span>
+<span class="nc" id="L714">            int topRanking = 0;</span>
+            
+<span class="nc bnc" id="L716" title="All 2 branches missed.">            for (Obs parentObs : contenders){</span>
+<span class="nc" id="L717">                int rank = ObsGroupComponent.supportingRank(questionsAndAnswers, parentObs, existingObsInGroups.get(parentObs));</span>
+
+<span class="nc bnc" id="L719" title="All 2 branches missed.">                if (rank &gt; 0) {</span>
+<span class="nc bnc" id="L720" title="All 2 branches missed.">                    if (rank &gt; topRanking) {</span>
+<span class="nc" id="L721">                        topRanking = rank;</span>
+<span class="nc" id="L722">                        rankTable.clear();</span>
+<span class="nc" id="L723">                        rankTable.add(parentObs);</span>
+<span class="nc bnc" id="L724" title="All 2 branches missed.">                    } else if (rank == topRanking) {</span>
+<span class="nc" id="L725">                    	rankTable.add(parentObs);</span>
+                    }
+                }
+<span class="nc" id="L728">            } </span>
+            
+<span class="nc bnc" id="L730" title="All 4 branches missed.">            if (rankTable.size() == 0 || rankTable.size() &gt; 1) {</span>
+                /* No unique matching obsGroup found; returning null obsGroup.  This will
+                 * trigger the creation of an &lt;unmatched id={} /&gt; tag which will be replaced on 
+                 * a subsequent form scan.
+                 */
+<span class="nc" id="L735">                ret = null;</span>
+            }
+            else {
+                // exactly one matching obs group
+<span class="nc" id="L739">                ret = rankTable.get(0);</span>
+            }
+        }
+        
+<span class="nc bnc" id="L743" title="All 2 branches missed.">        if (ret != null){</span>
+<span class="nc" id="L744">            existingObsInGroups.remove(ret);</span>
+<span class="nc" id="L745">            existingObs.remove(ret);</span>
+<span class="nc" id="L746">            return ret;</span>
+        }
+        else {
+<span class="nc" id="L749">            return null;</span>
+        }
+   }
+
+    /**
+     * Returns the patient currently associated with the context
+     */
+    public Patient getExistingPatient() {
+<span class="fc" id="L757">    	return existingPatient;</span>
+    }
+     
+    /**
+     * Returns the encounter currently associated with the context
+     */
+    public Encounter getExistingEncounter() {
+<span class="fc" id="L764">        return existingEncounter;</span>
+    }
+
+    /** 
+     * Returns the translator currently associated with the context
+     * @return
+     */
+    public Translator getTranslator() {
+<span class="nc" id="L772">    	return translator;</span>
+    }
+    
+    /**
+     * Return the HTML Form schema currently associated with the context
+     * @return
+     */
+    public HtmlFormSchema getSchema() {
+<span class="fc" id="L780">    	return schema;</span>
+    }
+
+    public void setHttpSession(HttpSession httpSession) {
+<span class="fc" id="L784">        this.httpSession = httpSession;</span>
+<span class="fc" id="L785">    }</span>
+
+    public HttpSession getHttpSession() {
+<span class="nc" id="L788">        return httpSession;</span>
+    }
+
+    public void pushToStack(Object object) {
+<span class="nc" id="L792">        stack.push(object);</span>
+<span class="nc" id="L793">    }</span>
+
+    public Object popFromStack() {
+<span class="nc" id="L796">        return stack.pop();</span>
+    }
+
+    public &lt;T&gt; T getHighestOnStack(Class&lt;T&gt; clazz) {
+<span class="nc bnc" id="L800" title="All 2 branches missed.">        for (int i = stack.size() - 1; i &gt;= 0; --i) {</span>
+<span class="nc" id="L801">            Object candidate = stack.get(i);</span>
+<span class="nc bnc" id="L802" title="All 2 branches missed.">            if (clazz.isAssignableFrom(candidate.getClass())) {</span>
+<span class="nc" id="L803">                return (T) candidate;</span>
+            }
+        }
+<span class="nc" id="L806">        return null;</span>
+    }
+
+    /**
+     * Modes associated with the HTML Form context
+     */
+<span class="fc" id="L812">    public enum Mode {</span>
+    	/** A new, unsaved form */
+<span class="fc" id="L814">    	ENTER,</span>
+    	/** A saved form in edit mode */
+<span class="fc" id="L816">        EDIT,</span>
+        /** A saved form in view-only mode */
+<span class="fc" id="L818">        VIEW</span>
+    }
+    
+    public Map&lt;Widget, String&gt; getFieldNames() {
+<span class="nc" id="L822">        return fieldNames;</span>
+    }
+        
+    public Map&lt;Concept, List&lt;Obs&gt;&gt; getExistingObs() {
+<span class="nc" id="L826">        return existingObs;</span>
+    }
+        
+    public Map&lt;Obs, Set&lt;Obs&gt;&gt; getExistingObsInGroups() {
+<span class="nc" id="L830">        return existingObsInGroups;</span>
+    }
+    
+    public Map&lt;Concept, List&lt;Order&gt;&gt; getExistingOrders() {
+<span class="nc" id="L834">        return existingOrders;</span>
+    }
+    
+    /**
+     * Sets up the necessary information so that the javascript getField, getValue and setValue
+     * functions can work.
+     * @param property the user-facing name of this property, e.g. weight.value
+     * @param widgetId the HTML DOM id of the widget, to be passed to the property accessor methods (if this parameter is null, the method call has no effect)
+     * @param fieldFunctionName the name of the javascript function used to access the field itself (or null to use the default function
+     * @param getterFunctionName the name of the javascript function used to get the value of the field (or null to use the default function
+     * @param setterFunctionName the name of the javascript function used to set the value of the field (or null to use the default function 
+     */
+	public void registerPropertyAccessorInfo(String property, String widgetId,
+	                                         String fieldFunctionName, String getterFunctionName, String setterFunctionName) {
+<span class="pc bpc" id="L848" title="1 of 2 branches missed.">		if (widgetId == null)</span>
+<span class="nc" id="L849">			return;		</span>
+<span class="fc" id="L850">		StringBuilder val = new StringBuilder(&quot;{ id: \&quot;&quot; + widgetId + &quot;\&quot; &quot;);</span>
+<span class="fc bfc" id="L851" title="All 2 branches covered.">		if (fieldFunctionName != null)</span>
+<span class="fc" id="L852">			val.append(&quot;, field: &quot; + fieldFunctionName);</span>
+<span class="pc bpc" id="L853" title="1 of 2 branches missed.">		if (getterFunctionName != null)</span>
+<span class="nc" id="L854">			val.append(&quot;, getter: &quot; + getterFunctionName);</span>
+<span class="fc bfc" id="L855" title="All 2 branches covered.">		if (setterFunctionName != null)</span>
+<span class="fc" id="L856">			val.append(&quot;, setter: &quot; + setterFunctionName);</span>
+<span class="fc" id="L857">		val.append(&quot; };&quot;);</span>
+<span class="pc bpc" id="L858" title="1 of 2 branches missed.">		if (javascriptFieldAccessorInfo.containsKey(property)) {</span>
+			// if this key has already been registered, this probably means we're inside a repeat tag.
+			// set it up as follows (assuming property=&quot;weight.value&quot;)
+			//   weight.value = X
+			//   weight.value_1 = X
+			//   weight.value_2 = Y
+			//   weight.value_3 = Z
+			// ...
+<span class="nc" id="L866">			int i = 1;</span>
+<span class="nc bnc" id="L867" title="All 2 branches missed.">			while (javascriptFieldAccessorInfo.containsKey(property + &quot;_&quot; + i))</span>
+<span class="nc" id="L868">				++i;</span>
+<span class="nc bnc" id="L869" title="All 2 branches missed.">			if (i == 1) {</span>
+				// this is the second time we hit this key (i.e. property is registered, but property_1 is not)
+				// we copy key to key_1
+<span class="nc" id="L872">				javascriptFieldAccessorInfo.put(property + &quot;_1&quot;, javascriptFieldAccessorInfo.get(property));</span>
+<span class="nc" id="L873">				i = 2;</span>
+			}
+<span class="nc" id="L875">			property = property + &quot;_&quot; + i;</span>
+		}
+<span class="fc" id="L877">		javascriptFieldAccessorInfo.put(property, val.toString());</span>
+<span class="fc" id="L878">    }</span>
+	
+    /**
+     * @return the javascriptFieldAccessors
+     */
+    public Map&lt;String, String&gt; getJavascriptFieldAccessorInfo() {
+<span class="nc" id="L884">    	return javascriptFieldAccessorInfo;</span>
+    }
+
+	/**
+	 * @return the defaultLocation
+	 */
+	public Location getDefaultLocation() {
+<span class="fc" id="L891">		return defaultLocation;</span>
+	}
+
+	/**
+	 * @param defaultLocation the defaultLocation to set
+	 */
+	public void setDefaultLocation(Location defaultLocation) {
+<span class="fc" id="L898">		this.defaultLocation = defaultLocation;</span>
+<span class="fc" id="L899">	}</span>
+
+	public boolean isGuessingInd() {
+<span class="nc" id="L902">		return guessingInd;</span>
+	}
+
+	public void setGuessingInd(boolean guessingInd) {
+<span class="nc" id="L906">		this.guessingInd = guessingInd;</span>
+<span class="nc" id="L907">	}</span>
+	    
+	public String getGuessingInd() {
+<span class="nc bnc" id="L910" title="All 2 branches missed.">		return guessingInd ? &quot;true&quot; : &quot;false&quot;;</span>
+	}
+
+	public Date getPreviousEncounterDate() {
+<span class="nc" id="L914">	    return previousEncounterDate;</span>
+    }
+
+	public void setPreviousEncounterDate(Date previousEncounterDate) {
+<span class="nc" id="L918">	    this.previousEncounterDate = previousEncounterDate;</span>
+<span class="nc" id="L919">    }</span>
+	
+	public boolean hasUnmatchedObsGroupEntities() {
+<span class="pc bpc" id="L922" title="3 of 4 branches missed.">		return unmatchedObsGroupEntities != null &amp;&amp; unmatchedObsGroupEntities.size() &gt; 0 ? true : false;</span>
+	}
+	
+    public int addUnmatchedObsGroupEntities(ObsGroupEntity obsGroupEntity) {
+<span class="nc bnc" id="L926" title="All 2 branches missed.">    	if (unmatchedObsGroupEntities == null) unmatchedObsGroupEntities = new ArrayList&lt;ObsGroupEntity&gt;();</span>
+<span class="nc" id="L927">    	int id = unmatchedObsGroupEntities.size();</span>
+<span class="nc" id="L928">    	obsGroupEntity.setId(id);</span>
+<span class="nc" id="L929">    	unmatchedObsGroupEntities.add(obsGroupEntity);</span>
+<span class="nc" id="L930">    	return id;</span>
+    }
+
+	public List&lt;ObsGroupEntity&gt; getUnmatchedObsGroupEntities() {
+<span class="nc" id="L934">		return unmatchedObsGroupEntities;</span>
+	}
+
+	public void setUnmatchedObsGroupEntities(
+			List&lt;ObsGroupEntity&gt; unmatchedObsGroupEntities) {
+<span class="nc" id="L939">		this.unmatchedObsGroupEntities = unmatchedObsGroupEntities;</span>
+<span class="nc" id="L940">	}</span>
+
+	public boolean isUnmatchedMode() {
+<span class="nc" id="L943">		return unmatchedMode;</span>
+	}
+
+    public void setUnmatchedMode(boolean unmatchedMode) {
+<span class="fc" id="L947">		this.unmatchedMode = unmatchedMode;</span>
+<span class="fc" id="L948">	}</span>
+
+    public boolean isAutomaticClientSideValidation() {
+<span class="nc" id="L951">        return automaticClientSideValidation;</span>
+    }
+
+    public void setAutomaticClientSideValidation(boolean automaticClientSideValidation) {
+<span class="fc" id="L955">        this.automaticClientSideValidation = automaticClientSideValidation;</span>
+<span class="fc" id="L956">    }</span>
+
+    public boolean isClientSideValidationHints() {
+<span class="nc" id="L959">        return clientSideValidationHints;</span>
+    }
+
+    public void setClientSideValidationHints(boolean clientSideValidationHints) {
+<span class="fc" id="L963">        this.clientSideValidationHints = clientSideValidationHints;</span>
+<span class="fc" id="L964">    }</span>
+
+    public Object getVisit() {
+<span class="fc" id="L967">        return visit;</span>
+    }
+
+    public void setVisit(Object visit) {
+<span class="nc" id="L971">        this.visit = visit;</span>
+<span class="nc" id="L972">    }</span>
+
+    public Date getDefaultEncounterDate() {
+<span class="fc" id="L975">        return defaultEncounterDate;</span>
+    }
+
+    public void setDefaultEncounterDate(Date defaultEncounterDate) {
+<span class="nc" id="L979">        this.defaultEncounterDate = defaultEncounterDate;</span>
+<span class="nc" id="L980">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.8.202204050719</span></div></body></html>

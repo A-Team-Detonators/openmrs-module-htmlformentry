@@ -1,0 +1,1275 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://maven.apache.org/surefire/maven-surefire-plugin/xsd/surefire-test-report.xsd" version="3.0.2" name="org.openmrs.module.htmlformentry.RegressionTest" time="16.984" tests="61" errors="0" skipped="0" failures="0">
+  <properties>
+    <property name="awt.toolkit" value="sun.awt.X11.XToolkit"/>
+    <property name="file.encoding.pkg" value="sun.io"/>
+    <property name="java.specification.version" value="1.8"/>
+    <property name="sun.cpu.isalist" value=""/>
+    <property name="sun.jnu.encoding" value="UTF-8"/>
+    <property name="java.class.path" value="/home/runner/work/openmrs-module-htmlformentry/openmrs-module-htmlformentry/api-tests/target/test-classes:/home/runner/work/openmrs-module-htmlformentry/openmrs-module-htmlformentry/api-tests/target/classes:/home/runner/work/openmrs-module-htmlformentry/openmrs-module-htmlformentry/api-1.10/target/htmlformentry-api-1.10-3.10.0.jar:/home/runner/work/openmrs-module-htmlformentry/openmrs-module-htmlformentry/api/target/htmlformentry-api-3.10.0.jar:/home/runner/work/openmrs-module-htmlformentry/openmrs-module-htmlformentry/api/target/htmlformentry-api-3.10.0-tests.jar:/home/runner/.m2/repository/net/anotheria/ano-web/2.1.0/ano-web-2.1.0.jar:/home/runner/work/openmrs-module-htmlformentry/openmrs-module-htmlformentry/api-1.9/target/htmlformentry-api-1.9-3.10.0.jar:/home/runner/work/openmrs-module-htmlformentry/openmrs-module-htmlformentry/api-2.0/target/htmlformentry-api-2.0-3.10.0.jar:/home/runner/.m2/repository/org/openmrs/api/openmrs-api/1.9.9/openmrs-api-1.9.9.jar:/home/runner/.m2/repository/commons-collections/commons-collections/3.2/commons-collections-3.2.jar:/home/runner/.m2/repository/org/apache/commons/commons-lang3/3.1/commons-lang3-3.1.jar:/home/runner/.m2/repository/commons-beanutils/commons-beanutils/1.7.0/commons-beanutils-1.7.0.jar:/home/runner/.m2/repository/commons-io/commons-io/1.4/commons-io-1.4.jar:/home/runner/.m2/repository/org/azeckoski/reflectutils/0.9.14/reflectutils-0.9.14.jar:/home/runner/.m2/repository/org/apache/velocity/velocity/1.6.2/velocity-1.6.2.jar:/home/runner/.m2/repository/commons-lang/commons-lang/2.4/commons-lang-2.4.jar:/home/runner/.m2/repository/log4j/log4j/1.2.15/log4j-1.2.15.jar:/home/runner/.m2/repository/org/springframework/spring-core/3.0.5.RELEASE/spring-core-3.0.5.RELEASE.jar:/home/runner/.m2/repository/org/springframework/spring-asm/3.0.5.RELEASE/spring-asm-3.0.5.RELEASE.jar:/home/runner/.m2/repository/org/springframework/spring-beans/3.0.5.RELEASE/spring-beans-3.0.5.RELEASE.jar:/home/runner/.m2/repository/org/springframework/spring-context/3.0.5.RELEASE/spring-context-3.0.5.RELEASE.jar:/home/runner/.m2/repository/org/springframework/spring-expression/3.0.5.RELEASE/spring-expression-3.0.5.RELEASE.jar:/home/runner/.m2/repository/org/springframework/spring-aop/3.0.5.RELEASE/spring-aop-3.0.5.RELEASE.jar:/home/runner/.m2/repository/aopalliance/aopalliance/1.0/aopalliance-1.0.jar:/home/runner/.m2/repository/org/springframework/spring-orm/3.0.5.RELEASE/spring-orm-3.0.5.RELEASE.jar:/home/runner/.m2/repository/org/springframework/spring-tx/3.0.5.RELEASE/spring-tx-3.0.5.RELEASE.jar:/home/runner/.m2/repository/org/springframework/spring-jdbc/3.0.5.RELEASE/spring-jdbc-3.0.5.RELEASE.jar:/home/runner/.m2/repository/org/antlr/antlr-runtime/3.4/antlr-runtime-3.4.jar:/home/runner/.m2/repository/org/antlr/stringtemplate/3.2.1/stringtemplate-3.2.1.jar:/home/runner/.m2/repository/asm/asm-commons/2.2.3/asm-commons-2.2.3.jar:/home/runner/.m2/repository/asm/asm-util/2.2.3/asm-util-2.2.3.jar:/home/runner/.m2/repository/cglib/cglib-nodep/2.2/cglib-nodep-2.2.jar:/home/runner/.m2/repository/ca/uhn/hapi/hapi/0.5/hapi-0.5.jar:/home/runner/.m2/repository/org/openmrs/simpleframework/simple-xml/1.6.1-mod/simple-xml-1.6.1-mod.jar:/home/runner/.m2/repository/stax/stax/1.2.0/stax-1.2.0.jar:/home/runner/.m2/repository/stax/stax-api/1.0.1/stax-api-1.0.1.jar:/home/runner/.m2/repository/org/openmrs/hibernate/hibernate-core/3.6.5.Final-mod/hibernate-core-3.6.5.Final-mod.jar:/home/runner/.m2/repository/org/hibernate/hibernate-commons-annotations/3.2.0.Final/hibernate-commons-annotations-3.2.0.Final.jar:/home/runner/.m2/repository/org/hibernate/javax/persistence/hibernate-jpa-2.0-api/1.0.0.Final/hibernate-jpa-2.0-api-1.0.0.Final.jar:/home/runner/.m2/repository/javax/transaction/jta/1.1/jta-1.1.jar:/home/runner/.m2/repository/org/hibernate/hibernate-c3p0/3.6.0.Final/hibernate-c3p0-3.6.0.Final.jar:/home/runner/.m2/repository/org/hibernate/hibernate-ehcache/3.6.0.Final/hibernate-ehcache-3.6.0.Final.jar:/home/runner/.m2/repository/dom4j/dom4j/1.6.1/dom4j-1.6.1.jar:/home/runner/.m2/repository/c3p0/c3p0/0.9.1/c3p0-0.9.1.jar:/home/runner/.m2/repository/net/sf/ehcache/ehcache-core/2.2.0/ehcache-core-2.2.0.jar:/home/runner/.m2/repository/org/slf4j/slf4j-api/1.6.0/slf4j-api-1.6.0.jar:/home/runner/.m2/repository/org/slf4j/jcl-over-slf4j/1.6.0/jcl-over-slf4j-1.6.0.jar:/home/runner/.m2/repository/org/slf4j/slf4j-log4j12/1.6.0/slf4j-log4j12-1.6.0.jar:/home/runner/.m2/repository/com/thoughtworks/xstream/xstream/1.4.3/xstream-1.4.3.jar:/home/runner/.m2/repository/xmlpull/xmlpull/1.1.3.1/xmlpull-1.1.3.1.jar:/home/runner/.m2/repository/xpp3/xpp3_min/1.1.4c/xpp3_min-1.1.4c.jar:/home/runner/.m2/repository/javax/mail/mail/1.4.1/mail-1.4.1.jar:/home/runner/.m2/repository/javax/activation/activation/1.1/activation-1.1.jar:/home/runner/.m2/repository/org/liquibase/liquibase-core/2.0.5/liquibase-core-2.0.5.jar:/home/runner/.m2/repository/org/openmrs/liquibase/ext/modify-column/2.0.2/modify-column-2.0.2.jar:/home/runner/.m2/repository/org/openmrs/liquibase/ext/identity-insert/1.2.1/identity-insert-1.2.1.jar:/home/runner/.m2/repository/org/openmrs/liquibase/ext/type-converter/1.0.1/type-converter-1.0.1.jar:/home/runner/.m2/repository/xerces/xercesImpl/2.8.0/xercesImpl-2.8.0.jar:/home/runner/.m2/repository/xml-apis/xml-apis/1.3.03/xml-apis-1.3.03.jar:/home/runner/.m2/repository/xml-resolver/xml-resolver/1.1/xml-resolver-1.1.jar:/home/runner/.m2/repository/javax/validation/validation-api/1.0.0.GA/validation-api-1.0.0.GA.jar:/home/runner/.m2/repository/org/hibernate/hibernate-validator/4.2.0.Final/hibernate-validator-4.2.0.Final.jar:/home/runner/.m2/repository/org/openmrs/api/openmrs-api/1.9.9/openmrs-api-1.9.9-tests.jar:/home/runner/.m2/repository/org/openmrs/module/metadatamapping-api/1.1.0-alpha1/metadatamapping-api-1.1.0-alpha1.jar:/home/runner/.m2/repository/org/openmrs/module/providermanagement-api/2.0/providermanagement-api-2.0.jar:/home/runner/.m2/repository/org/springframework/spring-test/3.0.5.RELEASE/spring-test-3.0.5.RELEASE.jar:/home/runner/.m2/repository/com/h2database/h2/1.2.135/h2-1.2.135.jar:/home/runner/.m2/repository/org/databene/databene-benerator/0.5.9/databene-benerator-0.5.9.jar:/home/runner/.m2/repository/org/databene/databene-webdecs/0.4.9/databene-webdecs-0.4.9.jar:/home/runner/.m2/repository/org/apache/poi/poi/3.5-beta5/poi-3.5-beta5.jar:/home/runner/.m2/repository/org/freemarker/freemarker/2.3.9/freemarker-2.3.9.jar:/home/runner/.m2/repository/org/databene/databene-commons/0.4.9/databene-commons-0.4.9.jar:/home/runner/.m2/repository/org/databene/databene-gui/0.1.9/databene-gui-0.1.9.jar:/home/runner/.m2/repository/org/apache/derby/derbyclient/10.4.2.0/derbyclient-10.4.2.0.jar:/home/runner/.m2/repository/org/dbunit/dbunit/2.4.7/dbunit-2.4.7.jar:/home/runner/.m2/repository/xmlunit/xmlunit/1.3/xmlunit-1.3.jar:/home/runner/.m2/repository/org/openmrs/web/openmrs-web/1.9.9/openmrs-web-1.9.9.jar:/home/runner/.m2/repository/javax/servlet/servlet-api/2.5/servlet-api-2.5.jar:/home/runner/.m2/repository/javax/servlet/jsp-api/2.0/jsp-api-2.0.jar:/home/runner/.m2/repository/javax/servlet/jstl/1.1.2/jstl-1.1.2.jar:/home/runner/.m2/repository/org/openmrs/directwebremoting/dwr/2.0.5-mod/dwr-2.0.5-mod.jar:/home/runner/.m2/repository/commons-fileupload/commons-fileupload/1.2.1/commons-fileupload-1.2.1.jar:/home/runner/.m2/repository/net/sf/saxon/saxon/8.7/saxon-8.7.jar:/home/runner/.m2/repository/net/sf/saxon/saxon-dom/8.7/saxon-dom-8.7.jar:/home/runner/.m2/repository/org/springframework/spring-web/3.0.5.RELEASE/spring-web-3.0.5.RELEASE.jar:/home/runner/.m2/repository/org/springframework/spring-webmvc/3.0.5.RELEASE/spring-webmvc-3.0.5.RELEASE.jar:/home/runner/.m2/repository/org/springframework/spring-context-support/3.0.5.RELEASE/spring-context-support-3.0.5.RELEASE.jar:/home/runner/.m2/repository/org/springframework/spring-oxm/3.0.5.RELEASE/spring-oxm-3.0.5.RELEASE.jar:/home/runner/.m2/repository/jfree/jfreechart/1.0.12/jfreechart-1.0.12.jar:/home/runner/.m2/repository/jfree/jcommon/1.0.15/jcommon-1.0.15.jar:/home/runner/.m2/repository/mysql/mysql-connector-java/5.1.28/mysql-connector-java-5.1.28.jar:/home/runner/.m2/repository/postgresql/postgresql/9.0-801.jdbc4/postgresql-9.0-801.jdbc4.jar:/home/runner/.m2/repository/net/sourceforge/jtds/jtds/1.2.4/jtds-1.2.4.jar:/home/runner/.m2/repository/taglibs/request/1.0.1/request-1.0.1.jar:/home/runner/.m2/repository/taglibs/response/1.0.1/response-1.0.1.jar:/home/runner/.m2/repository/taglibs/standard/1.1.2/standard-1.1.2.jar:/home/runner/.m2/repository/taglibs/page/1.0.1/page-1.0.1.jar:/home/runner/.m2/repository/org/apache/velocity/velocity-tools/2.0/velocity-tools-2.0.jar:/home/runner/.m2/repository/commons-digester/commons-digester/1.8/commons-digester-1.8.jar:/home/runner/.m2/repository/commons-chain/commons-chain/1.1/commons-chain-1.1.jar:/home/runner/.m2/repository/commons-validator/commons-validator/1.3.1/commons-validator-1.3.1.jar:/home/runner/.m2/repository/oro/oro/2.0.8/oro-2.0.8.jar:/home/runner/.m2/repository/sslext/sslext/1.2-0/sslext-1.2-0.jar:/home/runner/.m2/repository/org/apache/struts/struts-core/1.3.8/struts-core-1.3.8.jar:/home/runner/.m2/repository/org/apache/struts/struts-taglib/1.3.8/struts-taglib-1.3.8.jar:/home/runner/.m2/repository/org/apache/struts/struts-tiles/1.3.8/struts-tiles-1.3.8.jar:/home/runner/.m2/repository/org/openmrs/module/logic/0.5/logic-0.5.jar:/home/runner/.m2/repository/org/codehaus/groovy/groovy/1.8.3/groovy-1.8.3.jar:/home/runner/.m2/repository/antlr/antlr/2.7.7/antlr-2.7.7.jar:/home/runner/.m2/repository/asm/asm/3.2/asm-3.2.jar:/home/runner/.m2/repository/asm/asm-analysis/3.2/asm-analysis-3.2.jar:/home/runner/.m2/repository/asm/asm-tree/3.2/asm-tree-3.2.jar:/home/runner/.m2/repository/cglib/cglib/2.2.2/cglib-2.2.2.jar:/home/runner/.m2/repository/xalan/xalan/2.7.1/xalan-2.7.1.jar:/home/runner/.m2/repository/xalan/serializer/2.7.1/serializer-2.7.1.jar:/home/runner/.m2/repository/joda-time/joda-time/2.9.2/joda-time-2.9.2.jar:/home/runner/.m2/repository/org/joda/joda-convert/1.2/joda-convert-1.2.jar:/home/runner/.m2/repository/org/codehaus/jackson/jackson-mapper-asl/1.5.0/jackson-mapper-asl-1.5.0.jar:/home/runner/.m2/repository/org/codehaus/jackson/jackson-core-asl/1.5.0/jackson-core-asl-1.5.0.jar:/home/runner/.m2/repository/junit/junit/4.11/junit-4.11.jar:/home/runner/.m2/repository/org/mockito/mockito-core/1.9.5/mockito-core-1.9.5.jar:/home/runner/.m2/repository/org/objenesis/objenesis/1.0/objenesis-1.0.jar:/home/runner/.m2/repository/org/powermock/powermock-module-junit4/1.5/powermock-module-junit4-1.5.jar:/home/runner/.m2/repository/org/powermock/powermock-module-junit4-common/1.5/powermock-module-junit4-common-1.5.jar:/home/runner/.m2/repository/org/powermock/powermock-core/1.5/powermock-core-1.5.jar:/home/runner/.m2/repository/org/javassist/javassist/3.17.1-GA/javassist-3.17.1-GA.jar:/home/runner/.m2/repository/org/powermock/powermock-reflect/1.5/powermock-reflect-1.5.jar:/home/runner/.m2/repository/org/powermock/powermock-api-mockito/1.5/powermock-api-mockito-1.5.jar:/home/runner/.m2/repository/org/powermock/powermock-api-support/1.5/powermock-api-support-1.5.jar:/home/runner/.m2/repository/org/hamcrest/hamcrest-core/1.3/hamcrest-core-1.3.jar:/home/runner/.m2/repository/org/hamcrest/hamcrest-library/1.3/hamcrest-library-1.3.jar:"/>
+    <property name="java.vm.vendor" value="Temurin"/>
+    <property name="sun.arch.data.model" value="64"/>
+    <property name="sun.font.fontmanager" value="sun.awt.X11FontManager"/>
+    <property name="java.vendor.url" value="https://adoptium.net/"/>
+    <property name="user.timezone" value="Etc/UTC"/>
+    <property name="java.vm.specification.version" value="1.8"/>
+    <property name="os.name" value="Linux"/>
+    <property name="sun.java.launcher" value="SUN_STANDARD"/>
+    <property name="sun.boot.library.path" value="/usr/lib/jvm/temurin-8-jdk-amd64/jre/lib/amd64"/>
+    <property name="sun.java.command" value="/home/runner/work/openmrs-module-htmlformentry/openmrs-module-htmlformentry/api-tests/target/surefire/surefirebooter-20260619084844609_36.jar /home/runner/work/openmrs-module-htmlformentry/openmrs-module-htmlformentry/api-tests/target/surefire 2026-06-19T08-48-02_877-jvmRun1 surefire-20260619084844609_34tmp surefire_3-20260619084844609_35tmp"/>
+    <property name="surefire.test.class.path" value="/home/runner/work/openmrs-module-htmlformentry/openmrs-module-htmlformentry/api-tests/target/test-classes:/home/runner/work/openmrs-module-htmlformentry/openmrs-module-htmlformentry/api-tests/target/classes:/home/runner/work/openmrs-module-htmlformentry/openmrs-module-htmlformentry/api-1.10/target/htmlformentry-api-1.10-3.10.0.jar:/home/runner/work/openmrs-module-htmlformentry/openmrs-module-htmlformentry/api/target/htmlformentry-api-3.10.0.jar:/home/runner/work/openmrs-module-htmlformentry/openmrs-module-htmlformentry/api/target/htmlformentry-api-3.10.0-tests.jar:/home/runner/.m2/repository/net/anotheria/ano-web/2.1.0/ano-web-2.1.0.jar:/home/runner/work/openmrs-module-htmlformentry/openmrs-module-htmlformentry/api-1.9/target/htmlformentry-api-1.9-3.10.0.jar:/home/runner/work/openmrs-module-htmlformentry/openmrs-module-htmlformentry/api-2.0/target/htmlformentry-api-2.0-3.10.0.jar:/home/runner/.m2/repository/org/openmrs/api/openmrs-api/1.9.9/openmrs-api-1.9.9.jar:/home/runner/.m2/repository/commons-collections/commons-collections/3.2/commons-collections-3.2.jar:/home/runner/.m2/repository/org/apache/commons/commons-lang3/3.1/commons-lang3-3.1.jar:/home/runner/.m2/repository/commons-beanutils/commons-beanutils/1.7.0/commons-beanutils-1.7.0.jar:/home/runner/.m2/repository/commons-io/commons-io/1.4/commons-io-1.4.jar:/home/runner/.m2/repository/org/azeckoski/reflectutils/0.9.14/reflectutils-0.9.14.jar:/home/runner/.m2/repository/org/apache/velocity/velocity/1.6.2/velocity-1.6.2.jar:/home/runner/.m2/repository/commons-lang/commons-lang/2.4/commons-lang-2.4.jar:/home/runner/.m2/repository/log4j/log4j/1.2.15/log4j-1.2.15.jar:/home/runner/.m2/repository/org/springframework/spring-core/3.0.5.RELEASE/spring-core-3.0.5.RELEASE.jar:/home/runner/.m2/repository/org/springframework/spring-asm/3.0.5.RELEASE/spring-asm-3.0.5.RELEASE.jar:/home/runner/.m2/repository/org/springframework/spring-beans/3.0.5.RELEASE/spring-beans-3.0.5.RELEASE.jar:/home/runner/.m2/repository/org/springframework/spring-context/3.0.5.RELEASE/spring-context-3.0.5.RELEASE.jar:/home/runner/.m2/repository/org/springframework/spring-expression/3.0.5.RELEASE/spring-expression-3.0.5.RELEASE.jar:/home/runner/.m2/repository/org/springframework/spring-aop/3.0.5.RELEASE/spring-aop-3.0.5.RELEASE.jar:/home/runner/.m2/repository/aopalliance/aopalliance/1.0/aopalliance-1.0.jar:/home/runner/.m2/repository/org/springframework/spring-orm/3.0.5.RELEASE/spring-orm-3.0.5.RELEASE.jar:/home/runner/.m2/repository/org/springframework/spring-tx/3.0.5.RELEASE/spring-tx-3.0.5.RELEASE.jar:/home/runner/.m2/repository/org/springframework/spring-jdbc/3.0.5.RELEASE/spring-jdbc-3.0.5.RELEASE.jar:/home/runner/.m2/repository/org/antlr/antlr-runtime/3.4/antlr-runtime-3.4.jar:/home/runner/.m2/repository/org/antlr/stringtemplate/3.2.1/stringtemplate-3.2.1.jar:/home/runner/.m2/repository/asm/asm-commons/2.2.3/asm-commons-2.2.3.jar:/home/runner/.m2/repository/asm/asm-util/2.2.3/asm-util-2.2.3.jar:/home/runner/.m2/repository/cglib/cglib-nodep/2.2/cglib-nodep-2.2.jar:/home/runner/.m2/repository/ca/uhn/hapi/hapi/0.5/hapi-0.5.jar:/home/runner/.m2/repository/org/openmrs/simpleframework/simple-xml/1.6.1-mod/simple-xml-1.6.1-mod.jar:/home/runner/.m2/repository/stax/stax/1.2.0/stax-1.2.0.jar:/home/runner/.m2/repository/stax/stax-api/1.0.1/stax-api-1.0.1.jar:/home/runner/.m2/repository/org/openmrs/hibernate/hibernate-core/3.6.5.Final-mod/hibernate-core-3.6.5.Final-mod.jar:/home/runner/.m2/repository/org/hibernate/hibernate-commons-annotations/3.2.0.Final/hibernate-commons-annotations-3.2.0.Final.jar:/home/runner/.m2/repository/org/hibernate/javax/persistence/hibernate-jpa-2.0-api/1.0.0.Final/hibernate-jpa-2.0-api-1.0.0.Final.jar:/home/runner/.m2/repository/javax/transaction/jta/1.1/jta-1.1.jar:/home/runner/.m2/repository/org/hibernate/hibernate-c3p0/3.6.0.Final/hibernate-c3p0-3.6.0.Final.jar:/home/runner/.m2/repository/org/hibernate/hibernate-ehcache/3.6.0.Final/hibernate-ehcache-3.6.0.Final.jar:/home/runner/.m2/repository/dom4j/dom4j/1.6.1/dom4j-1.6.1.jar:/home/runner/.m2/repository/c3p0/c3p0/0.9.1/c3p0-0.9.1.jar:/home/runner/.m2/repository/net/sf/ehcache/ehcache-core/2.2.0/ehcache-core-2.2.0.jar:/home/runner/.m2/repository/org/slf4j/slf4j-api/1.6.0/slf4j-api-1.6.0.jar:/home/runner/.m2/repository/org/slf4j/jcl-over-slf4j/1.6.0/jcl-over-slf4j-1.6.0.jar:/home/runner/.m2/repository/org/slf4j/slf4j-log4j12/1.6.0/slf4j-log4j12-1.6.0.jar:/home/runner/.m2/repository/com/thoughtworks/xstream/xstream/1.4.3/xstream-1.4.3.jar:/home/runner/.m2/repository/xmlpull/xmlpull/1.1.3.1/xmlpull-1.1.3.1.jar:/home/runner/.m2/repository/xpp3/xpp3_min/1.1.4c/xpp3_min-1.1.4c.jar:/home/runner/.m2/repository/javax/mail/mail/1.4.1/mail-1.4.1.jar:/home/runner/.m2/repository/javax/activation/activation/1.1/activation-1.1.jar:/home/runner/.m2/repository/org/liquibase/liquibase-core/2.0.5/liquibase-core-2.0.5.jar:/home/runner/.m2/repository/org/openmrs/liquibase/ext/modify-column/2.0.2/modify-column-2.0.2.jar:/home/runner/.m2/repository/org/openmrs/liquibase/ext/identity-insert/1.2.1/identity-insert-1.2.1.jar:/home/runner/.m2/repository/org/openmrs/liquibase/ext/type-converter/1.0.1/type-converter-1.0.1.jar:/home/runner/.m2/repository/xerces/xercesImpl/2.8.0/xercesImpl-2.8.0.jar:/home/runner/.m2/repository/xml-apis/xml-apis/1.3.03/xml-apis-1.3.03.jar:/home/runner/.m2/repository/xml-resolver/xml-resolver/1.1/xml-resolver-1.1.jar:/home/runner/.m2/repository/javax/validation/validation-api/1.0.0.GA/validation-api-1.0.0.GA.jar:/home/runner/.m2/repository/org/hibernate/hibernate-validator/4.2.0.Final/hibernate-validator-4.2.0.Final.jar:/home/runner/.m2/repository/org/openmrs/api/openmrs-api/1.9.9/openmrs-api-1.9.9-tests.jar:/home/runner/.m2/repository/org/openmrs/module/metadatamapping-api/1.1.0-alpha1/metadatamapping-api-1.1.0-alpha1.jar:/home/runner/.m2/repository/org/openmrs/module/providermanagement-api/2.0/providermanagement-api-2.0.jar:/home/runner/.m2/repository/org/springframework/spring-test/3.0.5.RELEASE/spring-test-3.0.5.RELEASE.jar:/home/runner/.m2/repository/com/h2database/h2/1.2.135/h2-1.2.135.jar:/home/runner/.m2/repository/org/databene/databene-benerator/0.5.9/databene-benerator-0.5.9.jar:/home/runner/.m2/repository/org/databene/databene-webdecs/0.4.9/databene-webdecs-0.4.9.jar:/home/runner/.m2/repository/org/apache/poi/poi/3.5-beta5/poi-3.5-beta5.jar:/home/runner/.m2/repository/org/freemarker/freemarker/2.3.9/freemarker-2.3.9.jar:/home/runner/.m2/repository/org/databene/databene-commons/0.4.9/databene-commons-0.4.9.jar:/home/runner/.m2/repository/org/databene/databene-gui/0.1.9/databene-gui-0.1.9.jar:/home/runner/.m2/repository/org/apache/derby/derbyclient/10.4.2.0/derbyclient-10.4.2.0.jar:/home/runner/.m2/repository/org/dbunit/dbunit/2.4.7/dbunit-2.4.7.jar:/home/runner/.m2/repository/xmlunit/xmlunit/1.3/xmlunit-1.3.jar:/home/runner/.m2/repository/org/openmrs/web/openmrs-web/1.9.9/openmrs-web-1.9.9.jar:/home/runner/.m2/repository/javax/servlet/servlet-api/2.5/servlet-api-2.5.jar:/home/runner/.m2/repository/javax/servlet/jsp-api/2.0/jsp-api-2.0.jar:/home/runner/.m2/repository/javax/servlet/jstl/1.1.2/jstl-1.1.2.jar:/home/runner/.m2/repository/org/openmrs/directwebremoting/dwr/2.0.5-mod/dwr-2.0.5-mod.jar:/home/runner/.m2/repository/commons-fileupload/commons-fileupload/1.2.1/commons-fileupload-1.2.1.jar:/home/runner/.m2/repository/net/sf/saxon/saxon/8.7/saxon-8.7.jar:/home/runner/.m2/repository/net/sf/saxon/saxon-dom/8.7/saxon-dom-8.7.jar:/home/runner/.m2/repository/org/springframework/spring-web/3.0.5.RELEASE/spring-web-3.0.5.RELEASE.jar:/home/runner/.m2/repository/org/springframework/spring-webmvc/3.0.5.RELEASE/spring-webmvc-3.0.5.RELEASE.jar:/home/runner/.m2/repository/org/springframework/spring-context-support/3.0.5.RELEASE/spring-context-support-3.0.5.RELEASE.jar:/home/runner/.m2/repository/org/springframework/spring-oxm/3.0.5.RELEASE/spring-oxm-3.0.5.RELEASE.jar:/home/runner/.m2/repository/jfree/jfreechart/1.0.12/jfreechart-1.0.12.jar:/home/runner/.m2/repository/jfree/jcommon/1.0.15/jcommon-1.0.15.jar:/home/runner/.m2/repository/mysql/mysql-connector-java/5.1.28/mysql-connector-java-5.1.28.jar:/home/runner/.m2/repository/postgresql/postgresql/9.0-801.jdbc4/postgresql-9.0-801.jdbc4.jar:/home/runner/.m2/repository/net/sourceforge/jtds/jtds/1.2.4/jtds-1.2.4.jar:/home/runner/.m2/repository/taglibs/request/1.0.1/request-1.0.1.jar:/home/runner/.m2/repository/taglibs/response/1.0.1/response-1.0.1.jar:/home/runner/.m2/repository/taglibs/standard/1.1.2/standard-1.1.2.jar:/home/runner/.m2/repository/taglibs/page/1.0.1/page-1.0.1.jar:/home/runner/.m2/repository/org/apache/velocity/velocity-tools/2.0/velocity-tools-2.0.jar:/home/runner/.m2/repository/commons-digester/commons-digester/1.8/commons-digester-1.8.jar:/home/runner/.m2/repository/commons-chain/commons-chain/1.1/commons-chain-1.1.jar:/home/runner/.m2/repository/commons-validator/commons-validator/1.3.1/commons-validator-1.3.1.jar:/home/runner/.m2/repository/oro/oro/2.0.8/oro-2.0.8.jar:/home/runner/.m2/repository/sslext/sslext/1.2-0/sslext-1.2-0.jar:/home/runner/.m2/repository/org/apache/struts/struts-core/1.3.8/struts-core-1.3.8.jar:/home/runner/.m2/repository/org/apache/struts/struts-taglib/1.3.8/struts-taglib-1.3.8.jar:/home/runner/.m2/repository/org/apache/struts/struts-tiles/1.3.8/struts-tiles-1.3.8.jar:/home/runner/.m2/repository/org/openmrs/module/logic/0.5/logic-0.5.jar:/home/runner/.m2/repository/org/codehaus/groovy/groovy/1.8.3/groovy-1.8.3.jar:/home/runner/.m2/repository/antlr/antlr/2.7.7/antlr-2.7.7.jar:/home/runner/.m2/repository/asm/asm/3.2/asm-3.2.jar:/home/runner/.m2/repository/asm/asm-analysis/3.2/asm-analysis-3.2.jar:/home/runner/.m2/repository/asm/asm-tree/3.2/asm-tree-3.2.jar:/home/runner/.m2/repository/cglib/cglib/2.2.2/cglib-2.2.2.jar:/home/runner/.m2/repository/xalan/xalan/2.7.1/xalan-2.7.1.jar:/home/runner/.m2/repository/xalan/serializer/2.7.1/serializer-2.7.1.jar:/home/runner/.m2/repository/joda-time/joda-time/2.9.2/joda-time-2.9.2.jar:/home/runner/.m2/repository/org/joda/joda-convert/1.2/joda-convert-1.2.jar:/home/runner/.m2/repository/org/codehaus/jackson/jackson-mapper-asl/1.5.0/jackson-mapper-asl-1.5.0.jar:/home/runner/.m2/repository/org/codehaus/jackson/jackson-core-asl/1.5.0/jackson-core-asl-1.5.0.jar:/home/runner/.m2/repository/junit/junit/4.11/junit-4.11.jar:/home/runner/.m2/repository/org/mockito/mockito-core/1.9.5/mockito-core-1.9.5.jar:/home/runner/.m2/repository/org/objenesis/objenesis/1.0/objenesis-1.0.jar:/home/runner/.m2/repository/org/powermock/powermock-module-junit4/1.5/powermock-module-junit4-1.5.jar:/home/runner/.m2/repository/org/powermock/powermock-module-junit4-common/1.5/powermock-module-junit4-common-1.5.jar:/home/runner/.m2/repository/org/powermock/powermock-core/1.5/powermock-core-1.5.jar:/home/runner/.m2/repository/org/javassist/javassist/3.17.1-GA/javassist-3.17.1-GA.jar:/home/runner/.m2/repository/org/powermock/powermock-reflect/1.5/powermock-reflect-1.5.jar:/home/runner/.m2/repository/org/powermock/powermock-api-mockito/1.5/powermock-api-mockito-1.5.jar:/home/runner/.m2/repository/org/powermock/powermock-api-support/1.5/powermock-api-support-1.5.jar:/home/runner/.m2/repository/org/hamcrest/hamcrest-core/1.3/hamcrest-core-1.3.jar:/home/runner/.m2/repository/org/hamcrest/hamcrest-library/1.3/hamcrest-library-1.3.jar:"/>
+    <property name="sun.cpu.endian" value="little"/>
+    <property name="user.home" value="/home/runner"/>
+    <property name="user.language" value="en"/>
+    <property name="java.specification.vendor" value="Oracle Corporation"/>
+    <property name="java.home" value="/usr/lib/jvm/temurin-8-jdk-amd64/jre"/>
+    <property name="basedir" value="/home/runner/work/openmrs-module-htmlformentry/openmrs-module-htmlformentry/api-tests"/>
+    <property name="file.separator" value="/"/>
+    <property name="line.separator" value="&#10;"/>
+    <property name="java.vm.specification.vendor" value="Oracle Corporation"/>
+    <property name="java.specification.name" value="Java Platform API Specification"/>
+    <property name="java.awt.graphicsenv" value="sun.awt.X11GraphicsEnvironment"/>
+    <property name="surefire.real.class.path" value="/home/runner/work/openmrs-module-htmlformentry/openmrs-module-htmlformentry/api-tests/target/surefire/surefirebooter-20260619084844609_36.jar:/home/runner/.m2/repository/org/jacoco/org.jacoco.agent/0.8.8/org.jacoco.agent-0.8.8-runtime.jar"/>
+    <property name="sun.boot.class.path" value="/usr/lib/jvm/temurin-8-jdk-amd64/jre/lib/resources.jar:/usr/lib/jvm/temurin-8-jdk-amd64/jre/lib/rt.jar:/usr/lib/jvm/temurin-8-jdk-amd64/jre/lib/sunrsasign.jar:/usr/lib/jvm/temurin-8-jdk-amd64/jre/lib/jsse.jar:/usr/lib/jvm/temurin-8-jdk-amd64/jre/lib/jce.jar:/usr/lib/jvm/temurin-8-jdk-amd64/jre/lib/charsets.jar:/usr/lib/jvm/temurin-8-jdk-amd64/jre/lib/jfr.jar:/usr/lib/jvm/temurin-8-jdk-amd64/jre/classes"/>
+    <property name="sun.management.compiler" value="HotSpot 64-Bit Tiered Compilers"/>
+    <property name="java.runtime.version" value="1.8.0_492-b09"/>
+    <property name="user.name" value="runner"/>
+    <property name="path.separator" value=":"/>
+    <property name="os.version" value="6.17.0-1018-azure"/>
+    <property name="java.endorsed.dirs" value="/usr/lib/jvm/temurin-8-jdk-amd64/jre/lib/endorsed"/>
+    <property name="java.runtime.name" value="OpenJDK Runtime Environment"/>
+    <property name="file.encoding" value="UTF-8"/>
+    <property name="java.vm.name" value="OpenJDK 64-Bit Server VM"/>
+    <property name="localRepository" value="/home/runner/.m2/repository"/>
+    <property name="java.vendor.url.bug" value="https://github.com/adoptium/adoptium-support/issues"/>
+    <property name="java.io.tmpdir" value="/tmp"/>
+    <property name="java.version" value="1.8.0_492"/>
+    <property name="user.dir" value="/home/runner/work/openmrs-module-htmlformentry/openmrs-module-htmlformentry/api-tests"/>
+    <property name="os.arch" value="amd64"/>
+    <property name="java.vm.specification.name" value="Java Virtual Machine Specification"/>
+    <property name="java.awt.printerjob" value="sun.print.PSPrinterJob"/>
+    <property name="sun.os.patch.level" value="unknown"/>
+    <property name="java.library.path" value="/usr/java/packages/lib/amd64:/usr/lib64:/lib64:/lib:/usr/lib"/>
+    <property name="java.vm.info" value="mixed mode"/>
+    <property name="java.vendor" value="Temurin"/>
+    <property name="java.vm.version" value="25.492-b09"/>
+    <property name="java.specification.maintenance.version" value="6"/>
+    <property name="java.ext.dirs" value="/usr/lib/jvm/temurin-8-jdk-amd64/jre/lib/ext:/usr/java/packages/lib/ext"/>
+    <property name="sun.io.unicode.encoding" value="UnicodeLittle"/>
+    <property name="java.class.version" value="52.0"/>
+  </properties>
+  <testcase name="testSimplestFormSuccessNoLocationAndNoProvider" classname="org.openmrs.module.htmlformentry.RegressionTest" time="0.227">
+    <system-out><![CDATA[INFO - FormEntrySession.<init>(146) |2026-06-19 08:50:08,186| AUDIT | action=FORM_OPEN | userId=1 | patientId=2 | mode=ENTER
+INFO - FormEntrySession.applyActions(575) |2026-06-19 08:50:08,200| AUDIT | action=ENCOUNTER_CREATE | userId=1 | patientId=2 | encounterId=3042 | formId=null
+]]></system-out>
+  </testcase>
+  <testcase name="nestedObsGroup_doNotSaveThoseWithoutObs" classname="org.openmrs.module.htmlformentry.RegressionTest" time="0.237">
+    <system-out><![CDATA[INFO - FormEntrySession.<init>(146) |2026-06-19 08:50:08,417| AUDIT | action=FORM_OPEN | userId=1 | patientId=2 | mode=ENTER
+INFO - FormEntrySession.applyActions(575) |2026-06-19 08:50:08,437| AUDIT | action=ENCOUNTER_CREATE | userId=1 | patientId=2 | encounterId=3043 | formId=null
+]]></system-out>
+  </testcase>
+  <testcase name="testEncounterDateWithTimeComponent" classname="org.openmrs.module.htmlformentry.RegressionTest" time="0.238">
+    <system-out><![CDATA[INFO - FormEntrySession.<init>(146) |2026-06-19 08:50:08,650| AUDIT | action=FORM_OPEN | userId=1 | patientId=2 | mode=ENTER
+<div class="htmlform">
+	Date: <span id='encounterDate'><input type="text" size="10" id="w3-display"/><input type="hidden" name="w3" id="w3" /><script>setupDatePicker('dd/mm/yy', '110,20','en-GB', '#w3-display', '#w3')</script><span class="error field-error" style="display: none" id="w4"></span>&#160;<select class="hfe-hours" name="w1hours"><option value="0">00</option><option value="1">01</option><option value="2">02</option><option value="3">03</option><option value="4">04</option><option value="5">05</option><option value="6">06</option><option value="7">07</option><option value="8">08</option><option value="9">09</option><option value="10">10</option><option value="11">11</option><option value="12">12</option><option value="13">13</option><option value="14">14</option><option value="15">15</option><option value="16">16</option><option value="17">17</option><option value="18">18</option><option value="19">19</option><option value="20">20</option><option value="21">21</option><option value="22">22</option><option value="23">23</option></select>:<select class="hfe-minutes" name="w1minutes"><option value="0">00</option><option value="1">01</option><option value="2">02</option><option value="3">03</option><option value="4">04</option><option value="5">05</option><option value="6">06</option><option value="7">07</option><option value="8">08</option><option value="9">09</option><option value="10">10</option><option value="11">11</option><option value="12">12</option><option value="13">13</option><option value="14">14</option><option value="15">15</option><option value="16">16</option><option value="17">17</option><option value="18">18</option><option value="19">19</option><option value="20">20</option><option value="21">21</option><option value="22">22</option><option value="23">23</option><option value="24">24</option><option value="25">25</option><option value="26">26</option><option value="27">27</option><option value="28">28</option><option value="29">29</option><option value="30">30</option><option value="31">31</option><option value="32">32</option><option value="33">33</option><option value="34">34</option><option value="35">35</option><option value="36">36</option><option value="37">37</option><option value="38">38</option><option value="39">39</option><option value="40">40</option><option value="41">41</option><option value="42">42</option><option value="43">43</option><option value="44">44</option><option value="45">45</option><option value="46">46</option><option value="47">47</option><option value="48">48</option><option value="49">49</option><option value="50">50</option><option value="51">51</option><option value="52">52</option><option value="53">53</option><option value="54">54</option><option value="55">55</option><option value="56">56</option><option value="57">57</option><option value="58">58</option><option value="59">59</option></select><select class="hfe-seconds" name="w1seconds"><option value="0">00</option><option value="1">01</option><option value="2">02</option><option value="3">03</option><option value="4">04</option><option value="5">05</option><option value="6">06</option><option value="7">07</option><option value="8">08</option><option value="9">09</option><option value="10">10</option><option value="11">11</option><option value="12">12</option><option value="13">13</option><option value="14">14</option><option value="15">15</option><option value="16">16</option><option value="17">17</option><option value="18">18</option><option value="19">19</option><option value="20">20</option><option value="21">21</option><option value="22">22</option><option value="23">23</option><option value="24">24</option><option value="25">25</option><option value="26">26</option><option value="27">27</option><option value="28">28</option><option value="29">29</option><option value="30">30</option><option value="31">31</option><option value="32">32</option><option value="33">33</option><option value="34">34</option><option value="35">35</option><option value="36">36</option><option value="37">37</option><option value="38">38</option><option value="39">39</option><option value="40">40</option><option value="41">41</option><option value="42">42</option><option value="43">43</option><option value="44">44</option><option value="45">45</option><option value="46">46</option><option value="47">47</option><option value="48">48</option><option value="49">49</option><option value="50">50</option><option value="51">51</option><option value="52">52</option><option value="53">53</option><option value="54">54</option><option value="55">55</option><option value="56">56</option><option value="57">57</option><option value="58">58</option><option value="59">59</option></select><span class="error field-error" style="display: none" id="w2"></span></span>
+	Location: <span id='encounterLocation'><select id="w5" name="w5"><option value="" selected="true">htmlformentry.chooseALocation</option><option value="1004">Boston</option><option value="1001">Kigali</option><option value="1006">Lacolline</option><option value="1002">Mirebalais</option><option value="1005">Scituate</option><option value="1">Unknown Location</option><option value="2">Xanadu</option></select><span class="error field-error" style="display: none" id="w6"></span></span>
+	Provider: <span id='encounterProvider'><select id="w7" name="w7"><option value="" selected="true">htmlformentry.chooseAProvider</option><option value="502">Hippocrates of Cos</option></select><span class="error field-error" style="display: none" id="w8"></span></span>
+	<input type="button" class="submitButton" value="htmlformentry.enterFormButton" onClick="submitHtmlForm()"/>
+</div>
+INFO - FormEntrySession.applyActions(575) |2026-06-19 08:50:08,675| AUDIT | action=ENCOUNTER_CREATE | userId=1 | patientId=2 | encounterId=3044 | formId=null
+]]></system-out>
+  </testcase>
+  <testcase name="viewObsgroupsWithCodedValues" classname="org.openmrs.module.htmlformentry.RegressionTest" time="0.248">
+    <system-out><![CDATA[INFO - FormEntrySession.<init>(146) |2026-06-19 08:50:08,885| AUDIT | action=FORM_OPEN | userId=1 | patientId=2 | mode=ENTER
+INFO - FormEntrySession.<init>(146) |2026-06-19 08:50:08,906| AUDIT | action=FORM_OPEN | userId=1 | patientId=null | mode=VIEW
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:08,914| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:08,914| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:08,914| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:08,916| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:08,916| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:08,916| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:08,918| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:08,918| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:08,918| Comparing obsVal /7 to xmlval /7
+]]></system-out>
+  </testcase>
+  <testcase name="testMultipleObsGroupsTwoEmptyValues" classname="org.openmrs.module.htmlformentry.RegressionTest" time="0.238">
+    <system-out><![CDATA[INFO - FormEntrySession.<init>(146) |2026-06-19 08:50:09,133| AUDIT | action=FORM_OPEN | userId=1 | patientId=2 | mode=ENTER
+INFO - FormEntrySession.<init>(146) |2026-06-19 08:50:09,150| AUDIT | action=FORM_OPEN | userId=1 | patientId=null | mode=VIEW
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:09,158| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:09,158| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:09,158| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:09,159| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:09,159| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:09,160| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:09,160| Comparing obsVal /7 to xmlval /7
+]]></system-out>
+  </testcase>
+  <testcase name="testEditMultipleObsForm" classname="org.openmrs.module.htmlformentry.RegressionTest" time="0.256">
+    <system-out><![CDATA[INFO - FormEntrySession.<init>(146) |2026-06-19 08:50:09,374| AUDIT | action=FORM_OPEN | userId=1 | patientId=2 | mode=ENTER
+INFO - FormEntrySession.<init>(146) |2026-06-19 08:50:09,387| AUDIT | action=FORM_OPEN | userId=1 | patientId=2 | mode=VIEW
+INFO - FormEntrySession.<init>(146) |2026-06-19 08:50:09,395| AUDIT | action=FORM_OPEN | userId=1 | patientId=2 | mode=EDIT
+DEBUG - FormSubmissionActions.modifyObs(335) |2026-06-19 08:50:09,410| For concept WEIGHT (KG): 50.0 -> 75.0
+DEBUG - FormSubmissionActions.modifyObs(348) |2026-06-19 08:50:09,410| CHANGED: WEIGHT (KG) = 50.0
+DEBUG - FormSubmissionActions.modifyObs(335) |2026-06-19 08:50:09,410| For concept NO: Penicillin -> Bee stings
+DEBUG - FormSubmissionActions.modifyObs(348) |2026-06-19 08:50:09,411| CHANGED: NO = Penicillin
+DEBUG - FormEntrySession.applyActions(666) |2026-06-19 08:50:09,411| voiding obs: 101
+DEBUG - FormEntrySession.applyActions(666) |2026-06-19 08:50:09,412| voiding obs: 102
+INFO - FormEntrySession.applyActions(698) |2026-06-19 08:50:09,417| AUDIT | action=ENCOUNTER_EDIT | userId=1 | patientId=2 | encounterId=101 | formId=null
+]]></system-out>
+  </testcase>
+  <testcase name="shouldViewCheckboxObsProperly" classname="org.openmrs.module.htmlformentry.RegressionTest" time="0.231">
+    <system-out><![CDATA[INFO - FormEntrySession.<init>(146) |2026-06-19 08:50:09,627| AUDIT | action=FORM_OPEN | userId=1 | patientId=2 | mode=ENTER
+INFO - FormEntrySession.<init>(146) |2026-06-19 08:50:09,641| AUDIT | action=FORM_OPEN | userId=1 | patientId=null | mode=VIEW
+]]></system-out>
+  </testcase>
+  <testcase name="answerConceptIdsShouldMapToAnswerLabels" classname="org.openmrs.module.htmlformentry.RegressionTest" time="0.221">
+    <system-out><![CDATA[INFO - FormEntrySession.<init>(146) |2026-06-19 08:50:09,859| AUDIT | action=FORM_OPEN | userId=1 | patientId=2 | mode=ENTER
+]]></system-out>
+  </testcase>
+  <testcase name="invalidBooleanObsValueShouldThrowException" classname="org.openmrs.module.htmlformentry.RegressionTest" time="0.236">
+    <system-out><![CDATA[INFO - FormEntrySession.<init>(146) |2026-06-19 08:50:10,079| AUDIT | action=FORM_OPEN | userId=1 | patientId=2 | mode=ENTER
+INFO - FormEntrySession.<init>(146) |2026-06-19 08:50:10,098| AUDIT | action=FORM_OPEN | userId=1 | patientId=null | mode=VIEW
+]]></system-out>
+  </testcase>
+  <testcase name="testMultipleObsGroupsOneEmptyValueFirstScrambleEntryOrder" classname="org.openmrs.module.htmlformentry.RegressionTest" time="0.245">
+    <system-out><![CDATA[INFO - FormEntrySession.<init>(146) |2026-06-19 08:50:10,315| AUDIT | action=FORM_OPEN | userId=1 | patientId=2 | mode=ENTER
+INFO - FormEntrySession.<init>(146) |2026-06-19 08:50:10,336| AUDIT | action=FORM_OPEN | userId=1 | patientId=null | mode=VIEW
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:10,345| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:10,346| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:10,346| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:10,347| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:10,347| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:10,347| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:10,348| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:10,348| Comparing obsVal /7 to xmlval /7
+]]></system-out>
+  </testcase>
+  <testcase name="viewIdenticalObsGroups" classname="org.openmrs.module.htmlformentry.RegressionTest" time="1.081">
+    <system-out><![CDATA[INFO - FormEntrySession.<init>(146) |2026-06-19 08:50:10,560| AUDIT | action=FORM_OPEN | userId=1 | patientId=2 | mode=ENTER
+INFO - FormEntrySession.<init>(146) |2026-06-19 08:50:10,579| AUDIT | action=FORM_OPEN | userId=1 | patientId=null | mode=VIEW
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:10,586| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:10,586| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:10,587| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:10,587| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:10,588| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:10,588| Comparing obsVal /7 to xmlval /7
+INFO - FormEntrySession.<init>(146) |2026-06-19 08:50:10,591| AUDIT | action=FORM_OPEN | userId=1 | patientId=2 | mode=ENTER
+INFO - FormEntrySession.<init>(146) |2026-06-19 08:50:10,607| AUDIT | action=FORM_OPEN | userId=1 | patientId=null | mode=VIEW
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:10,615| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:10,615| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:10,616| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:10,616| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:10,617| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:10,617| Comparing obsVal /7 to xmlval /7
+INFO - FormEntrySession.<init>(146) |2026-06-19 08:50:10,620| AUDIT | action=FORM_OPEN | userId=1 | patientId=2 | mode=ENTER
+INFO - FormEntrySession.<init>(146) |2026-06-19 08:50:10,637| AUDIT | action=FORM_OPEN | userId=1 | patientId=null | mode=VIEW
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:10,645| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:10,646| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:10,646| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:10,647| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:10,647| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:10,648| Comparing obsVal /7 to xmlval /7
+INFO - FormEntrySession.<init>(146) |2026-06-19 08:50:10,650| AUDIT | action=FORM_OPEN | userId=1 | patientId=2 | mode=ENTER
+INFO - FormEntrySession.<init>(146) |2026-06-19 08:50:10,668| AUDIT | action=FORM_OPEN | userId=1 | patientId=null | mode=VIEW
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:10,677| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:10,677| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:10,678| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:10,678| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:10,679| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:10,679| Comparing obsVal /7 to xmlval /7
+INFO - FormEntrySession.<init>(146) |2026-06-19 08:50:10,681| AUDIT | action=FORM_OPEN | userId=1 | patientId=2 | mode=ENTER
+INFO - FormEntrySession.<init>(146) |2026-06-19 08:50:10,697| AUDIT | action=FORM_OPEN | userId=1 | patientId=null | mode=VIEW
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:10,705| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:10,705| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:10,706| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:10,707| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:10,707| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:10,707| Comparing obsVal /7 to xmlval /7
+INFO - FormEntrySession.<init>(146) |2026-06-19 08:50:10,710| AUDIT | action=FORM_OPEN | userId=1 | patientId=2 | mode=ENTER
+INFO - FormEntrySession.<init>(146) |2026-06-19 08:50:10,727| AUDIT | action=FORM_OPEN | userId=1 | patientId=null | mode=VIEW
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:10,734| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:10,734| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:10,735| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:10,735| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:10,736| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:10,736| Comparing obsVal /7 to xmlval /7
+INFO - FormEntrySession.<init>(146) |2026-06-19 08:50:10,739| AUDIT | action=FORM_OPEN | userId=1 | patientId=2 | mode=ENTER
+INFO - FormEntrySession.<init>(146) |2026-06-19 08:50:10,759| AUDIT | action=FORM_OPEN | userId=1 | patientId=null | mode=VIEW
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:10,767| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:10,768| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:10,768| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:10,768| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:10,769| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:10,769| Comparing obsVal /7 to xmlval /7
+INFO - FormEntrySession.<init>(146) |2026-06-19 08:50:10,772| AUDIT | action=FORM_OPEN | userId=1 | patientId=2 | mode=ENTER
+INFO - FormEntrySession.<init>(146) |2026-06-19 08:50:10,788| AUDIT | action=FORM_OPEN | userId=1 | patientId=null | mode=VIEW
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:10,796| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:10,796| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:10,797| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:10,797| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:10,798| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:10,798| Comparing obsVal /7 to xmlval /7
+INFO - FormEntrySession.<init>(146) |2026-06-19 08:50:10,800| AUDIT | action=FORM_OPEN | userId=1 | patientId=2 | mode=ENTER
+INFO - FormEntrySession.<init>(146) |2026-06-19 08:50:10,816| AUDIT | action=FORM_OPEN | userId=1 | patientId=null | mode=VIEW
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:10,824| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:10,824| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:10,825| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:10,825| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:10,826| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:10,826| Comparing obsVal /7 to xmlval /7
+INFO - FormEntrySession.<init>(146) |2026-06-19 08:50:10,829| AUDIT | action=FORM_OPEN | userId=1 | patientId=2 | mode=ENTER
+INFO - FormEntrySession.<init>(146) |2026-06-19 08:50:10,845| AUDIT | action=FORM_OPEN | userId=1 | patientId=null | mode=VIEW
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:10,854| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:10,854| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:10,855| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:10,855| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:10,856| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:10,856| Comparing obsVal /7 to xmlval /7
+INFO - FormEntrySession.<init>(146) |2026-06-19 08:50:10,859| AUDIT | action=FORM_OPEN | userId=1 | patientId=2 | mode=ENTER
+INFO - FormEntrySession.<init>(146) |2026-06-19 08:50:10,876| AUDIT | action=FORM_OPEN | userId=1 | patientId=null | mode=VIEW
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:10,886| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:10,887| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:10,888| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:10,888| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:10,888| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:10,889| Comparing obsVal /7 to xmlval /7
+INFO - FormEntrySession.<init>(146) |2026-06-19 08:50:10,891| AUDIT | action=FORM_OPEN | userId=1 | patientId=2 | mode=ENTER
+INFO - FormEntrySession.<init>(146) |2026-06-19 08:50:10,907| AUDIT | action=FORM_OPEN | userId=1 | patientId=null | mode=VIEW
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:10,915| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:10,915| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:10,916| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:10,916| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:10,917| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:10,917| Comparing obsVal /7 to xmlval /7
+INFO - FormEntrySession.<init>(146) |2026-06-19 08:50:10,920| AUDIT | action=FORM_OPEN | userId=1 | patientId=2 | mode=ENTER
+INFO - FormEntrySession.<init>(146) |2026-06-19 08:50:10,936| AUDIT | action=FORM_OPEN | userId=1 | patientId=null | mode=VIEW
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:10,945| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:10,945| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:10,946| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:10,946| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:10,947| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:10,948| Comparing obsVal /7 to xmlval /7
+INFO - FormEntrySession.<init>(146) |2026-06-19 08:50:10,950| AUDIT | action=FORM_OPEN | userId=1 | patientId=2 | mode=ENTER
+INFO - FormEntrySession.<init>(146) |2026-06-19 08:50:10,968| AUDIT | action=FORM_OPEN | userId=1 | patientId=null | mode=VIEW
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:10,981| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:10,981| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:10,982| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:10,982| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:10,983| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:10,983| Comparing obsVal /7 to xmlval /7
+INFO - FormEntrySession.<init>(146) |2026-06-19 08:50:10,985| AUDIT | action=FORM_OPEN | userId=1 | patientId=2 | mode=ENTER
+INFO - FormEntrySession.<init>(146) |2026-06-19 08:50:11,002| AUDIT | action=FORM_OPEN | userId=1 | patientId=null | mode=VIEW
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:11,011| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:11,011| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:11,012| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:11,012| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:11,013| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:11,013| Comparing obsVal /7 to xmlval /7
+INFO - FormEntrySession.<init>(146) |2026-06-19 08:50:11,015| AUDIT | action=FORM_OPEN | userId=1 | patientId=2 | mode=ENTER
+INFO - FormEntrySession.<init>(146) |2026-06-19 08:50:11,033| AUDIT | action=FORM_OPEN | userId=1 | patientId=null | mode=VIEW
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:11,040| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:11,041| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:11,041| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:11,042| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:11,042| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:11,042| Comparing obsVal /7 to xmlval /7
+INFO - FormEntrySession.<init>(146) |2026-06-19 08:50:11,045| AUDIT | action=FORM_OPEN | userId=1 | patientId=2 | mode=ENTER
+INFO - FormEntrySession.<init>(146) |2026-06-19 08:50:11,062| AUDIT | action=FORM_OPEN | userId=1 | patientId=null | mode=VIEW
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:11,070| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:11,070| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:11,071| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:11,071| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:11,072| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:11,072| Comparing obsVal /7 to xmlval /7
+INFO - FormEntrySession.<init>(146) |2026-06-19 08:50:11,076| AUDIT | action=FORM_OPEN | userId=1 | patientId=2 | mode=ENTER
+INFO - FormEntrySession.<init>(146) |2026-06-19 08:50:11,094| AUDIT | action=FORM_OPEN | userId=1 | patientId=null | mode=VIEW
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:11,101| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:11,102| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:11,102| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:11,102| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:11,103| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:11,103| Comparing obsVal /7 to xmlval /7
+INFO - FormEntrySession.<init>(146) |2026-06-19 08:50:11,106| AUDIT | action=FORM_OPEN | userId=1 | patientId=2 | mode=ENTER
+INFO - FormEntrySession.<init>(146) |2026-06-19 08:50:11,122| AUDIT | action=FORM_OPEN | userId=1 | patientId=null | mode=VIEW
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:11,131| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:11,131| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:11,132| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:11,132| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:11,133| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:11,133| Comparing obsVal /7 to xmlval /7
+INFO - FormEntrySession.<init>(146) |2026-06-19 08:50:11,135| AUDIT | action=FORM_OPEN | userId=1 | patientId=2 | mode=ENTER
+INFO - FormEntrySession.<init>(146) |2026-06-19 08:50:11,151| AUDIT | action=FORM_OPEN | userId=1 | patientId=null | mode=VIEW
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:11,158| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:11,158| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:11,159| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:11,159| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:11,160| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:11,160| Comparing obsVal /7 to xmlval /7
+INFO - FormEntrySession.<init>(146) |2026-06-19 08:50:11,162| AUDIT | action=FORM_OPEN | userId=1 | patientId=2 | mode=ENTER
+INFO - FormEntrySession.<init>(146) |2026-06-19 08:50:11,178| AUDIT | action=FORM_OPEN | userId=1 | patientId=null | mode=VIEW
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:11,186| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:11,186| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:11,187| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:11,187| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:11,188| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:11,188| Comparing obsVal /7 to xmlval /7
+INFO - FormEntrySession.<init>(146) |2026-06-19 08:50:11,190| AUDIT | action=FORM_OPEN | userId=1 | patientId=2 | mode=ENTER
+INFO - FormEntrySession.<init>(146) |2026-06-19 08:50:11,206| AUDIT | action=FORM_OPEN | userId=1 | patientId=null | mode=VIEW
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:11,213| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:11,213| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:11,214| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:11,214| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:11,215| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:11,215| Comparing obsVal /7 to xmlval /7
+INFO - FormEntrySession.<init>(146) |2026-06-19 08:50:11,218| AUDIT | action=FORM_OPEN | userId=1 | patientId=2 | mode=ENTER
+INFO - FormEntrySession.<init>(146) |2026-06-19 08:50:11,233| AUDIT | action=FORM_OPEN | userId=1 | patientId=null | mode=VIEW
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:11,242| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:11,242| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:11,243| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:11,243| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:11,244| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:11,244| Comparing obsVal /7 to xmlval /7
+INFO - FormEntrySession.<init>(146) |2026-06-19 08:50:11,246| AUDIT | action=FORM_OPEN | userId=1 | patientId=2 | mode=ENTER
+INFO - FormEntrySession.<init>(146) |2026-06-19 08:50:11,262| AUDIT | action=FORM_OPEN | userId=1 | patientId=null | mode=VIEW
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:11,272| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:11,272| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:11,273| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:11,273| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:11,275| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:11,275| Comparing obsVal /7 to xmlval /7
+INFO - FormEntrySession.<init>(146) |2026-06-19 08:50:11,278| AUDIT | action=FORM_OPEN | userId=1 | patientId=2 | mode=ENTER
+INFO - FormEntrySession.<init>(146) |2026-06-19 08:50:11,295| AUDIT | action=FORM_OPEN | userId=1 | patientId=null | mode=VIEW
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:11,303| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:11,303| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:11,304| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:11,304| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:11,305| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:11,305| Comparing obsVal /7 to xmlval /7
+INFO - FormEntrySession.<init>(146) |2026-06-19 08:50:11,307| AUDIT | action=FORM_OPEN | userId=1 | patientId=2 | mode=ENTER
+INFO - FormEntrySession.<init>(146) |2026-06-19 08:50:11,326| AUDIT | action=FORM_OPEN | userId=1 | patientId=null | mode=VIEW
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:11,336| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:11,336| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:11,337| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:11,337| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:11,338| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:11,338| Comparing obsVal /7 to xmlval /7
+INFO - FormEntrySession.<init>(146) |2026-06-19 08:50:11,340| AUDIT | action=FORM_OPEN | userId=1 | patientId=2 | mode=ENTER
+INFO - FormEntrySession.<init>(146) |2026-06-19 08:50:11,357| AUDIT | action=FORM_OPEN | userId=1 | patientId=null | mode=VIEW
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:11,365| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:11,366| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:11,366| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:11,367| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:11,367| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:11,367| Comparing obsVal /7 to xmlval /7
+INFO - FormEntrySession.<init>(146) |2026-06-19 08:50:11,370| AUDIT | action=FORM_OPEN | userId=1 | patientId=2 | mode=ENTER
+INFO - FormEntrySession.<init>(146) |2026-06-19 08:50:11,390| AUDIT | action=FORM_OPEN | userId=1 | patientId=null | mode=VIEW
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:11,399| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:11,399| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:11,400| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:11,400| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:11,401| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:11,401| Comparing obsVal /7 to xmlval /7
+INFO - FormEntrySession.<init>(146) |2026-06-19 08:50:11,403| AUDIT | action=FORM_OPEN | userId=1 | patientId=2 | mode=ENTER
+INFO - FormEntrySession.<init>(146) |2026-06-19 08:50:11,420| AUDIT | action=FORM_OPEN | userId=1 | patientId=null | mode=VIEW
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:11,428| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:11,428| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:11,429| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:11,429| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:11,430| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:11,430| Comparing obsVal /7 to xmlval /7
+]]></system-out>
+  </testcase>
+  <testcase name="testObsGroupRepeats" classname="org.openmrs.module.htmlformentry.RegressionTest" time="0.246">
+    <system-out><![CDATA[INFO - FormEntrySession.<init>(146) |2026-06-19 08:50:11,642| AUDIT | action=FORM_OPEN | userId=1 | patientId=2 | mode=ENTER
+INFO - FormEntrySession.<init>(146) |2026-06-19 08:50:11,661| AUDIT | action=FORM_OPEN | userId=1 | patientId=null | mode=VIEW
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:11,671| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:11,672| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:11,673| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:11,674| Comparing obsVal /7 to xmlval /7
+]]></system-out>
+  </testcase>
+  <testcase name="viewDSTModelWithNestedObsGroupsAndConceptSelectTag" classname="org.openmrs.module.htmlformentry.RegressionTest" time="0.264">
+    <system-out><![CDATA[INFO - FormEntrySession.<init>(146) |2026-06-19 08:50:11,893| AUDIT | action=FORM_OPEN | userId=1 | patientId=2 | mode=ENTER
+INFO - FormEntrySession.<init>(146) |2026-06-19 08:50:11,927| AUDIT | action=FORM_OPEN | userId=1 | patientId=null | mode=VIEW
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:11,937| Comparing obsVal /3040 to xmlval /3040
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:11,937| Comparing obsVal /3040/3025 to xmlval /3040
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:11,937| Comparing obsVal /3040/3025 to xmlval /3040
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:11,937| Comparing obsVal /3040/3025 to xmlval /3040
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:11,938| Comparing obsVal /3040/3025 to xmlval /3040/3025
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:11,938| Comparing obsVal /3040/3025 to xmlval /3040/3025
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:11,938| Comparing obsVal /3040/3025 to xmlval /3040/3025
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:11,939| Comparing obsVal /3040/3025 to xmlval /3040/3025
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:11,939| Comparing obsVal /3040/3025 to xmlval /3040/3025
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:11,940| Comparing obsVal /3040/3025 to xmlval /3040/3025
+]]></system-out>
+  </testcase>
+  <testcase name="viewObsGroupsWithSameGroupingConceptButDifferentMemberConcepts" classname="org.openmrs.module.htmlformentry.RegressionTest" time="0.952">
+    <system-out><![CDATA[INFO - FormEntrySession.<init>(146) |2026-06-19 08:50:12,152| AUDIT | action=FORM_OPEN | userId=1 | patientId=2 | mode=ENTER
+INFO - FormEntrySession.<init>(146) |2026-06-19 08:50:12,170| AUDIT | action=FORM_OPEN | userId=1 | patientId=null | mode=VIEW
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:12,179| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:12,179| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:12,179| Comparing obsVal /7 to xmlval /1004
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:12,179| Comparing obsVal /7 to xmlval /1004
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:12,180| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:12,180| Comparing obsVal /7 to xmlval /7
+INFO - FormEntrySession.<init>(146) |2026-06-19 08:50:12,182| AUDIT | action=FORM_OPEN | userId=1 | patientId=2 | mode=ENTER
+INFO - FormEntrySession.<init>(146) |2026-06-19 08:50:12,198| AUDIT | action=FORM_OPEN | userId=1 | patientId=null | mode=VIEW
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:12,206| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:12,206| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:12,207| Comparing obsVal /7 to xmlval /1004
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:12,207| Comparing obsVal /7 to xmlval /1004
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:12,208| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:12,208| Comparing obsVal /7 to xmlval /7
+INFO - FormEntrySession.<init>(146) |2026-06-19 08:50:12,210| AUDIT | action=FORM_OPEN | userId=1 | patientId=2 | mode=ENTER
+INFO - FormEntrySession.<init>(146) |2026-06-19 08:50:12,224| AUDIT | action=FORM_OPEN | userId=1 | patientId=null | mode=VIEW
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:12,232| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:12,232| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:12,233| Comparing obsVal /7 to xmlval /1004
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:12,233| Comparing obsVal /7 to xmlval /1004
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:12,233| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:12,233| Comparing obsVal /7 to xmlval /7
+INFO - FormEntrySession.<init>(146) |2026-06-19 08:50:12,235| AUDIT | action=FORM_OPEN | userId=1 | patientId=2 | mode=ENTER
+INFO - FormEntrySession.<init>(146) |2026-06-19 08:50:12,250| AUDIT | action=FORM_OPEN | userId=1 | patientId=null | mode=VIEW
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:12,259| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:12,259| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:12,260| Comparing obsVal /7 to xmlval /1004
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:12,260| Comparing obsVal /7 to xmlval /1004
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:12,261| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:12,261| Comparing obsVal /7 to xmlval /7
+INFO - FormEntrySession.<init>(146) |2026-06-19 08:50:12,262| AUDIT | action=FORM_OPEN | userId=1 | patientId=2 | mode=ENTER
+INFO - FormEntrySession.<init>(146) |2026-06-19 08:50:12,276| AUDIT | action=FORM_OPEN | userId=1 | patientId=null | mode=VIEW
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:12,286| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:12,286| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:12,287| Comparing obsVal /7 to xmlval /1004
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:12,287| Comparing obsVal /7 to xmlval /1004
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:12,287| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:12,288| Comparing obsVal /7 to xmlval /7
+INFO - FormEntrySession.<init>(146) |2026-06-19 08:50:12,289| AUDIT | action=FORM_OPEN | userId=1 | patientId=2 | mode=ENTER
+INFO - FormEntrySession.<init>(146) |2026-06-19 08:50:12,304| AUDIT | action=FORM_OPEN | userId=1 | patientId=null | mode=VIEW
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:12,312| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:12,312| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:12,313| Comparing obsVal /7 to xmlval /1004
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:12,313| Comparing obsVal /7 to xmlval /1004
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:12,314| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:12,314| Comparing obsVal /7 to xmlval /7
+INFO - FormEntrySession.<init>(146) |2026-06-19 08:50:12,316| AUDIT | action=FORM_OPEN | userId=1 | patientId=2 | mode=ENTER
+INFO - FormEntrySession.<init>(146) |2026-06-19 08:50:12,331| AUDIT | action=FORM_OPEN | userId=1 | patientId=null | mode=VIEW
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:12,340| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:12,340| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:12,341| Comparing obsVal /7 to xmlval /1004
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:12,341| Comparing obsVal /7 to xmlval /1004
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:12,342| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:12,342| Comparing obsVal /7 to xmlval /7
+INFO - FormEntrySession.<init>(146) |2026-06-19 08:50:12,343| AUDIT | action=FORM_OPEN | userId=1 | patientId=2 | mode=ENTER
+INFO - FormEntrySession.<init>(146) |2026-06-19 08:50:12,357| AUDIT | action=FORM_OPEN | userId=1 | patientId=null | mode=VIEW
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:12,365| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:12,365| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:12,365| Comparing obsVal /7 to xmlval /1004
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:12,366| Comparing obsVal /7 to xmlval /1004
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:12,366| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:12,366| Comparing obsVal /7 to xmlval /7
+INFO - FormEntrySession.<init>(146) |2026-06-19 08:50:12,368| AUDIT | action=FORM_OPEN | userId=1 | patientId=2 | mode=ENTER
+INFO - FormEntrySession.<init>(146) |2026-06-19 08:50:12,385| AUDIT | action=FORM_OPEN | userId=1 | patientId=null | mode=VIEW
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:12,396| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:12,397| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:12,398| Comparing obsVal /7 to xmlval /1004
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:12,398| Comparing obsVal /7 to xmlval /1004
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:12,399| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:12,399| Comparing obsVal /7 to xmlval /7
+INFO - FormEntrySession.<init>(146) |2026-06-19 08:50:12,402| AUDIT | action=FORM_OPEN | userId=1 | patientId=2 | mode=ENTER
+INFO - FormEntrySession.<init>(146) |2026-06-19 08:50:12,416| AUDIT | action=FORM_OPEN | userId=1 | patientId=null | mode=VIEW
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:12,424| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:12,424| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:12,425| Comparing obsVal /7 to xmlval /1004
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:12,425| Comparing obsVal /7 to xmlval /1004
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:12,425| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:12,425| Comparing obsVal /7 to xmlval /7
+INFO - FormEntrySession.<init>(146) |2026-06-19 08:50:12,427| AUDIT | action=FORM_OPEN | userId=1 | patientId=2 | mode=ENTER
+INFO - FormEntrySession.<init>(146) |2026-06-19 08:50:12,440| AUDIT | action=FORM_OPEN | userId=1 | patientId=null | mode=VIEW
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:12,447| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:12,448| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:12,448| Comparing obsVal /7 to xmlval /1004
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:12,448| Comparing obsVal /7 to xmlval /1004
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:12,449| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:12,449| Comparing obsVal /7 to xmlval /7
+INFO - FormEntrySession.<init>(146) |2026-06-19 08:50:12,451| AUDIT | action=FORM_OPEN | userId=1 | patientId=2 | mode=ENTER
+INFO - FormEntrySession.<init>(146) |2026-06-19 08:50:12,464| AUDIT | action=FORM_OPEN | userId=1 | patientId=null | mode=VIEW
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:12,471| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:12,472| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:12,473| Comparing obsVal /7 to xmlval /1004
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:12,473| Comparing obsVal /7 to xmlval /1004
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:12,474| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:12,474| Comparing obsVal /7 to xmlval /7
+INFO - FormEntrySession.<init>(146) |2026-06-19 08:50:12,476| AUDIT | action=FORM_OPEN | userId=1 | patientId=2 | mode=ENTER
+INFO - FormEntrySession.<init>(146) |2026-06-19 08:50:12,488| AUDIT | action=FORM_OPEN | userId=1 | patientId=null | mode=VIEW
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:12,496| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:12,496| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:12,497| Comparing obsVal /7 to xmlval /1004
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:12,497| Comparing obsVal /7 to xmlval /1004
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:12,497| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:12,497| Comparing obsVal /7 to xmlval /7
+INFO - FormEntrySession.<init>(146) |2026-06-19 08:50:12,499| AUDIT | action=FORM_OPEN | userId=1 | patientId=2 | mode=ENTER
+INFO - FormEntrySession.<init>(146) |2026-06-19 08:50:12,511| AUDIT | action=FORM_OPEN | userId=1 | patientId=null | mode=VIEW
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:12,518| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:12,519| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:12,519| Comparing obsVal /7 to xmlval /1004
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:12,519| Comparing obsVal /7 to xmlval /1004
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:12,520| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:12,520| Comparing obsVal /7 to xmlval /7
+INFO - FormEntrySession.<init>(146) |2026-06-19 08:50:12,521| AUDIT | action=FORM_OPEN | userId=1 | patientId=2 | mode=ENTER
+INFO - FormEntrySession.<init>(146) |2026-06-19 08:50:12,534| AUDIT | action=FORM_OPEN | userId=1 | patientId=null | mode=VIEW
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:12,542| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:12,542| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:12,542| Comparing obsVal /7 to xmlval /1004
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:12,543| Comparing obsVal /7 to xmlval /1004
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:12,543| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:12,543| Comparing obsVal /7 to xmlval /7
+INFO - FormEntrySession.<init>(146) |2026-06-19 08:50:12,545| AUDIT | action=FORM_OPEN | userId=1 | patientId=2 | mode=ENTER
+INFO - FormEntrySession.<init>(146) |2026-06-19 08:50:12,558| AUDIT | action=FORM_OPEN | userId=1 | patientId=null | mode=VIEW
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:12,569| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:12,569| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:12,569| Comparing obsVal /7 to xmlval /1004
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:12,569| Comparing obsVal /7 to xmlval /1004
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:12,570| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:12,570| Comparing obsVal /7 to xmlval /7
+INFO - FormEntrySession.<init>(146) |2026-06-19 08:50:12,572| AUDIT | action=FORM_OPEN | userId=1 | patientId=2 | mode=ENTER
+INFO - FormEntrySession.<init>(146) |2026-06-19 08:50:12,584| AUDIT | action=FORM_OPEN | userId=1 | patientId=null | mode=VIEW
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:12,592| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:12,592| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:12,593| Comparing obsVal /7 to xmlval /1004
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:12,593| Comparing obsVal /7 to xmlval /1004
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:12,593| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:12,593| Comparing obsVal /7 to xmlval /7
+INFO - FormEntrySession.<init>(146) |2026-06-19 08:50:12,595| AUDIT | action=FORM_OPEN | userId=1 | patientId=2 | mode=ENTER
+INFO - FormEntrySession.<init>(146) |2026-06-19 08:50:12,608| AUDIT | action=FORM_OPEN | userId=1 | patientId=null | mode=VIEW
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:12,615| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:12,615| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:12,616| Comparing obsVal /7 to xmlval /1004
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:12,616| Comparing obsVal /7 to xmlval /1004
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:12,617| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:12,617| Comparing obsVal /7 to xmlval /7
+INFO - FormEntrySession.<init>(146) |2026-06-19 08:50:12,618| AUDIT | action=FORM_OPEN | userId=1 | patientId=2 | mode=ENTER
+INFO - FormEntrySession.<init>(146) |2026-06-19 08:50:12,631| AUDIT | action=FORM_OPEN | userId=1 | patientId=null | mode=VIEW
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:12,640| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:12,640| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:12,641| Comparing obsVal /7 to xmlval /1004
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:12,641| Comparing obsVal /7 to xmlval /1004
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:12,641| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:12,641| Comparing obsVal /7 to xmlval /7
+INFO - FormEntrySession.<init>(146) |2026-06-19 08:50:12,643| AUDIT | action=FORM_OPEN | userId=1 | patientId=2 | mode=ENTER
+INFO - FormEntrySession.<init>(146) |2026-06-19 08:50:12,656| AUDIT | action=FORM_OPEN | userId=1 | patientId=null | mode=VIEW
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:12,664| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:12,664| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:12,665| Comparing obsVal /7 to xmlval /1004
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:12,665| Comparing obsVal /7 to xmlval /1004
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:12,666| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:12,666| Comparing obsVal /7 to xmlval /7
+INFO - FormEntrySession.<init>(146) |2026-06-19 08:50:12,667| AUDIT | action=FORM_OPEN | userId=1 | patientId=2 | mode=ENTER
+INFO - FormEntrySession.<init>(146) |2026-06-19 08:50:12,681| AUDIT | action=FORM_OPEN | userId=1 | patientId=null | mode=VIEW
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:12,688| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:12,689| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:12,689| Comparing obsVal /7 to xmlval /1004
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:12,689| Comparing obsVal /7 to xmlval /1004
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:12,690| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:12,690| Comparing obsVal /7 to xmlval /7
+INFO - FormEntrySession.<init>(146) |2026-06-19 08:50:12,692| AUDIT | action=FORM_OPEN | userId=1 | patientId=2 | mode=ENTER
+INFO - FormEntrySession.<init>(146) |2026-06-19 08:50:12,705| AUDIT | action=FORM_OPEN | userId=1 | patientId=null | mode=VIEW
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:12,715| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:12,715| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:12,716| Comparing obsVal /7 to xmlval /1004
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:12,716| Comparing obsVal /7 to xmlval /1004
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:12,717| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:12,717| Comparing obsVal /7 to xmlval /7
+INFO - FormEntrySession.<init>(146) |2026-06-19 08:50:12,719| AUDIT | action=FORM_OPEN | userId=1 | patientId=2 | mode=ENTER
+INFO - FormEntrySession.<init>(146) |2026-06-19 08:50:12,735| AUDIT | action=FORM_OPEN | userId=1 | patientId=null | mode=VIEW
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:12,743| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:12,743| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:12,744| Comparing obsVal /7 to xmlval /1004
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:12,744| Comparing obsVal /7 to xmlval /1004
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:12,745| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:12,745| Comparing obsVal /7 to xmlval /7
+INFO - FormEntrySession.<init>(146) |2026-06-19 08:50:12,746| AUDIT | action=FORM_OPEN | userId=1 | patientId=2 | mode=ENTER
+INFO - FormEntrySession.<init>(146) |2026-06-19 08:50:12,759| AUDIT | action=FORM_OPEN | userId=1 | patientId=null | mode=VIEW
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:12,767| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:12,767| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:12,768| Comparing obsVal /7 to xmlval /1004
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:12,768| Comparing obsVal /7 to xmlval /1004
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:12,769| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:12,769| Comparing obsVal /7 to xmlval /7
+INFO - FormEntrySession.<init>(146) |2026-06-19 08:50:12,770| AUDIT | action=FORM_OPEN | userId=1 | patientId=2 | mode=ENTER
+INFO - FormEntrySession.<init>(146) |2026-06-19 08:50:12,783| AUDIT | action=FORM_OPEN | userId=1 | patientId=null | mode=VIEW
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:12,790| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:12,790| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:12,791| Comparing obsVal /7 to xmlval /1004
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:12,791| Comparing obsVal /7 to xmlval /1004
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:12,792| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:12,792| Comparing obsVal /7 to xmlval /7
+INFO - FormEntrySession.<init>(146) |2026-06-19 08:50:12,793| AUDIT | action=FORM_OPEN | userId=1 | patientId=2 | mode=ENTER
+INFO - FormEntrySession.<init>(146) |2026-06-19 08:50:12,806| AUDIT | action=FORM_OPEN | userId=1 | patientId=null | mode=VIEW
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:12,814| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:12,814| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:12,814| Comparing obsVal /7 to xmlval /1004
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:12,814| Comparing obsVal /7 to xmlval /1004
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:12,815| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:12,815| Comparing obsVal /7 to xmlval /7
+INFO - FormEntrySession.<init>(146) |2026-06-19 08:50:12,817| AUDIT | action=FORM_OPEN | userId=1 | patientId=2 | mode=ENTER
+INFO - FormEntrySession.<init>(146) |2026-06-19 08:50:12,829| AUDIT | action=FORM_OPEN | userId=1 | patientId=null | mode=VIEW
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:12,841| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:12,841| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:12,842| Comparing obsVal /7 to xmlval /1004
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:12,842| Comparing obsVal /7 to xmlval /1004
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:12,843| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:12,843| Comparing obsVal /7 to xmlval /7
+INFO - FormEntrySession.<init>(146) |2026-06-19 08:50:12,844| AUDIT | action=FORM_OPEN | userId=1 | patientId=2 | mode=ENTER
+INFO - FormEntrySession.<init>(146) |2026-06-19 08:50:12,858| AUDIT | action=FORM_OPEN | userId=1 | patientId=null | mode=VIEW
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:12,866| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:12,866| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:12,867| Comparing obsVal /7 to xmlval /1004
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:12,867| Comparing obsVal /7 to xmlval /1004
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:12,867| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:12,867| Comparing obsVal /7 to xmlval /7
+INFO - FormEntrySession.<init>(146) |2026-06-19 08:50:12,869| AUDIT | action=FORM_OPEN | userId=1 | patientId=2 | mode=ENTER
+INFO - FormEntrySession.<init>(146) |2026-06-19 08:50:12,883| AUDIT | action=FORM_OPEN | userId=1 | patientId=null | mode=VIEW
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:12,891| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:12,891| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:12,892| Comparing obsVal /7 to xmlval /1004
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:12,892| Comparing obsVal /7 to xmlval /1004
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:12,892| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:12,892| Comparing obsVal /7 to xmlval /7
+]]></system-out>
+  </testcase>
+  <testcase name="testEditShouldEditDate" classname="org.openmrs.module.htmlformentry.RegressionTest" time="0.232">
+    <system-out><![CDATA[INFO - FormEntrySession.<init>(146) |2026-06-19 08:50:13,104| AUDIT | action=FORM_OPEN | userId=1 | patientId=2 | mode=ENTER
+INFO - FormEntrySession.applyActions(575) |2026-06-19 08:50:13,115| AUDIT | action=ENCOUNTER_CREATE | userId=1 | patientId=2 | encounterId=3048 | formId=null
+INFO - FormEntrySession.<init>(146) |2026-06-19 08:50:13,116| AUDIT | action=FORM_OPEN | userId=1 | patientId=2 | mode=EDIT
+INFO - FormEntrySession.applyActions(575) |2026-06-19 08:50:13,125| AUDIT | action=ENCOUNTER_CREATE | userId=1 | patientId=2 | encounterId=3049 | formId=null
+INFO - FormEntrySession.applyActions(698) |2026-06-19 08:50:13,127| AUDIT | action=ENCOUNTER_EDIT | userId=1 | patientId=2 | encounterId=3049 | formId=null
+]]></system-out>
+  </testcase>
+  <testcase name="testMultipleObsFormSuccess" classname="org.openmrs.module.htmlformentry.RegressionTest" time="0.23">
+    <system-out><![CDATA[INFO - FormEntrySession.<init>(146) |2026-06-19 08:50:13,338| AUDIT | action=FORM_OPEN | userId=1 | patientId=2 | mode=ENTER
+INFO - FormEntrySession.applyActions(575) |2026-06-19 08:50:13,356| AUDIT | action=ENCOUNTER_CREATE | userId=1 | patientId=2 | encounterId=3050 | formId=null
+]]></system-out>
+  </testcase>
+  <testcase name="testObsGroupRepeatsWithEveryOtherPartiallyFilledInEntry" classname="org.openmrs.module.htmlformentry.RegressionTest" time="0.245">
+    <system-out><![CDATA[INFO - FormEntrySession.<init>(146) |2026-06-19 08:50:13,565| AUDIT | action=FORM_OPEN | userId=1 | patientId=2 | mode=ENTER
+INFO - FormEntrySession.<init>(146) |2026-06-19 08:50:13,584| AUDIT | action=FORM_OPEN | userId=1 | patientId=null | mode=VIEW
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:13,592| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:13,592| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:13,592| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:13,592| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:13,592| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:13,597| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:13,597| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:13,597| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:13,597| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:13,598| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:13,598| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:13,598| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:13,599| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:13,599| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:13,599| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:13,600| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:13,600| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:13,601| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:13,601| Comparing obsVal /7 to xmlval /7
+]]></system-out>
+  </testcase>
+  <testcase name="testSimplestFormFailProviderNotEnteredWhileRequired" classname="org.openmrs.module.htmlformentry.RegressionTest" time="0.222">
+    <system-out><![CDATA[INFO - FormEntrySession.<init>(146) |2026-06-19 08:50:13,812| AUDIT | action=FORM_OPEN | userId=1 | patientId=2 | mode=ENTER
+WARN - FormSubmissionController.validateSubmission(88) |2026-06-19 08:50:13,823| AUDIT | action=FORM_SUBMIT_FAILED | userId=1 | errorCount=1
+]]></system-out>
+  </testcase>
+  <testcase name="testMultipleObsGroupsOneEmptyValueLast" classname="org.openmrs.module.htmlformentry.RegressionTest" time="0.239">
+    <system-out><![CDATA[INFO - FormEntrySession.<init>(146) |2026-06-19 08:50:14,034| AUDIT | action=FORM_OPEN | userId=1 | patientId=2 | mode=ENTER
+INFO - FormEntrySession.<init>(146) |2026-06-19 08:50:14,053| AUDIT | action=FORM_OPEN | userId=1 | patientId=null | mode=VIEW
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:14,060| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:14,061| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:14,061| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:14,062| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:14,062| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:14,062| Comparing obsVal /7 to xmlval /7
+]]></system-out>
+  </testcase>
+  <testcase name="saveFormWithLocationObs" classname="org.openmrs.module.htmlformentry.RegressionTest" time="0.225">
+    <system-out><![CDATA[INFO - FormEntrySession.<init>(146) |2026-06-19 08:50:14,272| AUDIT | action=FORM_OPEN | userId=1 | patientId=2 | mode=ENTER
+INFO - FormEntrySession.applyActions(575) |2026-06-19 08:50:14,289| AUDIT | action=ENCOUNTER_CREATE | userId=1 | patientId=2 | encounterId=3051 | formId=null
+]]></system-out>
+  </testcase>
+  <testcase name="viewSingleObsEncounterWithObsOfTextDatatype" classname="org.openmrs.module.htmlformentry.RegressionTest" time="0.235">
+    <system-out><![CDATA[INFO - FormEntrySession.<init>(146) |2026-06-19 08:50:14,504| AUDIT | action=FORM_OPEN | userId=1 | patientId=2 | mode=ENTER
+INFO - FormEntrySession.<init>(146) |2026-06-19 08:50:14,517| AUDIT | action=FORM_OPEN | userId=1 | patientId=null | mode=VIEW
+]]></system-out>
+  </testcase>
+  <testcase name="testSingleObsFormSuccess" classname="org.openmrs.module.htmlformentry.RegressionTest" time="0.226">
+    <system-out><![CDATA[INFO - FormEntrySession.<init>(146) |2026-06-19 08:50:14,733| AUDIT | action=FORM_OPEN | userId=1 | patientId=2 | mode=ENTER
+INFO - FormEntrySession.applyActions(575) |2026-06-19 08:50:14,749| AUDIT | action=ENCOUNTER_CREATE | userId=1 | patientId=2 | encounterId=3052 | formId=null
+]]></system-out>
+  </testcase>
+  <testcase name="testEditSingleObsForm" classname="org.openmrs.module.htmlformentry.RegressionTest" time="0.24">
+    <system-out><![CDATA[INFO - FormEntrySession.<init>(146) |2026-06-19 08:50:14,959| AUDIT | action=FORM_OPEN | userId=1 | patientId=2 | mode=ENTER
+INFO - FormEntrySession.applyActions(575) |2026-06-19 08:50:14,973| AUDIT | action=ENCOUNTER_CREATE | userId=1 | patientId=2 | encounterId=3053 | formId=null
+INFO - FormEntrySession.<init>(146) |2026-06-19 08:50:14,974| AUDIT | action=FORM_OPEN | userId=1 | patientId=2 | mode=EDIT
+DEBUG - FormSubmissionActions.modifyObs(335) |2026-06-19 08:50:14,985| For concept WEIGHT (KG): 70.0 -> 75.0
+DEBUG - FormSubmissionActions.modifyObs(348) |2026-06-19 08:50:14,985| CHANGED: WEIGHT (KG) = 70.0
+DEBUG - FormEntrySession.applyActions(666) |2026-06-19 08:50:14,986| voiding obs: 2033
+INFO - FormEntrySession.applyActions(698) |2026-06-19 08:50:14,989| AUDIT | action=ENCOUNTER_EDIT | userId=1 | patientId=2 | encounterId=3053 | formId=null
+]]></system-out>
+  </testcase>
+  <testcase name="testSingleObsGroupFormSuccess" classname="org.openmrs.module.htmlformentry.RegressionTest" time="0.236">
+    <system-out><![CDATA[INFO - FormEntrySession.<init>(146) |2026-06-19 08:50:15,205| AUDIT | action=FORM_OPEN | userId=1 | patientId=2 | mode=ENTER
+INFO - FormEntrySession.applyActions(575) |2026-06-19 08:50:15,225| AUDIT | action=ENCOUNTER_CREATE | userId=1 | patientId=2 | encounterId=3054 | formId=null
+]]></system-out>
+  </testcase>
+  <testcase name="shouldViewComplexObsProperly" classname="org.openmrs.module.htmlformentry.RegressionTest" time="0.434">
+    <system-out><![CDATA[INFO - FormEntrySession.<init>(146) |2026-06-19 08:50:15,436| AUDIT | action=FORM_OPEN | userId=1 | patientId=2 | mode=ENTER
+INFO - FormEntrySession.<init>(146) |2026-06-19 08:50:15,649| AUDIT | action=FORM_OPEN | userId=1 | patientId=null | mode=VIEW
+]]></system-out>
+  </testcase>
+  <testcase name="testMultipleObsFormFailure" classname="org.openmrs.module.htmlformentry.RegressionTest" time="0.232">
+    <system-out><![CDATA[INFO - FormEntrySession.<init>(146) |2026-06-19 08:50:15,880| AUDIT | action=FORM_OPEN | userId=1 | patientId=2 | mode=ENTER
+WARN - FormSubmissionController.validateSubmission(88) |2026-06-19 08:50:15,893| AUDIT | action=FORM_SUBMIT_FAILED | userId=1 | errorCount=1
+]]></system-out>
+  </testcase>
+  <testcase name="viewObsGroupsWithDifferentGroupingConceptsButSameMemberConcepts" classname="org.openmrs.module.htmlformentry.RegressionTest" time="0.896">
+    <system-out><![CDATA[INFO - FormEntrySession.<init>(146) |2026-06-19 08:50:16,110| AUDIT | action=FORM_OPEN | userId=1 | patientId=2 | mode=ENTER
+INFO - FormEntrySession.<init>(146) |2026-06-19 08:50:16,125| AUDIT | action=FORM_OPEN | userId=1 | patientId=null | mode=VIEW
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:16,133| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:16,133| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:16,133| Comparing obsVal /1004 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:16,134| Comparing obsVal /7 to xmlval /1004
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:16,134| Comparing obsVal /7 to xmlval /1004
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:16,134| Comparing obsVal /1004 to xmlval /1004
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:16,134| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:16,134| Comparing obsVal /7 to xmlval /7
+INFO - FormEntrySession.<init>(146) |2026-06-19 08:50:16,136| AUDIT | action=FORM_OPEN | userId=1 | patientId=2 | mode=ENTER
+INFO - FormEntrySession.<init>(146) |2026-06-19 08:50:16,148| AUDIT | action=FORM_OPEN | userId=1 | patientId=null | mode=VIEW
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:16,155| Comparing obsVal /1004 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:16,155| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:16,155| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:16,156| Comparing obsVal /1004 to xmlval /1004
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:16,156| Comparing obsVal /7 to xmlval /1004
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:16,156| Comparing obsVal /7 to xmlval /1004
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:16,156| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:16,157| Comparing obsVal /7 to xmlval /7
+INFO - FormEntrySession.<init>(146) |2026-06-19 08:50:16,158| AUDIT | action=FORM_OPEN | userId=1 | patientId=2 | mode=ENTER
+INFO - FormEntrySession.<init>(146) |2026-06-19 08:50:16,170| AUDIT | action=FORM_OPEN | userId=1 | patientId=null | mode=VIEW
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:16,178| Comparing obsVal /1004 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:16,178| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:16,178| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:16,179| Comparing obsVal /1004 to xmlval /1004
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:16,179| Comparing obsVal /7 to xmlval /1004
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:16,179| Comparing obsVal /7 to xmlval /1004
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:16,180| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:16,180| Comparing obsVal /7 to xmlval /7
+INFO - FormEntrySession.<init>(146) |2026-06-19 08:50:16,181| AUDIT | action=FORM_OPEN | userId=1 | patientId=2 | mode=ENTER
+INFO - FormEntrySession.<init>(146) |2026-06-19 08:50:16,194| AUDIT | action=FORM_OPEN | userId=1 | patientId=null | mode=VIEW
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:16,202| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:16,202| Comparing obsVal /1004 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:16,202| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:16,203| Comparing obsVal /7 to xmlval /1004
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:16,203| Comparing obsVal /1004 to xmlval /1004
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:16,203| Comparing obsVal /7 to xmlval /1004
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:16,204| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:16,204| Comparing obsVal /7 to xmlval /7
+INFO - FormEntrySession.<init>(146) |2026-06-19 08:50:16,205| AUDIT | action=FORM_OPEN | userId=1 | patientId=2 | mode=ENTER
+INFO - FormEntrySession.<init>(146) |2026-06-19 08:50:16,219| AUDIT | action=FORM_OPEN | userId=1 | patientId=null | mode=VIEW
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:16,226| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:16,226| Comparing obsVal /1004 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:16,226| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:16,227| Comparing obsVal /7 to xmlval /1004
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:16,227| Comparing obsVal /1004 to xmlval /1004
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:16,227| Comparing obsVal /7 to xmlval /1004
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:16,228| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:16,228| Comparing obsVal /7 to xmlval /7
+INFO - FormEntrySession.<init>(146) |2026-06-19 08:50:16,229| AUDIT | action=FORM_OPEN | userId=1 | patientId=2 | mode=ENTER
+INFO - FormEntrySession.<init>(146) |2026-06-19 08:50:16,242| AUDIT | action=FORM_OPEN | userId=1 | patientId=null | mode=VIEW
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:16,250| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:16,250| Comparing obsVal /1004 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:16,250| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:16,251| Comparing obsVal /7 to xmlval /1004
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:16,251| Comparing obsVal /1004 to xmlval /1004
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:16,251| Comparing obsVal /7 to xmlval /1004
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:16,251| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:16,251| Comparing obsVal /7 to xmlval /7
+INFO - FormEntrySession.<init>(146) |2026-06-19 08:50:16,253| AUDIT | action=FORM_OPEN | userId=1 | patientId=2 | mode=ENTER
+INFO - FormEntrySession.<init>(146) |2026-06-19 08:50:16,265| AUDIT | action=FORM_OPEN | userId=1 | patientId=null | mode=VIEW
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:16,272| Comparing obsVal /1004 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:16,273| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:16,273| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:16,273| Comparing obsVal /1004 to xmlval /1004
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:16,273| Comparing obsVal /7 to xmlval /1004
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:16,273| Comparing obsVal /7 to xmlval /1004
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:16,274| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:16,274| Comparing obsVal /7 to xmlval /7
+INFO - FormEntrySession.<init>(146) |2026-06-19 08:50:16,275| AUDIT | action=FORM_OPEN | userId=1 | patientId=2 | mode=ENTER
+INFO - FormEntrySession.<init>(146) |2026-06-19 08:50:16,288| AUDIT | action=FORM_OPEN | userId=1 | patientId=null | mode=VIEW
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:16,298| Comparing obsVal /1004 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:16,298| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:16,298| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:16,299| Comparing obsVal /1004 to xmlval /1004
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:16,299| Comparing obsVal /7 to xmlval /1004
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:16,299| Comparing obsVal /7 to xmlval /1004
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:16,300| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:16,300| Comparing obsVal /7 to xmlval /7
+INFO - FormEntrySession.<init>(146) |2026-06-19 08:50:16,302| AUDIT | action=FORM_OPEN | userId=1 | patientId=2 | mode=ENTER
+INFO - FormEntrySession.<init>(146) |2026-06-19 08:50:16,316| AUDIT | action=FORM_OPEN | userId=1 | patientId=null | mode=VIEW
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:16,325| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:16,325| Comparing obsVal /1004 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:16,325| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:16,326| Comparing obsVal /7 to xmlval /1004
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:16,326| Comparing obsVal /1004 to xmlval /1004
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:16,326| Comparing obsVal /7 to xmlval /1004
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:16,327| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:16,327| Comparing obsVal /7 to xmlval /7
+INFO - FormEntrySession.<init>(146) |2026-06-19 08:50:16,329| AUDIT | action=FORM_OPEN | userId=1 | patientId=2 | mode=ENTER
+INFO - FormEntrySession.<init>(146) |2026-06-19 08:50:16,345| AUDIT | action=FORM_OPEN | userId=1 | patientId=null | mode=VIEW
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:16,353| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:16,353| Comparing obsVal /1004 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:16,353| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:16,354| Comparing obsVal /7 to xmlval /1004
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:16,354| Comparing obsVal /1004 to xmlval /1004
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:16,354| Comparing obsVal /7 to xmlval /1004
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:16,355| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:16,355| Comparing obsVal /7 to xmlval /7
+INFO - FormEntrySession.<init>(146) |2026-06-19 08:50:16,356| AUDIT | action=FORM_OPEN | userId=1 | patientId=2 | mode=ENTER
+INFO - FormEntrySession.<init>(146) |2026-06-19 08:50:16,369| AUDIT | action=FORM_OPEN | userId=1 | patientId=null | mode=VIEW
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:16,376| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:16,376| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:16,376| Comparing obsVal /1004 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:16,377| Comparing obsVal /7 to xmlval /1004
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:16,377| Comparing obsVal /7 to xmlval /1004
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:16,377| Comparing obsVal /1004 to xmlval /1004
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:16,377| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:16,377| Comparing obsVal /7 to xmlval /7
+INFO - FormEntrySession.<init>(146) |2026-06-19 08:50:16,379| AUDIT | action=FORM_OPEN | userId=1 | patientId=2 | mode=ENTER
+INFO - FormEntrySession.<init>(146) |2026-06-19 08:50:16,391| AUDIT | action=FORM_OPEN | userId=1 | patientId=null | mode=VIEW
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:16,399| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:16,399| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:16,399| Comparing obsVal /1004 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:16,400| Comparing obsVal /7 to xmlval /1004
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:16,400| Comparing obsVal /7 to xmlval /1004
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:16,400| Comparing obsVal /1004 to xmlval /1004
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:16,400| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:16,400| Comparing obsVal /7 to xmlval /7
+INFO - FormEntrySession.<init>(146) |2026-06-19 08:50:16,401| AUDIT | action=FORM_OPEN | userId=1 | patientId=2 | mode=ENTER
+INFO - FormEntrySession.<init>(146) |2026-06-19 08:50:16,414| AUDIT | action=FORM_OPEN | userId=1 | patientId=null | mode=VIEW
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:16,421| Comparing obsVal /1004 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:16,421| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:16,421| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:16,422| Comparing obsVal /1004 to xmlval /1004
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:16,422| Comparing obsVal /7 to xmlval /1004
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:16,422| Comparing obsVal /7 to xmlval /1004
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:16,422| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:16,422| Comparing obsVal /7 to xmlval /7
+INFO - FormEntrySession.<init>(146) |2026-06-19 08:50:16,424| AUDIT | action=FORM_OPEN | userId=1 | patientId=2 | mode=ENTER
+INFO - FormEntrySession.<init>(146) |2026-06-19 08:50:16,436| AUDIT | action=FORM_OPEN | userId=1 | patientId=null | mode=VIEW
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:16,443| Comparing obsVal /1004 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:16,443| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:16,443| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:16,444| Comparing obsVal /1004 to xmlval /1004
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:16,444| Comparing obsVal /7 to xmlval /1004
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:16,444| Comparing obsVal /7 to xmlval /1004
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:16,444| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:16,445| Comparing obsVal /7 to xmlval /7
+INFO - FormEntrySession.<init>(146) |2026-06-19 08:50:16,446| AUDIT | action=FORM_OPEN | userId=1 | patientId=2 | mode=ENTER
+INFO - FormEntrySession.<init>(146) |2026-06-19 08:50:16,458| AUDIT | action=FORM_OPEN | userId=1 | patientId=null | mode=VIEW
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:16,465| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:16,465| Comparing obsVal /1004 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:16,465| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:16,466| Comparing obsVal /7 to xmlval /1004
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:16,466| Comparing obsVal /1004 to xmlval /1004
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:16,466| Comparing obsVal /7 to xmlval /1004
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:16,467| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:16,467| Comparing obsVal /7 to xmlval /7
+INFO - FormEntrySession.<init>(146) |2026-06-19 08:50:16,468| AUDIT | action=FORM_OPEN | userId=1 | patientId=2 | mode=ENTER
+INFO - FormEntrySession.<init>(146) |2026-06-19 08:50:16,481| AUDIT | action=FORM_OPEN | userId=1 | patientId=null | mode=VIEW
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:16,488| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:16,488| Comparing obsVal /1004 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:16,488| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:16,489| Comparing obsVal /7 to xmlval /1004
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:16,489| Comparing obsVal /1004 to xmlval /1004
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:16,489| Comparing obsVal /7 to xmlval /1004
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:16,489| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:16,489| Comparing obsVal /7 to xmlval /7
+INFO - FormEntrySession.<init>(146) |2026-06-19 08:50:16,491| AUDIT | action=FORM_OPEN | userId=1 | patientId=2 | mode=ENTER
+INFO - FormEntrySession.<init>(146) |2026-06-19 08:50:16,503| AUDIT | action=FORM_OPEN | userId=1 | patientId=null | mode=VIEW
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:16,510| Comparing obsVal /1004 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:16,510| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:16,510| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:16,511| Comparing obsVal /1004 to xmlval /1004
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:16,511| Comparing obsVal /7 to xmlval /1004
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:16,511| Comparing obsVal /7 to xmlval /1004
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:16,512| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:16,512| Comparing obsVal /7 to xmlval /7
+INFO - FormEntrySession.<init>(146) |2026-06-19 08:50:16,513| AUDIT | action=FORM_OPEN | userId=1 | patientId=2 | mode=ENTER
+INFO - FormEntrySession.<init>(146) |2026-06-19 08:50:16,525| AUDIT | action=FORM_OPEN | userId=1 | patientId=null | mode=VIEW
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:16,532| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:16,532| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:16,533| Comparing obsVal /1004 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:16,533| Comparing obsVal /7 to xmlval /1004
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:16,533| Comparing obsVal /7 to xmlval /1004
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:16,533| Comparing obsVal /1004 to xmlval /1004
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:16,534| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:16,534| Comparing obsVal /7 to xmlval /7
+INFO - FormEntrySession.<init>(146) |2026-06-19 08:50:16,535| AUDIT | action=FORM_OPEN | userId=1 | patientId=2 | mode=ENTER
+INFO - FormEntrySession.<init>(146) |2026-06-19 08:50:16,547| AUDIT | action=FORM_OPEN | userId=1 | patientId=null | mode=VIEW
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:16,554| Comparing obsVal /1004 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:16,554| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:16,555| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:16,555| Comparing obsVal /1004 to xmlval /1004
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:16,555| Comparing obsVal /7 to xmlval /1004
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:16,555| Comparing obsVal /7 to xmlval /1004
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:16,556| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:16,556| Comparing obsVal /7 to xmlval /7
+INFO - FormEntrySession.<init>(146) |2026-06-19 08:50:16,557| AUDIT | action=FORM_OPEN | userId=1 | patientId=2 | mode=ENTER
+INFO - FormEntrySession.<init>(146) |2026-06-19 08:50:16,570| AUDIT | action=FORM_OPEN | userId=1 | patientId=null | mode=VIEW
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:16,577| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:16,577| Comparing obsVal /1004 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:16,577| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:16,578| Comparing obsVal /7 to xmlval /1004
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:16,578| Comparing obsVal /1004 to xmlval /1004
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:16,578| Comparing obsVal /7 to xmlval /1004
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:16,579| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:16,579| Comparing obsVal /7 to xmlval /7
+INFO - FormEntrySession.<init>(146) |2026-06-19 08:50:16,580| AUDIT | action=FORM_OPEN | userId=1 | patientId=2 | mode=ENTER
+INFO - FormEntrySession.<init>(146) |2026-06-19 08:50:16,593| AUDIT | action=FORM_OPEN | userId=1 | patientId=null | mode=VIEW
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:16,601| Comparing obsVal /1004 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:16,601| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:16,601| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:16,602| Comparing obsVal /1004 to xmlval /1004
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:16,602| Comparing obsVal /7 to xmlval /1004
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:16,602| Comparing obsVal /7 to xmlval /1004
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:16,602| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:16,602| Comparing obsVal /7 to xmlval /7
+INFO - FormEntrySession.<init>(146) |2026-06-19 08:50:16,603| AUDIT | action=FORM_OPEN | userId=1 | patientId=2 | mode=ENTER
+INFO - FormEntrySession.<init>(146) |2026-06-19 08:50:16,615| AUDIT | action=FORM_OPEN | userId=1 | patientId=null | mode=VIEW
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:16,623| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:16,623| Comparing obsVal /1004 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:16,623| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:16,623| Comparing obsVal /7 to xmlval /1004
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:16,623| Comparing obsVal /1004 to xmlval /1004
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:16,623| Comparing obsVal /7 to xmlval /1004
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:16,624| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:16,624| Comparing obsVal /7 to xmlval /7
+INFO - FormEntrySession.<init>(146) |2026-06-19 08:50:16,626| AUDIT | action=FORM_OPEN | userId=1 | patientId=2 | mode=ENTER
+INFO - FormEntrySession.<init>(146) |2026-06-19 08:50:16,638| AUDIT | action=FORM_OPEN | userId=1 | patientId=null | mode=VIEW
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:16,644| Comparing obsVal /1004 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:16,645| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:16,645| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:16,646| Comparing obsVal /1004 to xmlval /1004
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:16,646| Comparing obsVal /7 to xmlval /1004
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:16,646| Comparing obsVal /7 to xmlval /1004
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:16,646| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:16,646| Comparing obsVal /7 to xmlval /7
+INFO - FormEntrySession.<init>(146) |2026-06-19 08:50:16,647| AUDIT | action=FORM_OPEN | userId=1 | patientId=2 | mode=ENTER
+INFO - FormEntrySession.<init>(146) |2026-06-19 08:50:16,659| AUDIT | action=FORM_OPEN | userId=1 | patientId=null | mode=VIEW
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:16,666| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:16,666| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:16,667| Comparing obsVal /1004 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:16,668| Comparing obsVal /7 to xmlval /1004
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:16,668| Comparing obsVal /7 to xmlval /1004
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:16,668| Comparing obsVal /1004 to xmlval /1004
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:16,668| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:16,668| Comparing obsVal /7 to xmlval /7
+INFO - FormEntrySession.<init>(146) |2026-06-19 08:50:16,670| AUDIT | action=FORM_OPEN | userId=1 | patientId=2 | mode=ENTER
+INFO - FormEntrySession.<init>(146) |2026-06-19 08:50:16,682| AUDIT | action=FORM_OPEN | userId=1 | patientId=null | mode=VIEW
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:16,690| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:16,691| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:16,691| Comparing obsVal /1004 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:16,691| Comparing obsVal /7 to xmlval /1004
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:16,691| Comparing obsVal /7 to xmlval /1004
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:16,691| Comparing obsVal /1004 to xmlval /1004
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:16,692| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:16,692| Comparing obsVal /7 to xmlval /7
+INFO - FormEntrySession.<init>(146) |2026-06-19 08:50:16,693| AUDIT | action=FORM_OPEN | userId=1 | patientId=2 | mode=ENTER
+INFO - FormEntrySession.<init>(146) |2026-06-19 08:50:16,705| AUDIT | action=FORM_OPEN | userId=1 | patientId=null | mode=VIEW
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:16,712| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:16,712| Comparing obsVal /1004 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:16,713| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:16,714| Comparing obsVal /7 to xmlval /1004
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:16,714| Comparing obsVal /1004 to xmlval /1004
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:16,714| Comparing obsVal /7 to xmlval /1004
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:16,714| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:16,715| Comparing obsVal /7 to xmlval /7
+INFO - FormEntrySession.<init>(146) |2026-06-19 08:50:16,716| AUDIT | action=FORM_OPEN | userId=1 | patientId=2 | mode=ENTER
+INFO - FormEntrySession.<init>(146) |2026-06-19 08:50:16,728| AUDIT | action=FORM_OPEN | userId=1 | patientId=null | mode=VIEW
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:16,736| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:16,736| Comparing obsVal /1004 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:16,736| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:16,736| Comparing obsVal /7 to xmlval /1004
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:16,736| Comparing obsVal /1004 to xmlval /1004
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:16,737| Comparing obsVal /7 to xmlval /1004
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:16,737| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:16,737| Comparing obsVal /7 to xmlval /7
+INFO - FormEntrySession.<init>(146) |2026-06-19 08:50:16,738| AUDIT | action=FORM_OPEN | userId=1 | patientId=2 | mode=ENTER
+INFO - FormEntrySession.<init>(146) |2026-06-19 08:50:16,753| AUDIT | action=FORM_OPEN | userId=1 | patientId=null | mode=VIEW
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:16,761| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:16,761| Comparing obsVal /1004 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:16,761| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:16,761| Comparing obsVal /7 to xmlval /1004
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:16,762| Comparing obsVal /1004 to xmlval /1004
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:16,762| Comparing obsVal /7 to xmlval /1004
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:16,762| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:16,762| Comparing obsVal /7 to xmlval /7
+INFO - FormEntrySession.<init>(146) |2026-06-19 08:50:16,764| AUDIT | action=FORM_OPEN | userId=1 | patientId=2 | mode=ENTER
+INFO - FormEntrySession.<init>(146) |2026-06-19 08:50:16,776| AUDIT | action=FORM_OPEN | userId=1 | patientId=null | mode=VIEW
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:16,786| Comparing obsVal /1004 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:16,786| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:16,786| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:16,787| Comparing obsVal /1004 to xmlval /1004
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:16,787| Comparing obsVal /7 to xmlval /1004
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:16,788| Comparing obsVal /7 to xmlval /1004
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:16,788| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:16,788| Comparing obsVal /7 to xmlval /7
+]]></system-out>
+  </testcase>
+  <testcase name="testIfModeTag" classname="org.openmrs.module.htmlformentry.RegressionTest" time="0.224">
+    <system-out><![CDATA[INFO - FormEntrySession.<init>(146) |2026-06-19 08:50:17,003| AUDIT | action=FORM_OPEN | userId=1 | patientId=2 | mode=ENTER
+]]></system-out>
+  </testcase>
+  <testcase name="testSimplestFormSuccessWithNoLocation" classname="org.openmrs.module.htmlformentry.RegressionTest" time="0.223">
+    <system-out><![CDATA[INFO - FormEntrySession.<init>(146) |2026-06-19 08:50:17,223| AUDIT | action=FORM_OPEN | userId=1 | patientId=2 | mode=ENTER
+INFO - FormEntrySession.applyActions(575) |2026-06-19 08:50:17,238| AUDIT | action=ENCOUNTER_CREATE | userId=1 | patientId=2 | encounterId=3056 | formId=null
+]]></system-out>
+  </testcase>
+  <testcase name="testSimplestFormFailWithLocationNotEnteredWhileRequired" classname="org.openmrs.module.htmlformentry.RegressionTest" time="0.228">
+    <system-out><![CDATA[INFO - FormEntrySession.<init>(146) |2026-06-19 08:50:17,455| AUDIT | action=FORM_OPEN | userId=1 | patientId=2 | mode=ENTER
+WARN - FormSubmissionController.validateSubmission(88) |2026-06-19 08:50:17,465| AUDIT | action=FORM_SUBMIT_FAILED | userId=1 | errorCount=1
+]]></system-out>
+  </testcase>
+  <testcase name="testObsGroupRepeatsWithEveryFieldFilledIn" classname="org.openmrs.module.htmlformentry.RegressionTest" time="0.247">
+    <system-out><![CDATA[INFO - FormEntrySession.<init>(146) |2026-06-19 08:50:17,681| AUDIT | action=FORM_OPEN | userId=1 | patientId=2 | mode=ENTER
+INFO - FormEntrySession.<init>(146) |2026-06-19 08:50:17,700| AUDIT | action=FORM_OPEN | userId=1 | patientId=null | mode=VIEW
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:17,708| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:17,708| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:17,708| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:17,709| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:17,709| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:17,710| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:17,710| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:17,710| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:17,710| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:17,711| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:17,711| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:17,711| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:17,712| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:17,712| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:17,712| Comparing obsVal /7 to xmlval /7
+]]></system-out>
+  </testcase>
+  <testcase name="testDatatypes" classname="org.openmrs.module.htmlformentry.RegressionTest" time="0.237">
+    <system-out><![CDATA[INFO - FormEntrySession.<init>(146) |2026-06-19 08:50:17,923| AUDIT | action=FORM_OPEN | userId=1 | patientId=2 | mode=ENTER
+INFO - FormEntrySession.applyActions(575) |2026-06-19 08:50:17,949| AUDIT | action=ENCOUNTER_CREATE | userId=1 | patientId=2 | encounterId=3057 | formId=null
+]]></system-out>
+  </testcase>
+  <testcase name="testSingleObsGroupFormFailure" classname="org.openmrs.module.htmlformentry.RegressionTest" time="0.222">
+    <system-out><![CDATA[INFO - FormEntrySession.<init>(146) |2026-06-19 08:50:18,159| AUDIT | action=FORM_OPEN | userId=1 | patientId=2 | mode=ENTER
+WARN - FormSubmissionController.validateSubmission(88) |2026-06-19 08:50:18,173| AUDIT | action=FORM_SUBMIT_FAILED | userId=1 | errorCount=1
+]]></system-out>
+  </testcase>
+  <testcase name="testMultipleObsGroupFormSuccess" classname="org.openmrs.module.htmlformentry.RegressionTest" time="0.239">
+    <system-out><![CDATA[INFO - FormEntrySession.<init>(146) |2026-06-19 08:50:18,381| AUDIT | action=FORM_OPEN | userId=1 | patientId=2 | mode=ENTER
+INFO - FormEntrySession.applyActions(575) |2026-06-19 08:50:18,409| AUDIT | action=ENCOUNTER_CREATE | userId=1 | patientId=2 | encounterId=3058 | formId=null
+]]></system-out>
+  </testcase>
+  <testcase name="viewFormWithLocationObsNewFormat" classname="org.openmrs.module.htmlformentry.RegressionTest" time="0.232">
+    <system-out><![CDATA[INFO - FormEntrySession.<init>(146) |2026-06-19 08:50:18,622| AUDIT | action=FORM_OPEN | userId=1 | patientId=2 | mode=ENTER
+INFO - FormEntrySession.<init>(146) |2026-06-19 08:50:18,636| AUDIT | action=FORM_OPEN | userId=1 | patientId=null | mode=VIEW
+]]></system-out>
+  </testcase>
+  <testcase name="testSimplestFormSuccess" classname="org.openmrs.module.htmlformentry.RegressionTest" time="0.226">
+    <system-out><![CDATA[INFO - FormEntrySession.<init>(146) |2026-06-19 08:50:18,855| AUDIT | action=FORM_OPEN | userId=1 | patientId=2 | mode=ENTER
+INFO - FormEntrySession.applyActions(575) |2026-06-19 08:50:18,871| AUDIT | action=ENCOUNTER_CREATE | userId=1 | patientId=2 | encounterId=3059 | formId=null
+]]></system-out>
+  </testcase>
+  <testcase name="testEditEncounterProviderWithAutocomplete" classname="org.openmrs.module.htmlformentry.RegressionTest" time="0.236">
+    <system-out><![CDATA[INFO - FormEntrySession.<init>(146) |2026-06-19 08:50:19,081| AUDIT | action=FORM_OPEN | userId=1 | patientId=2 | mode=ENTER
+INFO - FormEntrySession.applyActions(575) |2026-06-19 08:50:19,094| AUDIT | action=ENCOUNTER_CREATE | userId=1 | patientId=2 | encounterId=3060 | formId=null
+INFO - FormEntrySession.<init>(146) |2026-06-19 08:50:19,095| AUDIT | action=FORM_OPEN | userId=1 | patientId=2 | mode=EDIT
+INFO - FormEntrySession.applyActions(698) |2026-06-19 08:50:19,107| AUDIT | action=ENCOUNTER_EDIT | userId=1 | patientId=2 | encounterId=3060 | formId=null
+]]></system-out>
+  </testcase>
+  <testcase name="testRedisplayNumericObsWithSpecificAnswers" classname="org.openmrs.module.htmlformentry.RegressionTest" time="0.241">
+    <system-out><![CDATA[INFO - FormEntrySession.<init>(146) |2026-06-19 08:50:19,320| AUDIT | action=FORM_OPEN | userId=1 | patientId=2 | mode=ENTER
+INFO - FormEntrySession.applyActions(575) |2026-06-19 08:50:19,335| AUDIT | action=ENCOUNTER_CREATE | userId=1 | patientId=2 | encounterId=3061 | formId=null
+INFO - FormEntrySession.<init>(146) |2026-06-19 08:50:19,336| AUDIT | action=FORM_OPEN | userId=1 | patientId=2 | mode=EDIT
+DEBUG - FormSubmissionActions.modifyObs(335) |2026-06-19 08:50:19,347| For concept CD4 COUNT: 400 -> 400
+DEBUG - FormSubmissionActions.modifyObs(360) |2026-06-19 08:50:19,347| SAME: CD4 COUNT = 400
+INFO - FormEntrySession.applyActions(698) |2026-06-19 08:50:19,348| AUDIT | action=ENCOUNTER_EDIT | userId=1 | patientId=2 | encounterId=3061 | formId=null
+]]></system-out>
+  </testcase>
+  <testcase name="testMultipleObsGroupsThreeEmptyValues" classname="org.openmrs.module.htmlformentry.RegressionTest" time="0.237">
+    <system-out><![CDATA[INFO - FormEntrySession.<init>(146) |2026-06-19 08:50:19,557| AUDIT | action=FORM_OPEN | userId=1 | patientId=2 | mode=ENTER
+INFO - FormEntrySession.<init>(146) |2026-06-19 08:50:19,574| AUDIT | action=FORM_OPEN | userId=1 | patientId=null | mode=VIEW
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:19,581| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:19,581| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:19,581| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:19,582| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:19,583| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:19,583| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:19,584| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:19,584| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:19,584| Comparing obsVal /7 to xmlval /7
+]]></system-out>
+  </testcase>
+  <testcase name="testSimplestFormSuccessWithNoProviderRequired" classname="org.openmrs.module.htmlformentry.RegressionTest" time="0.22">
+    <system-out><![CDATA[INFO - FormEntrySession.<init>(146) |2026-06-19 08:50:19,795| AUDIT | action=FORM_OPEN | userId=1 | patientId=2 | mode=ENTER
+INFO - FormEntrySession.applyActions(575) |2026-06-19 08:50:19,806| AUDIT | action=ENCOUNTER_CREATE | userId=1 | patientId=2 | encounterId=3062 | formId=null
+]]></system-out>
+  </testcase>
+  <testcase name="testSubmitButtonLabelAndStyle" classname="org.openmrs.module.htmlformentry.RegressionTest" time="0.332">
+    <system-out><![CDATA[INFO - FormEntrySession.<init>(146) |2026-06-19 08:50:20,019| AUDIT | action=FORM_OPEN | userId=1 | patientId=2 | mode=ENTER
+INFO - FormEntrySession.<init>(146) |2026-06-19 08:50:20,029| AUDIT | action=FORM_OPEN | userId=1 | patientId=2 | mode=ENTER
+INFO - FormEntrySession.<init>(146) |2026-06-19 08:50:20,038| AUDIT | action=FORM_OPEN | userId=1 | patientId=2 | mode=ENTER
+]]></system-out>
+  </testcase>
+  <testcase name="viewSingleObsEncounterSuccess" classname="org.openmrs.module.htmlformentry.RegressionTest" time="0.228">
+    <system-out><![CDATA[INFO - FormEntrySession.<init>(146) |2026-06-19 08:50:20,346| AUDIT | action=FORM_OPEN | userId=1 | patientId=2 | mode=ENTER
+INFO - FormEntrySession.<init>(146) |2026-06-19 08:50:20,359| AUDIT | action=FORM_OPEN | userId=1 | patientId=null | mode=VIEW
+]]></system-out>
+  </testcase>
+  <testcase name="editFormWithLocationObs" classname="org.openmrs.module.htmlformentry.RegressionTest" time="0.247">
+    <system-out><![CDATA[INFO - FormEntrySession.<init>(146) |2026-06-19 08:50:20,574| AUDIT | action=FORM_OPEN | userId=1 | patientId=2 | mode=ENTER
+INFO - FormEntrySession.applyActions(575) |2026-06-19 08:50:20,595| AUDIT | action=ENCOUNTER_CREATE | userId=1 | patientId=2 | encounterId=3063 | formId=null
+INFO - FormEntrySession.<init>(146) |2026-06-19 08:50:20,595| AUDIT | action=FORM_OPEN | userId=1 | patientId=2 | mode=EDIT
+DEBUG - FormSubmissionActions.modifyObs(335) |2026-06-19 08:50:20,610| For concept FAVORITE FOOD, NON-CODED: 2 -> 3
+DEBUG - FormSubmissionActions.modifyObs(348) |2026-06-19 08:50:20,610| CHANGED: FAVORITE FOOD, NON-CODED = 2
+DEBUG - FormEntrySession.applyActions(666) |2026-06-19 08:50:20,610| voiding obs: 2049
+INFO - FormEntrySession.applyActions(698) |2026-06-19 08:50:20,613| AUDIT | action=ENCOUNTER_EDIT | userId=1 | patientId=2 | encounterId=3063 | formId=null
+]]></system-out>
+  </testcase>
+  <testcase name="viewObsgroupsWithMultipleAnswerConceptIdsAndMiddleBlank" classname="org.openmrs.module.htmlformentry.RegressionTest" time="0.246">
+    <system-out><![CDATA[INFO - FormEntrySession.<init>(146) |2026-06-19 08:50:20,826| AUDIT | action=FORM_OPEN | userId=1 | patientId=2 | mode=ENTER
+INFO - FormEntrySession.<init>(146) |2026-06-19 08:50:20,846| AUDIT | action=FORM_OPEN | userId=1 | patientId=null | mode=VIEW
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:20,855| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:20,855| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:20,855| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:20,856| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:20,856| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:20,858| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:20,858| Comparing obsVal /7 to xmlval /7
+]]></system-out>
+  </testcase>
+  <testcase name="testMultipleObsGroupFormFailure" classname="org.openmrs.module.htmlformentry.RegressionTest" time="0.224">
+    <system-out><![CDATA[INFO - FormEntrySession.<init>(146) |2026-06-19 08:50:21,067| AUDIT | action=FORM_OPEN | userId=1 | patientId=2 | mode=ENTER
+WARN - FormSubmissionController.validateSubmission(88) |2026-06-19 08:50:21,084| AUDIT | action=FORM_SUBMIT_FAILED | userId=1 | errorCount=1
+]]></system-out>
+  </testcase>
+  <testcase name="testEditShouldNotClearTimeComponentForm" classname="org.openmrs.module.htmlformentry.RegressionTest" time="0.23">
+    <system-out><![CDATA[INFO - FormEntrySession.<init>(146) |2026-06-19 08:50:21,292| AUDIT | action=FORM_OPEN | userId=1 | patientId=2 | mode=ENTER
+INFO - FormEntrySession.applyActions(575) |2026-06-19 08:50:21,302| AUDIT | action=ENCOUNTER_CREATE | userId=1 | patientId=2 | encounterId=3064 | formId=null
+INFO - FormEntrySession.<init>(146) |2026-06-19 08:50:21,303| AUDIT | action=FORM_OPEN | userId=1 | patientId=2 | mode=EDIT
+INFO - FormEntrySession.applyActions(575) |2026-06-19 08:50:21,312| AUDIT | action=ENCOUNTER_CREATE | userId=1 | patientId=2 | encounterId=3065 | formId=null
+INFO - FormEntrySession.applyActions(698) |2026-06-19 08:50:21,313| AUDIT | action=ENCOUNTER_EDIT | userId=1 | patientId=2 | encounterId=3065 | formId=null
+]]></system-out>
+  </testcase>
+  <testcase name="testMultipleObsGroupsOneEmptyValueMiddle" classname="org.openmrs.module.htmlformentry.RegressionTest" time="0.25">
+    <system-out><![CDATA[INFO - FormEntrySession.<init>(146) |2026-06-19 08:50:21,528| AUDIT | action=FORM_OPEN | userId=1 | patientId=2 | mode=ENTER
+INFO - FormEntrySession.<init>(146) |2026-06-19 08:50:21,544| AUDIT | action=FORM_OPEN | userId=1 | patientId=null | mode=VIEW
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:21,552| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:21,552| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:21,552| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:21,553| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:21,553| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:21,554| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:21,554| Comparing obsVal /7 to xmlval /7
+]]></system-out>
+  </testcase>
+  <testcase name="viewObsgroupsWithMultipleAnswerConceptIds" classname="org.openmrs.module.htmlformentry.RegressionTest" time="0.246">
+    <system-out><![CDATA[INFO - FormEntrySession.<init>(146) |2026-06-19 08:50:21,772| AUDIT | action=FORM_OPEN | userId=1 | patientId=2 | mode=ENTER
+INFO - FormEntrySession.<init>(146) |2026-06-19 08:50:21,794| AUDIT | action=FORM_OPEN | userId=1 | patientId=null | mode=VIEW
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:21,805| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:21,805| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:21,805| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:21,807| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:21,807| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:21,808| Comparing obsVal /7 to xmlval /7
+]]></system-out>
+  </testcase>
+  <testcase name="testVelocityExpressions" classname="org.openmrs.module.htmlformentry.RegressionTest" time="0.307">
+    <system-out><![CDATA[INFO - FormEntrySession.<init>(146) |2026-06-19 08:50:22,052| AUDIT | action=FORM_OPEN | userId=1 | patientId=2 | mode=ENTER
+]]></system-out>
+  </testcase>
+  <testcase name="testSimplestFormFailure" classname="org.openmrs.module.htmlformentry.RegressionTest" time="0.223">
+    <system-out><![CDATA[INFO - FormEntrySession.<init>(146) |2026-06-19 08:50:22,329| AUDIT | action=FORM_OPEN | userId=1 | patientId=2 | mode=ENTER
+]]></system-out>
+  </testcase>
+  <testcase name="testMultipleObsGroupsOneEmptyValueFirst" classname="org.openmrs.module.htmlformentry.RegressionTest" time="0.252">
+    <system-out><![CDATA[INFO - FormEntrySession.<init>(146) |2026-06-19 08:50:22,549| AUDIT | action=FORM_OPEN | userId=1 | patientId=2 | mode=ENTER
+INFO - FormEntrySession.<init>(146) |2026-06-19 08:50:22,572| AUDIT | action=FORM_OPEN | userId=1 | patientId=null | mode=VIEW
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:22,580| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:22,580| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:22,581| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:22,581| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:22,582| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:22,582| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:22,583| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:22,583| Comparing obsVal /7 to xmlval /7
+]]></system-out>
+  </testcase>
+  <testcase name="testObsGroupRepeatsWithOneCompleteEntryAndOnePartiallyFilledInEntry" classname="org.openmrs.module.htmlformentry.RegressionTest" time="0.245">
+    <system-out><![CDATA[INFO - FormEntrySession.<init>(146) |2026-06-19 08:50:22,801| AUDIT | action=FORM_OPEN | userId=1 | patientId=2 | mode=ENTER
+INFO - FormEntrySession.<init>(146) |2026-06-19 08:50:22,819| AUDIT | action=FORM_OPEN | userId=1 | patientId=null | mode=VIEW
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:22,827| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:22,827| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:22,828| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:22,828| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:22,829| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:22,829| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:22,830| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:22,830| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:22,831| Comparing obsVal /7 to xmlval /7
+]]></system-out>
+  </testcase>
+  <testcase name="viewFormWithLocationObs" classname="org.openmrs.module.htmlformentry.RegressionTest" time="0.234">
+    <system-out><![CDATA[INFO - FormEntrySession.<init>(146) |2026-06-19 08:50:23,049| AUDIT | action=FORM_OPEN | userId=1 | patientId=2 | mode=ENTER
+INFO - FormEntrySession.<init>(146) |2026-06-19 08:50:23,062| AUDIT | action=FORM_OPEN | userId=1 | patientId=null | mode=VIEW
+]]></system-out>
+  </testcase>
+  <testcase name="shouldReturnObsGroupSchemaCorrectly" classname="org.openmrs.module.htmlformentry.RegressionTest" time="0.224">
+    <system-out><![CDATA[INFO - FormEntrySession.<init>(146) |2026-06-19 08:50:23,278| AUDIT | action=FORM_OPEN | userId=1 | patientId=12345 | mode=ENTER
+]]></system-out>
+  </testcase>
+  <testcase name="viewSingleObsEncounterWithObsOfAnotherConcept" classname="org.openmrs.module.htmlformentry.RegressionTest" time="0.23">
+    <system-out><![CDATA[INFO - FormEntrySession.<init>(146) |2026-06-19 08:50:23,504| AUDIT | action=FORM_OPEN | userId=1 | patientId=2 | mode=ENTER
+INFO - FormEntrySession.<init>(146) |2026-06-19 08:50:23,516| AUDIT | action=FORM_OPEN | userId=1 | patientId=null | mode=VIEW
+]]></system-out>
+  </testcase>
+  <testcase name="viewEmptyEncounterSuccess" classname="org.openmrs.module.htmlformentry.RegressionTest" time="0.236">
+    <system-out><![CDATA[INFO - FormEntrySession.<init>(146) |2026-06-19 08:50:23,733| AUDIT | action=FORM_OPEN | userId=1 | patientId=2 | mode=ENTER
+INFO - FormEntrySession.<init>(146) |2026-06-19 08:50:23,750| AUDIT | action=FORM_OPEN | userId=1 | patientId=null | mode=VIEW
+]]></system-out>
+  </testcase>
+  <testcase name="testApplyMacros" classname="org.openmrs.module.htmlformentry.RegressionTest" time="0.21"/>
+  <testcase name="testSimplestFormFailLocationAndProviderNotEnteredWhileRequired" classname="org.openmrs.module.htmlformentry.RegressionTest" time="0.219">
+    <system-out><![CDATA[INFO - FormEntrySession.<init>(146) |2026-06-19 08:50:24,178| AUDIT | action=FORM_OPEN | userId=1 | patientId=2 | mode=ENTER
+WARN - FormSubmissionController.validateSubmission(88) |2026-06-19 08:50:24,190| AUDIT | action=FORM_SUBMIT_FAILED | userId=1 | errorCount=2
+]]></system-out>
+  </testcase>
+  <testcase name="testEditEncounterLocationWithAutocomplete" classname="org.openmrs.module.htmlformentry.RegressionTest" time="0.236">
+    <system-out><![CDATA[INFO - FormEntrySession.<init>(146) |2026-06-19 08:50:24,398| AUDIT | action=FORM_OPEN | userId=1 | patientId=2 | mode=ENTER
+INFO - FormEntrySession.applyActions(575) |2026-06-19 08:50:24,413| AUDIT | action=ENCOUNTER_CREATE | userId=1 | patientId=2 | encounterId=3066 | formId=null
+INFO - FormEntrySession.<init>(146) |2026-06-19 08:50:24,413| AUDIT | action=FORM_OPEN | userId=1 | patientId=2 | mode=EDIT
+INFO - FormEntrySession.applyActions(698) |2026-06-19 08:50:24,425| AUDIT | action=ENCOUNTER_EDIT | userId=1 | patientId=2 | encounterId=3066 | formId=null
+]]></system-out>
+  </testcase>
+  <testcase name="testMultipleObsGroupsOneEmptyValueFirstReverseEntryOrder" classname="org.openmrs.module.htmlformentry.RegressionTest" time="0.24">
+    <system-out><![CDATA[INFO - FormEntrySession.<init>(146) |2026-06-19 08:50:24,637| AUDIT | action=FORM_OPEN | userId=1 | patientId=2 | mode=ENTER
+INFO - FormEntrySession.<init>(146) |2026-06-19 08:50:24,653| AUDIT | action=FORM_OPEN | userId=1 | patientId=null | mode=VIEW
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:24,661| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:24,661| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:24,661| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:24,662| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:24,662| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:24,662| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:24,663| Comparing obsVal /7 to xmlval /7
+DEBUG - FormEntryContext.findBestMatchingObsGroup(703) |2026-06-19 08:50:24,663| Comparing obsVal /7 to xmlval /7
+]]></system-out>
+  </testcase>
+  <testcase name="testVelocityExpressionWithNoValueShouldReturnEmptyString" classname="org.openmrs.module.htmlformentry.RegressionTest" time="0.259">
+    <system-out><![CDATA[INFO - FormEntrySession.<init>(146) |2026-06-19 08:50:24,911| AUDIT | action=FORM_OPEN | userId=1 | patientId=2 | mode=ENTER
+]]></system-out>
+  </testcase>
+</testsuite>

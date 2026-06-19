@@ -1,0 +1,70 @@
+version: "3.9"
+
+# ============================================================
+# PRODUCTIE OMGEVING
+# Gebruik: docker compose -f docker-compose.production.yml up -d
+# WAARSCHUWING: nooit SEED_TEST_DATA=true in dit bestand!
+# ============================================================
+
+services:
+  db-production:
+    image: postgres:15-alpine
+    container_name: openmrs-db-prod
+    restart: always
+    environment:
+      POSTGRES_DB: ${DB_NAME}
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    volumes:
+      - db_prod_data:/var/lib/postgresql/data
+      # Geen seed-script gemount in productie
+    networks:
+      - prod-net
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER}"]
+      interval: 10s
+      retries: 5
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
+        max-file: "7"
+
+  openmrs-production:
+    image: openmrs/openmrs-reference-application-3-backend:${APP_VERSION}
+    container_name: openmrs-app-prod
+    restart: always
+    depends_on:
+      db-production:
+        condition: service_healthy
+    environment:
+      APP_ENV: production
+      DB_HOST: db-production
+      DB_PORT: 5432
+      DB_NAME: ${DB_NAME}
+      DB_USER: ${DB_USER}
+      DB_PASSWORD: ${DB_PASSWORD}
+      OPENMRS_ADMIN_USER: ${OPENMRS_ADMIN_USER}
+      OPENMRS_ADMIN_PASSWORD: ${OPENMRS_ADMIN_PASSWORD}
+      SEED_TEST_DATA: "false"          # ALTIJD false — nooit overschrijven
+      ENABLE_DEBUG_ENDPOINTS: "false"
+      FORCE_HTTPS: "true"
+    ports:
+      - "8080:8080"
+    networks:
+      - prod-net
+    labels:
+      environment: production
+      managed-by: github-actions
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "100m"
+        max-file: "14"
+
+volumes:
+  db_prod_data:
+
+networks:
+  prod-net:
+    driver: bridge

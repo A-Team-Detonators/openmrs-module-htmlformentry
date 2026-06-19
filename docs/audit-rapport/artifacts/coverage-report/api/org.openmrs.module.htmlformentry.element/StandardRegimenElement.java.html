@@ -1,0 +1,403 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>StandardRegimenElement.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">HTML Form Entry API</a> &gt; <a href="index.source.html" class="el_package">org.openmrs.module.htmlformentry.element</a> &gt; <span class="el_source">StandardRegimenElement.java</span></div><h1>StandardRegimenElement.java</h1><pre class="source lang-java linenums">package org.openmrs.module.htmlformentry.element;
+
+import org.apache.commons.beanutils.PropertyUtils;
+import org.apache.commons.lang.StringUtils;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+import org.openmrs.Concept;
+import org.openmrs.ConceptAnswer;
+import org.openmrs.DrugOrder;
+import org.openmrs.Order;
+import org.openmrs.api.APIException;
+import org.openmrs.api.context.Context;
+import org.openmrs.messagesource.MessageSourceService;
+import org.openmrs.module.ModuleUtil;
+import org.openmrs.module.htmlformentry.FormEntryContext;
+import org.openmrs.module.htmlformentry.FormEntryContext.Mode;
+import org.openmrs.module.htmlformentry.FormEntrySession;
+import org.openmrs.module.htmlformentry.FormSubmissionError;
+import org.openmrs.module.htmlformentry.HtmlFormEntryUtil;
+import org.openmrs.module.htmlformentry.action.FormSubmissionControllerAction;
+import org.openmrs.module.htmlformentry.regimen.RegimenUtil;
+import org.openmrs.module.htmlformentry.schema.ObsFieldAnswer;
+import org.openmrs.module.htmlformentry.schema.StandardRegimenAnswer;
+import org.openmrs.module.htmlformentry.schema.StandardRegimenField;
+import org.openmrs.module.htmlformentry.widget.DateWidget;
+import org.openmrs.module.htmlformentry.widget.DropdownWidget;
+import org.openmrs.module.htmlformentry.widget.ErrorWidget;
+import org.openmrs.module.htmlformentry.widget.Option;
+import org.openmrs.module.htmlformentry.widget.Widget;
+import org.openmrs.order.DrugOrderSupport;
+import org.openmrs.order.RegimenSuggestion;
+import org.openmrs.util.OpenmrsConstants;
+import org.openmrs.util.OpenmrsUtil;
+
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Date;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.StringTokenizer;
+import java.util.UUID;
+import javax.servlet.http.HttpServletRequest;
+
+
+/**
+ * 
+ * @author dthomas
+ * 
+ * NOTE:  the routines here WON'T change regimens if you change the definitions of a regimen in the XML automatically.
+ *
+ */
+public class StandardRegimenElement implements HtmlGeneratorElement, FormSubmissionControllerAction{
+
+<span class="nc" id="L55">	protected final Log log = LogFactory.getLog(StandardRegimenElement.class);</span>
+	
+	public static final String STANDARD_REGIMEN_CODES = &quot;regimenCodes&quot;;
+	
+	public static final String FIELD_DISCONTINUED_REASON=&quot;discontinuedReasonConceptId&quot;;
+	
+	public static final String FIELD_DISCONTINUED_REASON_ANSWERS=&quot;discontinueReasonAnswers&quot;;
+	
+	public static final String FIELD_DISCONTINUED_REASON_ANSWER_LABELS=&quot;discontinueReasonAnswerLabels&quot;;
+	
+	public static final String STANDARD_REGIMEN_GLOBAL_PROPERTY=&quot;dashboard.regimen.standardRegimens&quot;;
+
+	
+	protected Widget regWidget;
+	private ErrorWidget regErrorWidget;
+	private DateWidget startDateWidget;
+	private ErrorWidget startDateErrorWidget;
+	protected DateWidget discontinuedDateWidget;
+	private ErrorWidget discontinuedDateErrorWidget;
+	protected DropdownWidget discontinuedReasonWidget;
+    private ErrorWidget discontinuedReasonErrorWidget;
+    
+<span class="nc" id="L77">    protected List&lt;DrugOrder&gt; regDrugOrders = new ArrayList&lt;DrugOrder&gt;();</span>
+    protected RegimenSuggestion existingStandardRegimen;
+	
+	//helpers:
+<span class="nc" id="L81">    private List&lt;RegimenSuggestion&gt; allSystemStandardRegimens = new ArrayList&lt;RegimenSuggestion&gt;();</span>
+<span class="nc" id="L82">	protected List&lt;RegimenSuggestion&gt; possibleRegimens = new ArrayList&lt;RegimenSuggestion&gt;();</span>
+    
+<span class="nc" id="L84">	public StandardRegimenElement(FormEntryContext context, Map&lt;String, String&gt; parameters) {</span>
+		
+<span class="nc" id="L86">		String regimenCodes = parameters.get(STANDARD_REGIMEN_CODES);		</span>
+<span class="nc bnc" id="L87" title="All 4 branches missed.">		if (regimenCodes == null || regimenCodes.length() &lt; 1)</span>
+<span class="nc" id="L88">			throw new IllegalArgumentException(&quot;You must provide a valid regimenCode from your standard regimen XML (see global property &quot; + STANDARD_REGIMEN_GLOBAL_PROPERTY + &quot; for these codes) &quot; + parameters);</span>
+		
+<span class="nc" id="L90">		List&lt;Option&gt; options = new ArrayList&lt;Option&gt;();</span>
+<span class="nc" id="L91">		options.add(new Option(&quot;&quot;, &quot;&quot;, false));</span>
+		
+<span class="nc" id="L93">		StringTokenizer tokenizer = new StringTokenizer(regimenCodes, &quot;,&quot;);</span>
+<span class="nc" id="L94">		allSystemStandardRegimens = DrugOrderSupport.getInstance().getStandardRegimens();</span>
+<span class="nc" id="L95">		StandardRegimenField srf = new StandardRegimenField();</span>
+<span class="nc bnc" id="L96" title="All 2 branches missed.">		while (tokenizer.hasMoreElements()) {</span>
+<span class="nc" id="L97">			String regCode = (String) tokenizer.nextElement();</span>
+<span class="nc" id="L98">			RegimenSuggestion rs = getRegimenSuggestionByCode(regCode, allSystemStandardRegimens);</span>
+<span class="nc bnc" id="L99" title="All 2 branches missed.">			if (rs != null){</span>
+<span class="nc" id="L100">				options.add(new Option(rs.getDisplayName(),rs.getCodeName(), false));</span>
+<span class="nc" id="L101">				srf.addStandardRegimenAnswer(new StandardRegimenAnswer(rs));</span>
+<span class="nc" id="L102">				possibleRegimens.add(rs);</span>
+			} else {
+<span class="nc" id="L104">				throw new IllegalArgumentException(&quot;standardRegimen tag can't find regimen code &quot; + regCode + &quot; found in regimenCodes attribute in global property &quot; + STANDARD_REGIMEN_GLOBAL_PROPERTY);</span>
+			}
+<span class="nc" id="L106">		}	</span>
+<span class="nc" id="L107">		DropdownWidget dw = new DropdownWidget();</span>
+<span class="nc" id="L108">        dw.setOptions(options);</span>
+<span class="nc" id="L109">        regWidget = dw;</span>
+<span class="nc" id="L110">        context.registerWidget(regWidget);</span>
+<span class="nc" id="L111">        regErrorWidget = new ErrorWidget();</span>
+<span class="nc" id="L112">        context.registerErrorWidget(regWidget, regErrorWidget);</span>
+        
+        //start date
+<span class="nc" id="L115">        startDateWidget = new DateWidget();</span>
+<span class="nc" id="L116">        startDateErrorWidget = new ErrorWidget();</span>
+<span class="nc" id="L117">        context.registerWidget(startDateWidget);</span>
+<span class="nc" id="L118">        context.registerErrorWidget(startDateWidget, startDateErrorWidget);</span>
+        
+        //end date
+<span class="nc" id="L121">        discontinuedDateWidget = new DateWidget();</span>
+<span class="nc" id="L122">		discontinuedDateErrorWidget = new ErrorWidget();</span>
+<span class="nc" id="L123">		context.registerWidget(discontinuedDateWidget);</span>
+<span class="nc" id="L124">		context.registerErrorWidget(discontinuedDateWidget, discontinuedDateErrorWidget);</span>
+		
+		//discontinue reasons
+<span class="nc bnc" id="L127" title="All 2 branches missed.">		if (parameters.get(FIELD_DISCONTINUED_REASON) != null){</span>
+<span class="nc" id="L128">		    String discReasonConceptStr = (String) parameters.get(FIELD_DISCONTINUED_REASON);</span>
+<span class="nc" id="L129">		    Concept discontineReasonConcept = HtmlFormEntryUtil.getConcept(discReasonConceptStr);</span>
+<span class="nc bnc" id="L130" title="All 2 branches missed.">		    if (discontineReasonConcept == null)</span>
+<span class="nc" id="L131">		        throw new IllegalArgumentException(&quot;discontinuedReasonConceptId is not set to a valid conceptId or concept UUID&quot;);</span>
+<span class="nc" id="L132">		    srf.setDiscontinuedReasonQuestion(discontineReasonConcept);</span>
+		    
+<span class="nc" id="L134">		    discontinuedReasonWidget = new DropdownWidget();</span>
+<span class="nc" id="L135">		    discontinuedReasonErrorWidget = new ErrorWidget();</span>
+		    
+<span class="nc" id="L137">		    List&lt;Option&gt; discOptions = new ArrayList&lt;Option&gt;();</span>
+<span class="nc" id="L138">		    discOptions.add(new Option(&quot;&quot;, &quot;&quot;, false));</span>
+		    
+<span class="nc bnc" id="L140" title="All 2 branches missed.">		    if (parameters.get(FIELD_DISCONTINUED_REASON_ANSWERS) != null){</span>
+		        //setup a list of the reason concepts
+<span class="nc" id="L142">		        List&lt;Concept&gt; discReasons = new ArrayList&lt;Concept&gt;();</span>
+<span class="nc" id="L143">		        String discAnswersString = (String) parameters.get(FIELD_DISCONTINUED_REASON_ANSWERS);</span>
+<span class="nc" id="L144">		        String[] strDiscAnswers = discAnswersString.split(&quot;,&quot;);</span>
+<span class="nc bnc" id="L145" title="All 2 branches missed.">		        for (int i = 0; i &lt; strDiscAnswers.length; i++){</span>
+<span class="nc" id="L146">		            String thisAnswer = strDiscAnswers[i];</span>
+<span class="nc" id="L147">		            Concept answer = HtmlFormEntryUtil.getConcept(thisAnswer, &quot;discontinueReasonAnswers includes a value that is not a valid conceptId or concept UUID&quot;);</span>
+<span class="nc" id="L148">	                discReasons.add(answer);</span>
+		        }
+		       
+<span class="nc bnc" id="L151" title="All 2 branches missed.">		        if (parameters.get(FIELD_DISCONTINUED_REASON_ANSWER_LABELS) != null){</span>
+		            // use the listed discontinueReasons, and use labels:
+<span class="nc" id="L153">		            String discLabelsString = parameters.get(FIELD_DISCONTINUED_REASON_ANSWER_LABELS);</span>
+<span class="nc" id="L154">		            String[] strDiscAnswerLabels = discLabelsString.split(&quot;,&quot;);</span>
+		            //a little validation:
+<span class="nc bnc" id="L156" title="All 2 branches missed.">		            if (strDiscAnswerLabels.length != discReasons.size())</span>
+<span class="nc" id="L157">		                throw new RuntimeException(&quot;discontinueReasonAnswers and discontinueReasonAnswerLabels must contain the same number of members.&quot;);</span>
+<span class="nc bnc" id="L158" title="All 2 branches missed.">		            for (int i = 0; i &lt; strDiscAnswerLabels.length; i ++ ){</span>
+<span class="nc" id="L159">		                discOptions.add(new Option( strDiscAnswerLabels[i], discReasons.get(i).getConceptId().toString(),false));  </span>
+<span class="nc" id="L160">		                srf.addDiscontinuedReasonAnswer(new ObsFieldAnswer(strDiscAnswerLabels[i].trim(), discReasons.get(i)));</span>
+		            }
+<span class="nc" id="L162">		        } else {</span>
+		            // use the listed discontinueReasons, and use their ConceptNames.
+<span class="nc bnc" id="L164" title="All 2 branches missed.">    		        for (Concept c: discReasons){</span>
+<span class="nc" id="L165">    		            discOptions.add(new Option( c.getBestName(Context.getLocale()).getName(), c.getConceptId().toString(),false));</span>
+<span class="nc" id="L166">    		            srf.addDiscontinuedReasonAnswer(new ObsFieldAnswer(c.getBestName(Context.getLocale()).getName(), c));</span>
+<span class="nc" id="L167">    		        }</span>
+		        }
+<span class="nc" id="L169">		    } else {</span>
+		        //just use the conceptAnswers
+<span class="nc bnc" id="L171" title="All 2 branches missed.">    		    for (ConceptAnswer ca : discontineReasonConcept.getAnswers()){</span>
+<span class="nc" id="L172">    		        discOptions.add(new Option( ca.getAnswerConcept().getBestName(Context.getLocale()).getName(), ca.getAnswerConcept().getConceptId().toString(),false));</span>
+<span class="nc" id="L173">    		        srf.addDiscontinuedReasonAnswer(new ObsFieldAnswer(ca.getAnswerConcept().getBestName(Context.getLocale()).getName(), ca.getAnswerConcept()));</span>
+<span class="nc" id="L174">    		    }</span>
+		    }
+<span class="nc bnc" id="L176" title="All 2 branches missed.">		    if (discOptions.size() == 1)</span>
+<span class="nc" id="L177">		        throw new IllegalArgumentException(&quot;discontinue reason Concept doesn't have any ConceptAnswers&quot;);</span>
+		    
+<span class="nc" id="L179">		    discontinuedReasonWidget.setOptions(discOptions);</span>
+<span class="nc" id="L180">		    context.registerWidget(discontinuedReasonWidget);</span>
+<span class="nc" id="L181">	        context.registerErrorWidget(discontinuedReasonWidget, discontinuedReasonErrorWidget);</span>
+		}
+		
+<span class="nc" id="L184">		createAdditionalWidgets(context, parameters);</span>
+		
+<span class="nc bnc" id="L186" title="All 4 branches missed.">		if (context.getMode() != Mode.ENTER &amp;&amp; context.getExistingOrders() != null) {	</span>
+<span class="nc" id="L187">			matchStandardRegimenInExistingOrders(context);</span>
+		}
+<span class="nc bnc" id="L189" title="All 4 branches missed.">		if (regDrugOrders != null &amp;&amp; regDrugOrders.size() &gt; 0){</span>
+<span class="nc bnc" id="L190" title="All 2 branches missed.">            String startDateFieldName = (ModuleUtil.compareVersion(</span>
+                    OpenmrsConstants.OPENMRS_VERSION_SHORT, &quot;1.10&quot;) &gt; -1) ? &quot;dateActivated&quot; : &quot;startDate&quot;;
+            try {
+<span class="nc" id="L193">                startDateWidget.setInitialValue(PropertyUtils.getProperty(regDrugOrders.get(0), startDateFieldName));</span>
+<span class="nc" id="L194">            } catch (Exception e) {</span>
+<span class="nc" id="L195">                throw new APIException(e);</span>
+<span class="nc" id="L196">            }</span>
+        }
+<span class="nc" id="L198">        context.addFieldToActiveSection(srf);</span>
+<span class="nc" id="L199">	}</span>
+
+	protected void createAdditionalWidgets(FormEntryContext context, Map&lt;String, String&gt; parameters) {
+<span class="nc" id="L202">    }</span>
+
+
+	protected void matchStandardRegimenInExistingOrders(FormEntryContext context) {
+<span class="nc" id="L206">	    Map&lt;RegimenSuggestion, List&lt;DrugOrder&gt;&gt; map =  RegimenUtil.findStrongestStandardRegimenInDrugOrders(possibleRegimens, context.getRemainingExistingOrders());</span>
+<span class="nc bnc" id="L207" title="All 2 branches missed.">	    if (map.size() == 1){</span>
+<span class="nc" id="L208">	    	existingStandardRegimen = map.keySet().iterator().next();</span>
+<span class="nc bnc" id="L209" title="All 2 branches missed.">	    	for (DrugOrder dor : map.get(existingStandardRegimen)){</span>
+<span class="nc" id="L210">	    		regDrugOrders.add(context.removeExistingDrugOrder(dor.getDrug()));</span>
+<span class="nc" id="L211">	    		regWidget.setInitialValue(existingStandardRegimen.getCodeName());</span>
+<span class="nc" id="L212">	    	}</span>
+<span class="nc" id="L213">	    	 discontinuedDateWidget.setInitialValue(getCommonDiscontinueDate(regDrugOrders));</span>
+<span class="nc bnc" id="L214" title="All 4 branches missed.">	    	    if (discontinuedReasonWidget != null &amp;&amp; regDrugOrders.get(0).getDiscontinuedReason() != null)</span>
+<span class="nc" id="L215">	    	        discontinuedReasonWidget.setInitialValue(regDrugOrders.get(0).getDiscontinuedReason().getConceptId());</span>
+	    }
+<span class="nc" id="L217">    }</span>
+	
+	protected Date getCommonDiscontinueDate(List&lt;DrugOrder&gt; orders){
+<span class="nc" id="L220">		Date candidate = null;</span>
+<span class="nc bnc" id="L221" title="All 6 branches missed.">		if (orders != null &amp; orders.size() &gt; 0)</span>
+<span class="nc" id="L222">				candidate = orders.get(0).getDiscontinuedDate();</span>
+<span class="nc bnc" id="L223" title="All 2 branches missed.">		for (Order o : orders){</span>
+<span class="nc bnc" id="L224" title="All 2 branches missed.">			if (!OpenmrsUtil.nullSafeEquals(o.getDiscontinuedDate(), candidate))</span>
+<span class="nc" id="L225">				return null;</span>
+<span class="nc" id="L226">		}</span>
+<span class="nc" id="L227">		return candidate;</span>
+	}
+
+	@Override
+    public Collection&lt;FormSubmissionError&gt; validateSubmission(FormEntryContext context, HttpServletRequest submission) {
+
+<span class="nc" id="L233">		List&lt;FormSubmissionError&gt; ret = new ArrayList&lt;FormSubmissionError&gt;();</span>
+		//if no drug specified, then don't do anything.
+<span class="nc bnc" id="L235" title="All 8 branches missed.">		if (regWidget != null &amp;&amp; regWidget.getValue(context, submission) != null &amp;&amp; !((String) regWidget.getValue(context, submission)).trim().equals(&quot;&quot;) &amp;&amp; !((String) regWidget.getValue(context, submission)).trim().equals(&quot;~&quot;)){</span>
+
+			try {
+<span class="nc bnc" id="L238" title="All 2 branches missed.">				if (startDateWidget != null) {</span>
+<span class="nc" id="L239">					Date dateCreated = startDateWidget.getValue(context, submission);</span>
+<span class="nc bnc" id="L240" title="All 2 branches missed.">					if (dateCreated == null)</span>
+<span class="nc" id="L241">						throw new Exception(&quot;htmlformentry.error.required&quot;);</span>
+				}
+<span class="nc" id="L243">			} catch (Exception ex) {</span>
+<span class="nc" id="L244">				ret.add(new FormSubmissionError(context</span>
+<span class="nc" id="L245">						.getFieldName(startDateErrorWidget), Context</span>
+<span class="nc" id="L246">						.getMessageSourceService().getMessage(ex.getMessage())));</span>
+<span class="nc" id="L247">			}</span>
+			try {
+<span class="nc bnc" id="L249" title="All 4 branches missed.">                if (startDateWidget != null &amp;&amp; discontinuedDateWidget != null) {</span>
+<span class="nc" id="L250">                    Date startDate = startDateWidget.getValue(context, submission);</span>
+<span class="nc" id="L251">                    Date endDate = discontinuedDateWidget.getValue(context, submission);</span>
+<span class="nc bnc" id="L252" title="All 4 branches missed.">                    if (startDate != null &amp;&amp; endDate != null </span>
+<span class="nc bnc" id="L253" title="All 2 branches missed.">                            &amp;&amp; startDate.getTime() &gt; endDate.getTime())</span>
+<span class="nc" id="L254">                        throw new Exception(&quot;htmlformentry.error.discontinuedDateBeforeStartDate&quot;);</span>
+                }
+<span class="nc" id="L256">            } catch (Exception ex) {</span>
+<span class="nc" id="L257">                ret.add(new FormSubmissionError(context</span>
+<span class="nc" id="L258">                        .getFieldName(discontinuedDateErrorWidget), Context</span>
+<span class="nc" id="L259">                        .getMessageSourceService().getMessage(ex.getMessage())));</span>
+<span class="nc" id="L260">            }</span>
+            try {
+<span class="nc bnc" id="L262" title="All 4 branches missed.">                if (discontinuedReasonWidget != null &amp;&amp; discontinuedDateWidget != null) {</span>
+<span class="nc" id="L263">                    String discReason = (String) discontinuedReasonWidget.getValue(context, submission);</span>
+<span class="nc" id="L264">                    Date endDate = discontinuedDateWidget.getValue(context, submission);</span>
+<span class="nc bnc" id="L265" title="All 4 branches missed.">                    if (endDate == null &amp;&amp; !StringUtils.isEmpty(discReason))</span>
+<span class="nc" id="L266">                        throw new Exception(&quot;htmlformentry.error.discontinuedReasonEnteredWithoutDate&quot;);</span>
+                }
+<span class="nc" id="L268">            } catch (Exception ex) {</span>
+<span class="nc" id="L269">                ret.add(new FormSubmissionError(context</span>
+<span class="nc" id="L270">                        .getFieldName(discontinuedReasonErrorWidget), Context</span>
+<span class="nc" id="L271">                        .getMessageSourceService().getMessage(ex.getMessage())));</span>
+<span class="nc" id="L272">            }</span>
+		}
+		
+<span class="nc" id="L275">		return ret;</span>
+	    }
+	
+	
+    public String generateHtml(FormEntryContext context) {
+<span class="nc" id="L280">    	StringBuilder ret = new StringBuilder();</span>
+<span class="nc" id="L281">		MessageSourceService mss = Context.getMessageSourceService();</span>
+		
+<span class="nc bnc" id="L283" title="All 2 branches missed.">		if (regWidget != null) {</span>
+<span class="nc" id="L284">		    ret.append(mss.getMessage(&quot;htmlformentry.standardRegimen&quot;) + &quot; &quot;);</span>
+<span class="nc" id="L285">			ret.append(regWidget.generateHtml(context) + &quot; &quot;);</span>
+<span class="nc bnc" id="L286" title="All 2 branches missed.">			if (context.getMode() != Mode.VIEW)</span>
+<span class="nc" id="L287">				ret.append(regErrorWidget.generateHtml(context));</span>
+		}
+
+<span class="nc bnc" id="L290" title="All 2 branches missed.">		if (startDateWidget != null) {</span>
+<span class="nc" id="L291">			ret.append(&quot; | &quot;);</span>
+<span class="nc" id="L292">			ret.append(mss.getMessage(&quot;general.dateStart&quot;) + &quot; &quot;);</span>
+<span class="nc" id="L293">			ret.append(startDateWidget.generateHtml(context) + &quot; &quot;);</span>
+<span class="nc bnc" id="L294" title="All 2 branches missed.">			if (context.getMode() != Mode.VIEW)</span>
+<span class="nc" id="L295">				ret.append(startDateErrorWidget.generateHtml(context));</span>
+		}
+		//duration and discontinuedDate are now mutually exclusive
+<span class="nc bnc" id="L298" title="All 2 branches missed.">		if (discontinuedDateWidget != null) {</span>
+<span class="nc" id="L299">			ret.append(mss.getMessage(&quot;general.dateDiscontinued&quot;) + &quot; &quot;);</span>
+<span class="nc" id="L300">			ret.append(discontinuedDateWidget.generateHtml(context) + &quot; &quot;);</span>
+<span class="nc bnc" id="L301" title="All 2 branches missed.">			if (context.getMode() != Mode.VIEW)</span>
+<span class="nc" id="L302">				ret.append(discontinuedDateErrorWidget.generateHtml(context));</span>
+		}
+<span class="nc bnc" id="L304" title="All 2 branches missed.">		if (discontinuedReasonWidget != null){</span>
+<span class="nc" id="L305">		    ret.append(&quot; | &quot; + mss.getMessage(&quot;general.discontinuedReason&quot;) + &quot; &quot;);</span>
+<span class="nc" id="L306">            ret.append(discontinuedReasonWidget.generateHtml(context) + &quot; &quot;);</span>
+<span class="nc bnc" id="L307" title="All 2 branches missed.">            if (context.getMode() != Mode.VIEW)</span>
+<span class="nc" id="L308">                ret.append(discontinuedReasonErrorWidget.generateHtml(context));</span>
+        }
+		
+<span class="nc" id="L311">		return ret.toString();</span>
+    }
+    
+    @Override
+    public void handleSubmission(FormEntrySession session, HttpServletRequest submission) {
+<span class="nc" id="L316">	    String regCode = null;</span>
+<span class="nc bnc" id="L317" title="All 2 branches missed.">	    if (regWidget.getValue(session.getContext(), submission) != null)</span>
+<span class="nc" id="L318">	            regCode = ((String) regWidget.getValue(session.getContext(), submission));</span>
+<span class="nc" id="L319">    	Date startDate =  startDateWidget.getValue(session.getContext(), submission);</span>
+<span class="nc" id="L320">    	Date discontinuedDate = null;</span>
+<span class="nc bnc" id="L321" title="All 2 branches missed.">    	if (discontinuedDateWidget != null){</span>
+<span class="nc" id="L322">    	    discontinuedDate = discontinuedDateWidget.getValue(session.getContext(), submission);</span>
+    	}    
+<span class="nc" id="L324">    	String discontinuedReasonStr = null;</span>
+<span class="nc bnc" id="L325" title="All 2 branches missed.">    	if (discontinuedReasonWidget != null){</span>
+<span class="nc" id="L326">    	    discontinuedReasonStr = (String) discontinuedReasonWidget.getValue(session.getContext(), submission);</span>
+    	}
+<span class="nc bnc" id="L328" title="All 2 branches missed.">    	if (!StringUtils.isEmpty(regCode)){</span>
+<span class="nc bnc" id="L329" title="All 6 branches missed.">    		if (session.getContext().getMode() == Mode.ENTER || (session.getContext().getMode() == Mode.EDIT &amp;&amp; regDrugOrders == null)) {</span>
+<span class="nc" id="L330">    			enterStandardRegimen(session, submission, regCode, startDate, discontinuedDate, discontinuedReasonStr);	</span>
+<span class="nc bnc" id="L331" title="All 2 branches missed.">    		} else if (session.getContext().getMode() == Mode.EDIT) {</span>
+<span class="nc" id="L332">    			editStandardRegimen(session, submission, regCode, startDate, discontinuedDate, discontinuedReasonStr);</span>
+    		}	
+<span class="nc bnc" id="L334" title="All 2 branches missed.">    	} else if (regDrugOrders != null){</span>
+	   	     //void all existing orders in standard regimen -- this is if you un-select an existing standardRegimen
+    		 //these are already part of the encounter, so will be updated when encounter is saved.
+<span class="nc" id="L337">	    		 voidDrugOrders(regDrugOrders, session);</span>
+    	}
+
+<span class="nc" id="L340">    }</span>
+
+	protected void editStandardRegimen(FormEntrySession session, HttpServletRequest submission, String regCode, Date startDate, Date discontinuedDate,
+            String discontinuedReasonStr) {
+<span class="nc bnc" id="L344" title="All 4 branches missed.">	    if (existingStandardRegimen != null &amp;&amp; regCode.equals(existingStandardRegimen.getCodeName())){</span>
+	    	//the drug orders are already there and attached to the encounter.
+<span class="nc bnc" id="L346" title="All 2 branches missed.">	    	for (Order o : regDrugOrders){</span>
+<span class="nc bnc" id="L347" title="All 2 branches missed.">	        	if (!StringUtils.isEmpty(discontinuedReasonStr))</span>
+<span class="nc" id="L348">	        	    o.setDiscontinuedReason(HtmlFormEntryUtil.getConcept(discontinuedReasonStr));</span>
+<span class="nc bnc" id="L349" title="All 2 branches missed.">	    		if (discontinuedDate != null){</span>
+<span class="nc" id="L350">	        	    o.setDiscontinuedDate(discontinuedDate);</span>
+<span class="nc" id="L351">	        	    o.setDiscontinued(true); </span>
+	    		}    
+<span class="nc" id="L353">	    		o.setStartDate(startDate);</span>
+<span class="nc" id="L354">	    	}</span>
+	    } else {
+	    	//standard regimen changed in the drop-down...  I'm going to have this void the old DrugOrders, and create new ones.
+<span class="nc" id="L357">	    	 voidDrugOrders(regDrugOrders, session);</span>
+<span class="nc" id="L358">	    	 enterStandardRegimen(session, submission, regCode, startDate, discontinuedDate, discontinuedReasonStr);	</span>
+	    }
+<span class="nc" id="L360">    }</span>
+
+	protected void enterStandardRegimen(FormEntrySession session, HttpServletRequest submission, String regCode, Date startDate,
+            Date discontinuedDate, String discontinuedReasonStr) {
+<span class="nc" id="L364">	    RegimenSuggestion rs = RegimenUtil.getStandardRegimenByCode(possibleRegimens, regCode);</span>
+	    //create new drugOrders
+<span class="nc" id="L366">	    Set&lt;Order&gt; ords = RegimenUtil.standardRegimenToDrugOrders(rs, startDate, session.getPatient());	</span>
+<span class="nc bnc" id="L367" title="All 2 branches missed.">	    for (Order o: ords){</span>
+<span class="nc bnc" id="L368" title="All 2 branches missed.">	    	if (o.getDateCreated() == null)</span>
+<span class="nc" id="L369">	    	    o.setDateCreated(new Date());</span>
+<span class="nc bnc" id="L370" title="All 2 branches missed.">	    	if (o.getCreator() == null)</span>
+<span class="nc" id="L371">	    	    o.setCreator(Context.getAuthenticatedUser());</span>
+<span class="nc bnc" id="L372" title="All 2 branches missed.">	    	if (o.getUuid() == null)</span>
+<span class="nc" id="L373">	    	    o.setUuid(UUID.randomUUID().toString());</span>
+<span class="nc bnc" id="L374" title="All 2 branches missed.">	    	if (!StringUtils.isEmpty(discontinuedReasonStr))</span>
+<span class="nc" id="L375">	    	    o.setDiscontinuedReason(HtmlFormEntryUtil.getConcept(discontinuedReasonStr));</span>
+<span class="nc bnc" id="L376" title="All 2 branches missed.">	    	if (discontinuedDate != null){</span>
+<span class="nc" id="L377">	    	    o.setDiscontinuedDate(discontinuedDate);</span>
+<span class="nc" id="L378">	    	    o.setDiscontinued(true);</span>
+<span class="nc" id="L379">	    	    o.setDiscontinuedBy(Context.getAuthenticatedUser());</span>
+	    	}    
+<span class="nc" id="L381">	    	session.getSubmissionActions().getCurrentEncounter().addOrder(o);</span>
+<span class="nc" id="L382">	    }</span>
+<span class="nc" id="L383">    }</span>
+    
+    
+	private RegimenSuggestion getRegimenSuggestionByCode(String code, List&lt;RegimenSuggestion&gt; rs){
+<span class="nc bnc" id="L387" title="All 2 branches missed.">		for (RegimenSuggestion r : rs){</span>
+<span class="nc bnc" id="L388" title="All 4 branches missed.">			if (r.getCodeName() != null &amp;&amp; r.getCodeName().equals(code))</span>
+<span class="nc" id="L389">				return r;</span>
+<span class="nc" id="L390">		}</span>
+<span class="nc" id="L391">		return null;</span>
+	}
+	
+	protected void voidDrugOrders(List&lt;DrugOrder&gt; dos, FormEntrySession session){
+<span class="nc bnc" id="L395" title="All 2 branches missed.">		for (DrugOrder dor: dos){</span>
+<span class="nc" id="L396">			 dor.setVoided(true);</span>
+<span class="nc" id="L397">    	     dor.setVoidedBy(Context.getAuthenticatedUser());</span>
+<span class="nc" id="L398">    	     dor.setVoidReason(&quot;Drug De-selected in &quot; + session.getForm().getName());</span>
+<span class="nc" id="L399">		}</span>
+<span class="nc" id="L400">	}</span>
+}
+
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.8.202204050719</span></div></body></html>
