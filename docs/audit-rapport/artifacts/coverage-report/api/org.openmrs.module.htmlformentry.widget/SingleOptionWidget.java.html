@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>SingleOptionWidget.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">HTML Form Entry API</a> &gt; <a href="index.source.html" class="el_package">org.openmrs.module.htmlformentry.widget</a> &gt; <span class="el_source">SingleOptionWidget.java</span></div><h1>SingleOptionWidget.java</h1><pre class="source lang-java linenums">package org.openmrs.module.htmlformentry.widget;
+
+import org.openmrs.OpenmrsObject;
+import org.openmrs.module.htmlformentry.FormEntryContext;
+
+import javax.servlet.http.HttpServletRequest;
+import java.util.ArrayList;
+import java.util.List;
+
+/**
+ * This represents a single widget on a form which presents several coded options, of which only one 
+ * may be selected, such as a dropdown, or a group of radio buttons. 
+ */
+public abstract class SingleOptionWidget implements Widget {
+	
+	private String initialValue;
+	private List&lt;Option&gt; options;
+	
+	/**
+	 * Default Constructor
+	 */
+<span class="fc" id="L22">	public SingleOptionWidget() { }</span>
+	
+    /**
+     * @see Widget#setInitialValue(java.lang.Object)
+     */
+    @Override
+    public void setInitialValue(Object initialValue) {
+<span class="fc bfc" id="L29" title="All 2 branches covered.">        if (initialValue == null)</span>
+<span class="fc" id="L30">            this.initialValue = null;</span>
+		else {
+<span class="fc bfc" id="L32" title="All 2 branches covered.">			if (initialValue instanceof OpenmrsObject) {</span>
+<span class="fc" id="L33">				this.initialValue = ((OpenmrsObject) initialValue).getId().toString();</span>
+			}
+			else {
+<span class="fc" id="L36">				this.initialValue = initialValue.toString();</span>
+			}
+		}
+<span class="fc" id="L39">    }</span>
+    
+    /**
+     * Returns the initial value set on this Widget
+     * @return
+     */
+    public String getInitialValue() {
+<span class="fc" id="L46">    	return initialValue;</span>
+    }
+    
+    /**
+     * @see Widget#getValue(FormEntryContext, HttpServletRequest)
+     */
+    @Override
+    public Object getValue(FormEntryContext context, HttpServletRequest request) {
+<span class="fc" id="L54">        return request.getParameter(context.getFieldName(this));</span>
+    }
+
+	/**
+	 * Adds an Option to this Widget
+	 * @param option
+	 */
+    public void addOption(Option option) {
+<span class="fc bfc" id="L62" title="All 2 branches covered.">        if (options == null)</span>
+<span class="fc" id="L63">            options = new ArrayList&lt;Option&gt;();</span>
+<span class="fc" id="L64">        options.add(option);</span>
+<span class="fc" id="L65">    }    </span>
+
+    /**
+     * Returns all Options for this Widget
+     * @return
+     */
+    public List&lt;Option&gt; getOptions() {
+<span class="fc" id="L72">        return options;</span>
+    }
+
+    /**
+     * Sets all Options for this Widget
+     * @param options
+     */
+    public void setOptions(List&lt;Option&gt; options) {
+<span class="fc" id="L80">        this.options = options;</span>
+<span class="fc" id="L81">    }</span>
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.8.202204050719</span></div></body></html>

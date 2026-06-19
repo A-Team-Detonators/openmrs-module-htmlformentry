@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ProviderAjaxAutoCompleteWidget.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">HTML Form Entry API</a> &gt; <a href="index.source.html" class="el_package">org.openmrs.module.htmlformentry.widget</a> &gt; <span class="el_source">ProviderAjaxAutoCompleteWidget.java</span></div><h1>ProviderAjaxAutoCompleteWidget.java</h1><pre class="source lang-java linenums">package org.openmrs.module.htmlformentry.widget;
+
+import javax.servlet.http.HttpServletRequest;
+import java.util.List;
+
+import org.apache.commons.lang.StringEscapeUtils;
+import org.openmrs.Provider;
+import org.openmrs.api.context.Context;
+import org.openmrs.module.htmlformentry.FormEntryContext;
+import org.openmrs.module.htmlformentry.element.ProviderStub;
+import org.openmrs.module.htmlformentry.util.MatchMode;
+import org.springframework.util.StringUtils;
+
+public class ProviderAjaxAutoCompleteWidget implements Widget {
+
+    private List&lt;String&gt; providerRoles;
+    private MatchMode matchMode;
+    private Provider initialValue;
+
+    public MatchMode getMatchMode() {
+<span class="nc" id="L21">        return matchMode;</span>
+    }
+
+    public void setMatchMode(MatchMode matchMode) {
+<span class="nc bnc" id="L25" title="All 2 branches missed.">        if (matchMode == null) {</span>
+<span class="nc" id="L26">            this.matchMode = MatchMode.ANYWHERE;</span>
+        }
+        else  {
+<span class="nc" id="L29">            this.matchMode = matchMode;</span>
+        }
+<span class="nc" id="L31">    }</span>
+
+<span class="nc" id="L33">    public ProviderAjaxAutoCompleteWidget(MatchMode matchMode, List&lt;String&gt; providerRoles) {</span>
+<span class="nc" id="L34">        setMatchMode(matchMode);</span>
+<span class="nc" id="L35">        this.providerRoles = providerRoles;</span>
+<span class="nc" id="L36">    }</span>
+
+    @Override
+    public void setInitialValue(Object initialValue) {
+<span class="nc" id="L40">         this.initialValue = (Provider)initialValue;</span>
+<span class="nc" id="L41">    }</span>
+
+    @Override
+    public String generateHtml(FormEntryContext context) {
+
+<span class="nc" id="L46">        StringBuilder sb = new StringBuilder();</span>
+<span class="nc bnc" id="L47" title="All 2 branches missed.">        if (context.getMode().equals(FormEntryContext.Mode.VIEW)) {</span>
+<span class="nc" id="L48">            String toPrint = &quot;&quot;;</span>
+<span class="nc bnc" id="L49" title="All 2 branches missed.">            if (initialValue != null) {</span>
+<span class="nc" id="L50">                toPrint = initialValue.getName();</span>
+<span class="nc" id="L51">                return WidgetFactory.displayValue(toPrint);</span>
+            }
+            else {
+<span class="nc" id="L54">                return WidgetFactory.displayEmptyValue(&quot;___________&quot;);</span>
+            }
+        }
+        else {
+<span class="nc" id="L58">            String placeholder = Context.getMessageSourceService().getMessage(&quot;htmlformentry.providerPlaceHolder&quot;);</span>
+<span class="nc" id="L59">            sb.append(&quot;&lt;input type=\&quot;text\&quot;  id=\&quot;&quot;</span>
+<span class="nc" id="L60">                    + context.getFieldName(this) + &quot;\&quot;&quot; + &quot; name=\&quot;&quot;</span>
+<span class="nc" id="L61">                    + context.getFieldName(this) + &quot;\&quot; &quot;</span>
+                    + &quot; onfocus=\&quot;setupProviderAutocomplete(this);\&quot;&quot;
+                    + &quot; class=\&quot;autoCompleteText\&quot;&quot;
+                    + &quot; onchange=\&quot;setValWhenAutocompleteFieldBlanked(this)\&quot;&quot;
+                    + &quot; onblur=\&quot;onBlurAutocomplete(this)\&quot;&quot;
+                    + &quot; placeholder = \&quot;&quot; + placeholder + &quot;\&quot;&quot;);
+
+<span class="nc bnc" id="L68" title="All 2 branches missed.">            if (initialValue != null) {</span>
+<span class="nc" id="L69">                sb.append(&quot; value=\&quot;&quot; + (new ProviderStub(initialValue).getDisplayValue()) + &quot;\&quot;&quot;);</span>
+            }
+<span class="nc" id="L71">            sb.append(&quot;/&gt;\n&quot;);</span>
+
+            //Add hidden field for provider match mode
+<span class="nc" id="L74">            sb.append(&quot;&lt;input type='hidden' id='&quot;).append(context.getFieldName(this)+&quot;_matchMode_hid'&quot;);</span>
+<span class="nc" id="L75">            sb.append(&quot; value='&quot;).append(matchMode).append(&quot;' /&gt;\n&quot;);</span>
+
+            //Add hidden field for provider roles
+<span class="nc" id="L78">            String csvRoles = StringUtils.collectionToCommaDelimitedString(providerRoles);</span>
+<span class="nc" id="L79">            String escapedCsvRoles = StringEscapeUtils.escapeJavaScript(csvRoles);</span>
+<span class="nc" id="L80">            sb.append(&quot;&lt;input type='hidden' id='&quot;).append(context.getFieldName(this)+&quot;_providerRoles_hid'&quot;);</span>
+<span class="nc" id="L81">            sb.append(&quot; value='&quot;).append(escapedCsvRoles).append(&quot;' /&gt;\n&quot;);</span>
+
+<span class="nc" id="L83">            sb.append(&quot;&lt;input name=\&quot;&quot; + context.getFieldName(this) + &quot;_hid&quot; + &quot;\&quot; id=\&quot;&quot;);</span>
+<span class="nc" id="L84">            sb.append(context.getFieldName(this) + &quot;_hid&quot; + &quot;\&quot;&quot;);</span>
+<span class="nc" id="L85">            sb.append(&quot; type=\&quot;hidden\&quot; class=\&quot;autoCompleteHidden\&quot; &quot;);</span>
+<span class="nc bnc" id="L86" title="All 2 branches missed.">            if (initialValue != null) {</span>
+<span class="nc" id="L87">                sb.append(&quot; value=\&quot;&quot; + initialValue.getProviderId() + &quot;\&quot;&quot;);</span>
+            }
+<span class="nc" id="L89">            sb.append(&quot;/&gt; \n&quot;);</span>
+        }
+
+<span class="nc" id="L92">        return sb.toString();</span>
+    }
+
+    @Override
+    public Object getValue(FormEntryContext context, HttpServletRequest request) {
+<span class="nc" id="L97">        String value = request.getParameter(context.getFieldName(this)+&quot;_hid&quot;);</span>
+<span class="nc" id="L98">        Provider provider = null;</span>
+<span class="nc bnc" id="L99" title="All 2 branches missed.">        if(StringUtils.hasText(value)) {</span>
+<span class="nc" id="L100">            provider = Context.getProviderService().getProvider(Integer.valueOf(value));</span>
+        }
+<span class="nc" id="L102">        return provider;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.8.202204050719</span></div></body></html>

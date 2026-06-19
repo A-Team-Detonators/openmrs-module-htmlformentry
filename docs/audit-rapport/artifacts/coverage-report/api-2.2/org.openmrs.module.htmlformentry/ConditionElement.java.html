@@ -1,0 +1,277 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ConditionElement.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">htmlformentry Module api 2.2</a> &gt; <a href="index.source.html" class="el_package">org.openmrs.module.htmlformentry</a> &gt; <span class="el_source">ConditionElement.java</span></div><h1>ConditionElement.java</h1><pre class="source lang-java linenums">package org.openmrs.module.htmlformentry;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Date;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+
+import javax.servlet.http.HttpServletRequest;
+
+import org.apache.commons.lang.StringUtils;
+import org.openmrs.CodedOrFreeText;
+import org.openmrs.Concept;
+import org.openmrs.ConceptClass;
+import org.openmrs.Condition;
+import org.openmrs.ConditionClinicalStatus;
+import org.openmrs.api.ConditionService;
+import org.openmrs.api.context.Context;
+import org.openmrs.messagesource.MessageSourceService;
+import org.openmrs.module.htmlformentry.FormEntryContext.Mode;
+import org.openmrs.module.htmlformentry.action.FormSubmissionControllerAction;
+import org.openmrs.module.htmlformentry.element.HtmlGeneratorElement;
+import org.openmrs.module.htmlformentry.widget.ConceptSearchAutocompleteWidget;
+import org.openmrs.module.htmlformentry.widget.DateWidget;
+import org.openmrs.module.htmlformentry.widget.ErrorWidget;
+import org.openmrs.module.htmlformentry.widget.Option;
+import org.openmrs.module.htmlformentry.widget.RadioButtonsWidget;
+import org.openmrs.module.htmlformentry.widget.Widget;
+
+<span class="nc" id="L32">public class ConditionElement implements HtmlGeneratorElement, FormSubmissionControllerAction {</span>
+
+	private MessageSourceService mss;
+	private ConditionService conditionService;
+	private boolean required;
+<span class="nc" id="L37">    private final String CONDITION_LIST_CONCEPT_CLASS_NAME = &quot;Diagnosis&quot;;</span>
+    
+	// widgets
+	private Widget conditionSearchWidget;
+	private DateWidget onSetDateWidget;
+	private DateWidget endDateWidget;
+	private RadioButtonsWidget conditionStatusesWidget;
+	private ErrorWidget endDateErrorWidget;
+	private ErrorWidget conditionSearchErrorWidget;
+	private ErrorWidget conditionStatusesErrorWidget;
+	
+	@Override
+	public void handleSubmission(FormEntrySession session, HttpServletRequest submission) {
+<span class="nc" id="L50">		FormEntryContext context = session.getContext();</span>
+<span class="nc bnc" id="L51" title="All 2 branches missed.">		if (context.getMode() != Mode.VIEW) {</span>
+<span class="nc" id="L52">			Condition condition = new Condition();</span>
+<span class="nc" id="L53">			CodedOrFreeText conditionConcept = new CodedOrFreeText();</span>
+			try {
+<span class="nc" id="L55">				int conceptId = Integer.parseInt((String) conditionSearchWidget.getValue(session.getContext(), submission));</span>
+<span class="nc" id="L56">				conditionConcept.setCoded(new Concept(conceptId));</span>
+				
+<span class="nc" id="L58">			} catch(NumberFormatException e) {</span>
+<span class="nc" id="L59">				String nonCodedConcept = submission.getParameter(context.getFieldName(conditionSearchWidget));</span>
+<span class="nc bnc" id="L60" title="All 4 branches missed.">				if (StringUtils.isBlank(nonCodedConcept) &amp;&amp; !required) {</span>
+					// ignore silently
+<span class="nc" id="L62">					return;</span>
+				}
+<span class="nc" id="L64">				conditionConcept.setNonCoded(nonCodedConcept);</span>
+<span class="nc" id="L65">			}</span>
+<span class="nc" id="L66">			condition.setCondition(conditionConcept);</span>
+<span class="nc" id="L67">			condition.setClinicalStatus(getStatus(context, submission));</span>
+<span class="nc" id="L68">			condition.setOnsetDate(onSetDateWidget.getValue(context, submission));</span>
+<span class="nc bnc" id="L69" title="All 2 branches missed.">			if (ConditionClinicalStatus.INACTIVE == getStatus(context, submission)) {</span>
+<span class="nc" id="L70">				condition.setEndDate(endDateWidget.getValue(context, submission));</span>
+			}
+<span class="nc" id="L72">			condition.setPatient(session.getPatient());</span>
+<span class="nc" id="L73">			conditionService = Context.getConditionService();</span>
+<span class="nc" id="L74">			conditionService.saveCondition(condition);</span>
+		}
+<span class="nc" id="L76">	}</span>
+
+	@Override
+	public Collection&lt;FormSubmissionError&gt; validateSubmission(FormEntryContext context, HttpServletRequest submission) {		
+<span class="nc" id="L80">		List&lt;FormSubmissionError&gt; ret = new ArrayList&lt;FormSubmissionError&gt;();</span>
+<span class="nc" id="L81">		Date givenOnsetDate = onSetDateWidget.getValue(context, submission);</span>
+<span class="nc" id="L82">		Date givenEndDate = endDateWidget.getValue(context, submission);</span>
+<span class="nc bnc" id="L83" title="All 2 branches missed.">		String condition = StringUtils.isNotBlank((String) conditionSearchWidget.getValue(context, submission)) ? </span>
+<span class="nc" id="L84">				(String) conditionSearchWidget.getValue(context, submission) : submission.getParameter(context.getFieldName(conditionSearchWidget));</span>
+<span class="nc" id="L85">		ConditionClinicalStatus status = getStatus(context, submission);</span>
+		
+<span class="nc bnc" id="L87" title="All 2 branches missed.">		if (context.getMode() != Mode.VIEW) {</span>
+<span class="nc bnc" id="L88" title="All 4 branches missed.">			if (StringUtils.isBlank(condition) &amp;&amp; required) {</span>
+<span class="nc" id="L89">				ret.add(new FormSubmissionError(context.getFieldName(conditionSearchWidget), </span>
+<span class="nc" id="L90">		                    Context.getMessageSourceService().getMessage(&quot;htmlformentry.conditionui.condition.required&quot;)));</span>
+			}	
+<span class="nc bnc" id="L92" title="All 4 branches missed.">			if (givenOnsetDate != null &amp;&amp; givenEndDate != null) {</span>
+<span class="nc bnc" id="L93" title="All 2 branches missed.">				if (givenOnsetDate.after(givenEndDate)) {</span>
+<span class="nc" id="L94">					ret.add(new FormSubmissionError(context.getFieldName(endDateWidget), </span>
+<span class="nc" id="L95">							Context.getMessageSourceService().getMessage(&quot;htmlformentry.conditionui.endDate.before.onsetDate.error&quot;)));</span>
+				}
+			} 
+<span class="nc bnc" id="L98" title="All 4 branches missed.">			if (status == null &amp;&amp; required) {</span>
+<span class="nc" id="L99">				ret.add(new FormSubmissionError(context.getFieldName(conditionStatusesWidget), </span>
+<span class="nc" id="L100">						Context.getMessageSourceService().getMessage(&quot;htmlformentry.conditionui.status.required&quot;)));</span>
+			}
+		}
+<span class="nc" id="L103">		return ret;</span>
+	}
+
+	@Override
+	public String generateHtml(FormEntryContext context) {
+<span class="nc" id="L108">		StringBuilder ret = new StringBuilder();</span>
+<span class="nc" id="L109">		ret.append(&quot;&lt;div id=\&quot;htmlformentry-condition\&quot;&gt;&quot;);</span>
+<span class="nc" id="L110">		ret.append(htmlForConditionSearchWidget(context));</span>
+<span class="nc" id="L111">		ret.append(htmlForConditionStatusesWidgets(context));		</span>
+<span class="nc" id="L112">		ret.append(htmlForConditionDatesWidget(context));</span>
+<span class="nc" id="L113">		ret.append(&quot;&lt;/div&gt;&quot;);</span>
+<span class="nc" id="L114">		return ret.toString();</span>
+	}
+		
+	private String htmlForConditionSearchWidget(FormEntryContext context) {
+<span class="nc" id="L118">		Set&lt;Concept&gt; initialConcepts = new HashSet&lt;Concept&gt;();</span>
+<span class="nc bnc" id="L119" title="All 2 branches missed.">		if (mss == null) {</span>
+<span class="nc" id="L120">			mss = Context.getMessageSourceService();		</span>
+		}
+<span class="nc" id="L122">		ConceptClass conceptClass = Context.getConceptService().getConceptClassByName(CONDITION_LIST_CONCEPT_CLASS_NAME);</span>
+<span class="nc" id="L123">		initialConcepts.addAll(Context.getConceptService().getConceptsByClass(conceptClass));</span>
+<span class="nc" id="L124">		conditionSearchWidget = new ConceptSearchAutocompleteWidget(new ArrayList&lt;Concept&gt;(initialConcepts), Arrays.asList(conceptClass));</span>
+<span class="nc" id="L125">		String conditionNameTextInputId = context.registerWidget(conditionSearchWidget);</span>
+<span class="nc" id="L126">		conditionSearchErrorWidget = new ErrorWidget();</span>
+<span class="nc" id="L127">		context.registerErrorWidget(conditionSearchWidget, conditionSearchErrorWidget);</span>
+		
+<span class="nc" id="L129">		StringBuilder ret = new StringBuilder();</span>
+<span class="nc" id="L130">		ret.append(conditionSearchWidget.generateHtml(context));</span>
+<span class="nc bnc" id="L131" title="All 2 branches missed.">		if (context.getMode() != Mode.VIEW) {</span>
+<span class="nc" id="L132">			ret.append(conditionSearchErrorWidget.generateHtml(context));</span>
+		}
+<span class="nc" id="L134">		ret.append(&quot;\n&lt;script&gt;jq('#&quot; + conditionNameTextInputId + &quot;').attr('placeholder',&quot;);</span>
+<span class="nc" id="L135">		ret.append(&quot; '&quot; + mss.getMessage(&quot;coreapps.conditionui.condition&quot;) + &quot;');\n&quot;);</span>
+<span class="nc" id="L136">		ret.append(&quot; jq('#&quot; + conditionNameTextInputId + &quot;').css('min-width', '46.4%');\n&quot;);</span>
+
+		// Add support for non-coded concept values.
+		// This a hack to let the autocomplete widget accept values that aren't part of the concept list.
+<span class="nc" id="L140">		ret.append(&quot;jq('#&quot; + conditionNameTextInputId + &quot;').blur(function(e){\n&quot;);</span>
+<span class="nc" id="L141">		ret.append(&quot;     var valueAttr = jq('#&quot; + conditionNameTextInputId + &quot;_hid&quot; + &quot;').attr('value');\n&quot;);</span>
+<span class="nc" id="L142">		ret.append(&quot;     if(valueAttr === \&quot;ERROR\&quot;){\n&quot;);</span>
+<span class="nc" id="L143">		ret.append(&quot;        jq('#&quot; + conditionNameTextInputId + &quot;_hid&quot; + &quot;').attr('value', '');\n&quot;);</span>
+<span class="nc" id="L144">		ret.append(&quot;     }\n&quot;);</span>
+<span class="nc" id="L145">		ret.append(&quot;});\n&quot;);				</span>
+<span class="nc" id="L146">		ret.append(&quot;&lt;/script&gt;\n&quot;);</span>
+<span class="nc" id="L147">		return ret.toString();</span>
+	}
+	
+	private String htmlForConditionStatusesWidgets(FormEntryContext context) {
+<span class="nc bnc" id="L151" title="All 2 branches missed.">		if (mss == null) {</span>
+<span class="nc" id="L152">			mss = Context.getMessageSourceService();		</span>
+		}
+<span class="nc" id="L154">		Option active = new Option(mss.getMessage(&quot;coreapps.conditionui.active.label&quot;), &quot;active&quot;, false);</span>
+<span class="nc" id="L155">		Option inactive = new Option(mss.getMessage(&quot;coreapps.conditionui.inactive.label&quot;), &quot;inactive&quot;, false);</span>
+<span class="nc" id="L156">		Option historyOf = new Option(mss.getMessage(&quot;htmlformentry.conditionui.historyOf.label&quot;), &quot;history-of&quot;, false);</span>
+<span class="nc" id="L157">		conditionStatusesWidget = new RadioButtonsWidget();</span>
+<span class="nc" id="L158">		conditionStatusesErrorWidget = new ErrorWidget();</span>
+<span class="nc" id="L159">		conditionStatusesWidget.addOption(active);</span>
+<span class="nc" id="L160">		conditionStatusesWidget.addOption(inactive);</span>
+<span class="nc" id="L161">		conditionStatusesWidget.addOption(historyOf);</span>
+<span class="nc" id="L162">		String radioGroupName = context.registerWidget(conditionStatusesWidget);</span>
+<span class="nc" id="L163">		context.registerErrorWidget(conditionStatusesWidget, conditionStatusesErrorWidget);</span>
+
+<span class="nc" id="L165">		StringBuilder sb = new StringBuilder();</span>
+<span class="nc" id="L166">		sb.append(&quot;&lt;div id=\&quot;condition-status\&quot;&gt;&quot;);</span>
+<span class="nc" id="L167">		sb.append(conditionStatusesErrorWidget.generateHtml(context));</span>
+<span class="nc" id="L168">		sb.append(conditionStatusesWidget.generateHtml(context));</span>
+<span class="nc" id="L169">		sb.append(&quot;&lt;script&gt;&quot;);		</span>
+<span class="nc" id="L170">		sb.append(&quot;jq(\&quot;input[name='&quot; + radioGroupName + &quot;']\&quot;).change(function(e){\n&quot; +</span>
+				&quot;    if($(this).val() == 'active') {\n&quot; + 
+				&quot;		document.getElementById('endDatePicker').style.visibility=\&quot;hidden\&quot;; \n&quot; +
+				&quot;    } else {\n&quot; + 
+				&quot;		document.getElementById('endDatePicker').style.visibility=\&quot;visible\&quot;;\n&quot; +
+				&quot;    }\n&quot; + 
+				&quot;\n&quot; + 
+				&quot;});&quot;);
+<span class="nc" id="L178">		sb.append(&quot;&lt;/script&gt;&quot;);</span>
+<span class="nc" id="L179">		sb.append(&quot;&lt;style&gt;&quot;);</span>
+<span class="nc" id="L180">		sb.append(&quot;#condition-status input {\n&quot; + </span>
+				&quot;    display: inline;\n&quot; + 
+				&quot;    float: none;\n&quot; + 
+				&quot;}\n&quot; + 
+				&quot;#condition-status label {\n&quot; + 
+				&quot;    display: inline;\n&quot; + 
+				&quot;}&quot;);
+<span class="nc" id="L187">		sb.append(&quot;#condition-status {\n&quot; +</span>
+				 &quot;   padding:10px 0px;\n&quot; +
+				 &quot; }&quot;);
+<span class="nc" id="L190">		sb.append(&quot;&lt;/style&gt;&quot;);</span>
+<span class="nc" id="L191">		sb.append(&quot;&lt;/div&gt;&quot;);</span>
+<span class="nc" id="L192">		return sb.toString();	</span>
+	}
+	
+	private String htmlForConditionDatesWidget(FormEntryContext context) {
+<span class="nc" id="L196">		onSetDateWidget = new DateWidget();</span>
+<span class="nc bnc" id="L197" title="All 2 branches missed.">		if (mss == null) {</span>
+<span class="nc" id="L198">			mss = Context.getMessageSourceService();		</span>
+		}
+<span class="nc" id="L200">		String onsetDateTextInputId = context.registerWidget(onSetDateWidget) + &quot;-display&quot;;</span>
+<span class="nc" id="L201">		endDateWidget = new DateWidget();</span>
+<span class="nc" id="L202">		endDateErrorWidget = new ErrorWidget();</span>
+<span class="nc" id="L203">		String endDateTextInputId = context.registerWidget(endDateWidget) + &quot;-display&quot;;</span>
+<span class="nc" id="L204">		context.registerErrorWidget(endDateWidget, endDateErrorWidget);</span>
+		
+<span class="nc" id="L206">		StringBuilder ret = new StringBuilder();</span>
+<span class="nc" id="L207">		ret.append(&quot;&lt;ul&gt;&quot;);</span>
+<span class="nc" id="L208">		ret.append(&quot;&lt;li&gt;&quot;);</span>
+<span class="nc" id="L209">		ret.append(onSetDateWidget.generateHtml(context));</span>
+<span class="nc" id="L210">		ret.append(&quot;&lt;/li&gt; &lt;li&gt;&quot;);</span>
+<span class="nc" id="L211">		ret.append(&quot;&lt;span id=\&quot;endDatePicker\&quot;&gt;&quot;);</span>
+<span class="nc" id="L212">		ret.append(endDateWidget.generateHtml(context));</span>
+<span class="nc" id="L213">		ret.append(&quot;&lt;/span&gt;&quot;);</span>
+<span class="nc" id="L214">		ret.append(&quot;&lt;/li&gt;&quot;);</span>
+<span class="nc bnc" id="L215" title="All 2 branches missed.">		if (context.getMode() != Mode.VIEW) {</span>
+<span class="nc" id="L216">			ret.append(endDateErrorWidget.generateHtml(context));</span>
+		}
+<span class="nc" id="L218">		ret.append(&quot;&lt;/ul&gt; &lt;br/&gt;&quot;);</span>
+<span class="nc" id="L219">		ret.append(&quot;&lt;script&gt; jq('#&quot; + onsetDateTextInputId + &quot;').attr('placeholder',&quot;);</span>
+<span class="nc" id="L220">		ret.append(&quot; '&quot; + mss.getMessage(&quot;coreapps.conditionui.onsetdate&quot;) + &quot;');&quot;);</span>
+<span class="nc" id="L221">		ret.append(&quot;jq('#&quot; + endDateTextInputId + &quot;').attr('placeholder',&quot;);</span>
+<span class="nc" id="L222">		ret.append(&quot; '&quot; + mss.getMessage(&quot;coreapps.stopDate.label&quot;) + &quot;');&quot;);</span>
+<span class="nc" id="L223">		ret.append(&quot;&lt;/script&gt;&quot;);</span>
+<span class="nc" id="L224">		ret.append(&quot;&lt;style&gt;&quot;);</span>
+<span class="nc" id="L225">		ret.append(&quot;#htmlformentry-condition li {\n&quot; + </span>
+				&quot;	width:30%;\n&quot; + 
+				&quot;   float: left;\n&quot; + 
+				&quot;}&quot;);
+<span class="nc" id="L229">		ret.append(&quot;#htmlformentry-condition ul {\n&quot; + </span>
+				&quot;	display:flow-root;\n&quot; + 
+				&quot;   width:85%&quot; +
+				&quot;}&quot;);
+<span class="nc" id="L233">		ret.append(&quot;&lt;/style&gt;&quot;);</span>
+<span class="nc" id="L234">		return ret.toString();</span>
+	}
+
+	private ConditionClinicalStatus getStatus(FormEntryContext context, HttpServletRequest request) {
+<span class="nc bnc" id="L238" title="All 2 branches missed.">		if (conditionStatusesWidget == null) {</span>
+<span class="nc" id="L239">			return null;</span>
+		}
+<span class="nc" id="L241">		Object status = conditionStatusesWidget.getValue(context, request);</span>
+<span class="nc bnc" id="L242" title="All 2 branches missed.">		if (status != null) {			</span>
+<span class="nc bnc" id="L243" title="All 2 branches missed.">			if (((String)status).equals(&quot;active&quot;)) {</span>
+<span class="nc" id="L244">				return ConditionClinicalStatus.ACTIVE;</span>
+			}
+<span class="nc bnc" id="L246" title="All 2 branches missed.">			if (((String)status).equals(&quot;inactive&quot;)) {</span>
+<span class="nc" id="L247">				return ConditionClinicalStatus.INACTIVE;</span>
+			}
+<span class="nc bnc" id="L249" title="All 2 branches missed.">			if (((String)status).equals(&quot;history-of&quot;)) {</span>
+<span class="nc" id="L250">				return ConditionClinicalStatus.HISTORY_OF;</span>
+			}
+		}
+<span class="nc" id="L253">		return null;</span>
+	}
+
+	public void setConditionSearchWidget(Widget conditionSearchWidget) {
+<span class="nc" id="L257">		this.conditionSearchWidget = conditionSearchWidget;</span>
+<span class="nc" id="L258">	}</span>
+
+	public void setOnSetDateWidget(DateWidget onSetDateWidget) {
+<span class="nc" id="L261">		this.onSetDateWidget = onSetDateWidget;</span>
+<span class="nc" id="L262">	}</span>
+
+	public void setEndDateWidget(DateWidget endDateWidget) {
+<span class="nc" id="L265">		this.endDateWidget = endDateWidget;</span>
+<span class="nc" id="L266">	}</span>
+
+	public void setConditionStatusesWidget(RadioButtonsWidget conditionStatusesWidget) {
+<span class="nc" id="L269">		this.conditionStatusesWidget = conditionStatusesWidget;</span>
+<span class="nc" id="L270">	}</span>
+
+	public void setRequired(boolean required) {
+<span class="nc" id="L273">		this.required = required;</span>
+<span class="nc" id="L274">	}</span>
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.8.202204050719</span></div></body></html>

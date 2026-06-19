@@ -1,0 +1,260 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ObsReferenceSubmissionElement.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">HTML Form Entry API</a> &gt; <a href="index.source.html" class="el_package">org.openmrs.module.htmlformentry.element</a> &gt; <span class="el_source">ObsReferenceSubmissionElement.java</span></div><h1>ObsReferenceSubmissionElement.java</h1><pre class="source lang-java linenums">package org.openmrs.module.htmlformentry.element;
+
+import org.apache.commons.lang.StringUtils;
+import org.joda.time.DateTime;
+import org.openmrs.Concept;
+import org.openmrs.Obs;
+import org.openmrs.Person;
+import org.openmrs.api.context.Context;
+import org.openmrs.module.htmlformentry.FormEntryContext;
+import org.openmrs.module.htmlformentry.HtmlFormEntryConstants;
+import org.openmrs.module.htmlformentry.HtmlFormEntryUtil;
+import org.openmrs.module.htmlformentry.schema.ObsField;
+import org.openmrs.module.htmlformentry.widget.CheckboxWidget;
+import org.openmrs.module.htmlformentry.widget.DateWidget;
+import org.openmrs.module.htmlformentry.widget.DropdownWidget;
+import org.openmrs.module.htmlformentry.widget.NumberFieldWidget;
+import org.openmrs.module.htmlformentry.widget.RadioButtonsWidget;
+import org.openmrs.module.htmlformentry.widget.SingleOptionWidget;
+import org.openmrs.module.htmlformentry.widget.TextFieldWidget;
+import org.openmrs.module.htmlformentry.widget.Widget;
+
+import java.text.SimpleDateFormat;
+import java.util.Collections;
+import java.util.Date;
+import java.util.List;
+import java.util.Map;
+
+public class ObsReferenceSubmissionElement extends ObsSubmissionElement {
+
+<span class="nc" id="L30">    private Widget referenceDisplayWidget = null;</span>
+
+<span class="nc" id="L32">    private Boolean allowOverride = false;</span>
+
+<span class="nc" id="L34">    private Obs referenceObs = null;</span>
+
+<span class="nc" id="L36">    private String overrideLabel = &quot;Override&quot;;</span>
+
+<span class="nc" id="L38">    private String tooltipTemplate = &quot;({{encounterType}} on {{encounterDate}})&quot;;</span>
+
+    public ObsReferenceSubmissionElement(FormEntryContext context, Map&lt;String, String&gt; parameters) {
+
+<span class="nc" id="L42">        super(context, parameters);</span>
+
+<span class="nc bnc" id="L44" title="All 2 branches missed.">        Date encounterDate = context.getExistingEncounter() != null ? context.getExistingEncounter().getEncounterDatetime() : context.getDefaultEncounterDate();</span>
+
+<span class="nc bnc" id="L46" title="All 2 branches missed.">        if (StringUtils.isNotEmpty(parameters.get(&quot;tooltipTemplate&quot;))) {</span>
+<span class="nc" id="L47">            tooltipTemplate = parameters.get(&quot;tooltipTemplate&quot;);</span>
+        }
+
+<span class="nc bnc" id="L50" title="All 2 branches missed.">        if (StringUtils.isNotEmpty(parameters.get(&quot;allowOverride&quot;))) {</span>
+<span class="nc" id="L51">            allowOverride = Boolean.parseBoolean(parameters.get(&quot;allowOverride&quot;));</span>
+        }
+
+<span class="nc bnc" id="L54" title="All 2 branches missed.">        if (StringUtils.isNotEmpty(parameters.get(&quot;overrideLabel&quot;))) {</span>
+<span class="nc" id="L55">            overrideLabel = parameters.get(&quot;overrideLabel&quot;);</span>
+        }
+
+<span class="nc" id="L58">        String conceptId = parameters.get(&quot;conceptId&quot;);</span>
+<span class="nc" id="L59">        Concept concept = null;</span>
+
+        // TODO handle error cases
+<span class="nc bnc" id="L62" title="All 2 branches missed.">        if (StringUtils.isNotBlank(conceptId)) {</span>
+<span class="nc" id="L63">            concept = HtmlFormEntryUtil.getConcept(conceptId);</span>
+        }
+
+        // TODO handle error cases
+<span class="nc bnc" id="L67" title="All 4 branches missed.">        if (concept != null &amp;&amp; encounterDate != null) {</span>
+
+            // note that this may match obs from the existing encounter, but we don't worry about that, because if there's an existing match, we won't be using this functionality (because getInitialValue(valueWidget) should be null)
+            // also note that if an answer concept is present (ie it's a checkbox) we match on that as well
+            // note that we are passing in the value of &quot;1&quot; for
+<span class="nc" id="L72">            List&lt;Obs&gt; obsList = Context.getObsService().getObservations(</span>
+<span class="nc" id="L73">                    Collections.singletonList((Person) context.getExistingPatient()),</span>
+<span class="nc" id="L74">                    null, Collections.singletonList(concept),</span>
+<span class="nc bnc" id="L75" title="All 2 branches missed.">                    getAnswerConcept() != null ? Collections.singletonList(getAnswerConcept()): null, null, null, null, 1, null,</span>
+<span class="nc" id="L76">                    new DateTime(encounterDate).withTime(0, 0, 0, 0).toDate(),</span>
+<span class="nc" id="L77">                    new DateTime(encounterDate).withTime(23,59,59,999).toDate(),</span>
+                    false);
+
+<span class="nc bnc" id="L80" title="All 2 branches missed.">            if (!obsList.isEmpty()) {</span>
+                // we are restricting to a single answer, so we will only get one
+                // also note that by default it sorts by obsDatetime descending so it should return the most recent
+<span class="nc" id="L83">                referenceObs = obsList.get(0);</span>
+            }
+        }
+<span class="nc" id="L86">    }</span>
+
+    @Override
+    protected ObsField instatiateObsField() {
+<span class="nc" id="L90">        ObsField field = super.instatiateObsField();</span>
+<span class="nc" id="L91">        field.setObsReference(true);</span>
+<span class="nc" id="L92">        return field;</span>
+    }
+
+    @Override
+    public String generateHtml(FormEntryContext context) {
+
+        // break these out in separate methods for VIEW and ENTER/EDIT for clarify
+<span class="nc bnc" id="L99" title="All 2 branches missed.">        if (context.getMode().equals(FormEntryContext.Mode.VIEW)) {</span>
+<span class="nc" id="L100">            return generateHtmlViewMode(context);</span>
+        }
+<span class="nc bnc" id="L102" title="All 4 branches missed.">        else if (context.getMode().equals(FormEntryContext.Mode.ENTER) || (context.getMode().equals(FormEntryContext.Mode.EDIT))) {</span>
+<span class="nc" id="L103">            return  generateHtmlEnterAndEditMode(context);</span>
+        }
+        else {
+            // should never get here, but just in case a mode besides VIEW, ENTER, and EDIT is added in the future
+<span class="nc" id="L107">            return super.generateHtml(context);</span>
+        }
+    }
+
+    private String generateHtmlViewMode(FormEntryContext context) {
+
+        // if we have a reference value but no existing obs, set the value widget to the value of the existing obs
+<span class="nc bnc" id="L114" title="All 4 branches missed.">        if (getInitialValue(valueWidget) == null &amp;&amp; referenceObs != null) {</span>
+
+            // in view mode we just set the initial value of the actual widget to the value
+<span class="nc bnc" id="L117" title="All 2 branches missed.">            if (context.getMode().equals(FormEntryContext.Mode.VIEW)) {</span>
+<span class="nc bnc" id="L118" title="All 2 branches missed.">                if (this.valueWidget instanceof NumberFieldWidget) {</span>
+<span class="nc" id="L119">                    this.valueWidget.setInitialValue(referenceObs.getValueNumeric());</span>
+                }
+
+<span class="nc bnc" id="L122" title="All 2 branches missed.">                if (this.valueWidget instanceof SingleOptionWidget) {</span>
+<span class="nc" id="L123">                    this.valueWidget.setInitialValue(referenceObs.getValueCoded());</span>
+                }
+
+<span class="nc bnc" id="L126" title="All 2 branches missed.">                if (this.valueWidget instanceof TextFieldWidget) {</span>
+<span class="nc" id="L127">                    this.valueWidget.setInitialValue(referenceObs.getValueText());</span>
+                }
+
+<span class="nc bnc" id="L130" title="All 2 branches missed.">                if (this.valueWidget instanceof DateWidget) {</span>
+<span class="nc" id="L131">                    this.valueWidget.setInitialValue(referenceObs.getValueDatetime());</span>
+                }
+
+<span class="nc bnc" id="L134" title="All 2 branches missed.">                if (this.valueWidget instanceof CheckboxWidget) {</span>
+<span class="nc" id="L135">                    this.valueWidget.setInitialValue(referenceObs.getValueCoded());</span>
+                }
+            }
+        }
+
+        // have ObsSubmissionElement generate it's HTML
+<span class="nc" id="L141">        return super.generateHtml(context);</span>
+    }
+
+    private String generateHtmlEnterAndEditMode(FormEntryContext context) {
+
+        // have ObsSubmissionElement generate it's HTML
+<span class="nc" id="L147">        String html = super.generateHtml(context);</span>
+
+        // we are only modifying if there's no value for the obs and there is a reference value
+<span class="nc bnc" id="L150" title="All 4 branches missed.">        if (getInitialValue(valueWidget) == null &amp;&amp; referenceObs != null) {</span>
+
+<span class="nc" id="L152">            String fieldName = context.getFieldName(this.valueWidget);</span>
+
+<span class="nc" id="L154">            String viewWidgetHtml = &quot;&quot;;</span>
+<span class="nc" id="L155">            String tooltip = &quot;&quot;;</span>
+<span class="nc" id="L156">            String editWidgetHtml = &quot;&quot;;</span>
+<span class="nc" id="L157">            String overrideButtonHtml = &quot;&quot;;</span>
+<span class="nc" id="L158">            String units = &quot;&quot;;</span>
+
+            // create a new reference widget to display the reference value
+<span class="nc bnc" id="L161" title="All 2 branches missed.">            if (this.valueWidget instanceof NumberFieldWidget) {</span>
+<span class="nc" id="L162">                this.referenceDisplayWidget = ((NumberFieldWidget) this.valueWidget).clone();</span>
+<span class="nc" id="L163">                this.referenceDisplayWidget.setInitialValue(referenceObs.getValueNumeric());</span>
+<span class="nc bnc" id="L164" title="All 2 branches missed.">            } else if (this.valueWidget instanceof DropdownWidget) {</span>
+<span class="nc" id="L165">                this.referenceDisplayWidget = ((DropdownWidget) this.valueWidget).clone();</span>
+<span class="nc" id="L166">                this.referenceDisplayWidget.setInitialValue(referenceObs.getValueCoded());</span>
+<span class="nc bnc" id="L167" title="All 2 branches missed.">            } else if (this.valueWidget instanceof RadioButtonsWidget) {</span>
+<span class="nc" id="L168">                this.referenceDisplayWidget = ((RadioButtonsWidget) this.valueWidget).clone();</span>
+<span class="nc" id="L169">                this.referenceDisplayWidget.setInitialValue(referenceObs.getValueCoded());</span>
+<span class="nc bnc" id="L170" title="All 2 branches missed.">            } else if (this.valueWidget instanceof TextFieldWidget) {</span>
+<span class="nc" id="L171">                this.referenceDisplayWidget = ((TextFieldWidget) this.valueWidget).clone();</span>
+<span class="nc" id="L172">                this.referenceDisplayWidget.setInitialValue(referenceObs.getValueText());</span>
+<span class="nc bnc" id="L173" title="All 2 branches missed.">            } else if (this.valueWidget instanceof DateWidget) {</span>
+<span class="nc" id="L174">                this.referenceDisplayWidget = ((DateWidget) this.valueWidget).clone();</span>
+<span class="nc" id="L175">                this.referenceDisplayWidget.setInitialValue(referenceObs.getValueDatetime());</span>
+            }
+            // TODO does this work for boolean checkboxes?
+<span class="nc bnc" id="L178" title="All 2 branches missed.">            else if (this.valueWidget instanceof CheckboxWidget) {</span>
+<span class="nc" id="L179">                this.referenceDisplayWidget = ((CheckboxWidget) this.valueWidget).clone();</span>
+<span class="nc" id="L180">                this.referenceDisplayWidget.setInitialValue(referenceObs.getValueCoded());</span>
+            }
+
+<span class="nc bnc" id="L183" title="All 2 branches missed.">            if (showUnits) {</span>
+<span class="nc" id="L184">                units = this.getUnits(context);</span>
+            }
+
+            // generate the tool tip
+            // TODO show the tooltip in view mode as well?
+            // TODO this is pretty quick-and-dirty, and not fully localized; add better templating in the future?
+<span class="nc" id="L190">            String value = referenceObs.getValueAsString(Context.getLocale());</span>
+<span class="nc bnc" id="L191" title="All 2 branches missed.">            if (showUnits) {</span>
+<span class="nc" id="L192">                value = value + &quot; &quot; + units;</span>
+            }
+<span class="nc" id="L194">            tooltip = StringUtils.replace(tooltipTemplate, &quot;{{value}}&quot;, value);</span>
+<span class="nc bnc" id="L195" title="All 2 branches missed.">            if (referenceObs.getEncounter() != null) {</span>
+<span class="nc" id="L196">                tooltip = StringUtils.replace(tooltip, &quot;{{encounterType}}&quot;,</span>
+<span class="nc bnc" id="L197" title="All 2 branches missed.">                        referenceObs.getEncounter() != null ? referenceObs.getEncounter().getEncounterType().getName() : &quot;&quot;);</span>
+<span class="nc" id="L198">                tooltip = StringUtils.replace(tooltip, &quot;{{encounterDate}}&quot;,</span>
+<span class="nc bnc" id="L199" title="All 2 branches missed.">                        referenceObs.getEncounter() != null ? dateFormat().format(referenceObs.getEncounter().getEncounterDatetime()) : &quot;&quot;);</span>
+            }
+
+            // create a new viewWidget from the reference display widget
+<span class="nc" id="L203">            FormEntryContext mockViewContext = new FormEntryContext(FormEntryContext.Mode.VIEW); // bit of a hack, to force the widget to render in View mode</span>
+<span class="nc bnc" id="L204" title="All 2 branches missed.">            viewWidgetHtml = &quot;&lt;span id=\&quot;&quot; + fieldName + &quot;-reference-view\&quot; title=\&quot;&quot; + tooltip + &quot;\&quot;&gt;&quot;</span>
+<span class="nc" id="L205">                    + (referenceDisplayWidget != null ? referenceDisplayWidget.generateHtml(mockViewContext) : &quot;&quot;)</span>
+<span class="nc bnc" id="L206" title="All 2 branches missed.">                    + (StringUtils.isNotBlank(units) ? &quot;&lt;span class=\&quot;&quot; + unitsCssClass + &quot;\&quot;&gt;&quot; + units + &quot;&lt;/span&gt; &quot; : &quot;&quot;)</span>
+                    + &quot;&lt;/span&gt;&quot;;
+
+            // wrap the existing html generated by the ObsSubmissionElement in a span so we can show/hide it
+<span class="nc" id="L210">            editWidgetHtml = &quot;&lt;span id=\&quot;&quot; + fieldName + &quot;-reference-edit\&quot; style=\&quot;display:none\&quot;&gt;&quot; + html + &quot;&lt;/span&gt;&quot;;</span>
+
+            // unfortunately, impossible to &quot;override&quot; a Checkbox since it just creates a single obs if checked, and no obs if unchecked
+<span class="nc bnc" id="L213" title="All 2 branches missed.">            if (allowOverride) {</span>
+<span class="nc bnc" id="L214" title="All 2 branches missed.">                if (!(this.valueWidget instanceof CheckboxWidget)) {</span>
+<span class="nc" id="L215">                    overrideButtonHtml = &quot;&lt;button id=\&quot;&quot; + fieldName + &quot;-toggle-button\&quot; type=\&quot;button\&quot; onclick=\&quot;jQuery('#&quot; + fieldName + &quot;-reference-view').hide();jQuery('#&quot; + fieldName + &quot;-reference-edit').show();jQuery('#&quot; + fieldName + &quot;-toggle-button').hide();\&quot;&gt;&quot; + overrideLabel + &quot;&lt;/button&gt;&quot;;</span>
+                }
+            }
+
+<span class="nc" id="L219">            html = viewWidgetHtml + &quot; &quot;  + editWidgetHtml + &quot; &quot; + overrideButtonHtml;</span>
+        }
+
+<span class="nc" id="L222">        return html;</span>
+    }
+
+    // utility method since getInitialValue not on Widget interface
+    private Object getInitialValue(Widget widget) {
+<span class="nc bnc" id="L227" title="All 2 branches missed.">        if (widget instanceof NumberFieldWidget) {</span>
+<span class="nc" id="L228">            return ((NumberFieldWidget) this.valueWidget).getInitialValue();</span>
+        }
+
+<span class="nc bnc" id="L231" title="All 2 branches missed.">        if (widget instanceof SingleOptionWidget) {</span>
+<span class="nc" id="L232">            return ((SingleOptionWidget) this.valueWidget).getInitialValue();</span>
+        }
+
+<span class="nc bnc" id="L235" title="All 2 branches missed.">        if (widget instanceof TextFieldWidget) {</span>
+<span class="nc" id="L236">            return ((TextFieldWidget) this.valueWidget).getInitialValue();</span>
+        }
+
+<span class="nc bnc" id="L239" title="All 2 branches missed.">        if (widget instanceof DateWidget) {</span>
+<span class="nc" id="L240">            return ((DateWidget) this.valueWidget).getInitialValue();</span>
+        }
+
+<span class="nc bnc" id="L243" title="All 2 branches missed.">        if (widget instanceof CheckboxWidget) {</span>
+<span class="nc" id="L244">            return ((CheckboxWidget) this.valueWidget).getInitialValue();</span>
+        }
+
+        // TODO also handle DateTime and Time widgets
+<span class="nc" id="L248">        return null;</span>
+    }
+
+    private SimpleDateFormat dateFormat() {
+<span class="nc" id="L252">        String df = Context.getAdministrationService().getGlobalProperty(HtmlFormEntryConstants.GP_DATE_FORMAT);</span>
+<span class="nc bnc" id="L253" title="All 2 branches missed.">        if (StringUtils.isNotEmpty(df)) {</span>
+<span class="nc" id="L254">            return new SimpleDateFormat(df, Context.getLocale());</span>
+        } else {
+<span class="nc" id="L256">            return Context.getDateFormat();</span>
+        }
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.8.202204050719</span></div></body></html>

@@ -1,0 +1,4 @@
+-------------------------------------------------------------------------------
+Test set: org.openmrs.module.htmlformentry.VelocityFunctionsTest
+-------------------------------------------------------------------------------
+Tests run: 17, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 2.720 s -- in org.openmrs.module.htmlformentry.VelocityFunctionsTest
