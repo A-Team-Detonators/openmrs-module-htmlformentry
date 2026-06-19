@@ -1,0 +1,323 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>WorkflowStateSubmissionElement.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">HTML Form Entry API</a> &gt; <a href="index.source.html" class="el_package">org.openmrs.module.htmlformentry.element</a> &gt; <span class="el_source">WorkflowStateSubmissionElement.java</span></div><h1>WorkflowStateSubmissionElement.java</h1><pre class="source lang-java linenums">/**
+ * The contents of this file are subject to the OpenMRS Public License
+ * Version 1.0 (the &quot;License&quot;); you may not use this file except in
+ * compliance with the License. You may obtain a copy of the License at
+ * http://license.openmrs.org
+ *
+ * Software distributed under the License is distributed on an &quot;AS IS&quot;
+ * basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
+ * License for the specific language governing rights and limitations
+ * under the License.
+ *
+ * Copyright (C) OpenMRS, LLC.  All Rights Reserved.
+ */
+package org.openmrs.module.htmlformentry.element;
+
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Date;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+
+import javax.servlet.http.HttpServletRequest;
+
+import org.apache.commons.lang.StringUtils;
+import org.openmrs.Patient;
+import org.openmrs.PatientProgram;
+import org.openmrs.PatientState;
+import org.openmrs.ProgramWorkflow;
+import org.openmrs.ProgramWorkflowState;
+import org.openmrs.api.context.Context;
+import org.openmrs.module.htmlformentry.FormEntryContext;
+import org.openmrs.module.htmlformentry.FormEntryContext.Mode;
+import org.openmrs.module.htmlformentry.FormEntryException;
+import org.openmrs.module.htmlformentry.FormEntrySession;
+import org.openmrs.module.htmlformentry.FormSubmissionError;
+import org.openmrs.module.htmlformentry.HtmlFormEntryUtil;
+import org.openmrs.module.htmlformentry.action.FormSubmissionControllerAction;
+import org.openmrs.module.htmlformentry.tag.WorkflowStateTag;
+import org.openmrs.module.htmlformentry.widget.CheckboxWidget;
+import org.openmrs.module.htmlformentry.widget.DropdownWidget;
+import org.openmrs.module.htmlformentry.widget.HiddenFieldWidget;
+import org.openmrs.module.htmlformentry.widget.Option;
+import org.openmrs.module.htmlformentry.widget.RadioButtonsWidget;
+import org.openmrs.module.htmlformentry.widget.SingleOptionWidget;
+import org.openmrs.module.htmlformentry.widget.Widget;
+
+/**
+ *
+ */
+public class WorkflowStateSubmissionElement implements HtmlGeneratorElement, FormSubmissionControllerAction {
+	
+	private final WorkflowStateTag tagParams;
+	
+	private ProgramWorkflow workflow;
+	
+	private Map&lt;String, ProgramWorkflowState&gt; states;
+	
+	private PatientState activePatientState;
+	
+	private String label;
+	
+	private Widget widget;
+	
+	/**
+	 * @param context
+	 * @param parameters
+	 */
+<span class="nc" id="L71">	public WorkflowStateSubmissionElement(FormEntryContext context, Map&lt;String, String&gt; parameters) {</span>
+<span class="nc" id="L72">		tagParams = new WorkflowStateTag(parameters);</span>
+		
+<span class="nc" id="L74">		workflow = HtmlFormEntryUtil.getWorkflow(tagParams.getWorkflowId());</span>
+<span class="nc bnc" id="L75" title="All 2 branches missed.">		if (workflow == null) {</span>
+<span class="nc" id="L76">			throw new IllegalArgumentException(&quot;workflow does not exist: &quot; + tagParams.getWorkflowId());</span>
+		}
+		
+<span class="nc" id="L79">		states = new LinkedHashMap&lt;String, ProgramWorkflowState&gt;();</span>
+<span class="nc bnc" id="L80" title="All 2 branches missed.">		if (tagParams.getStateIds() != null) {</span>
+<span class="nc bnc" id="L81" title="All 2 branches missed.">			for (int i = 0; i &lt; tagParams.getStateIds().size(); i++) {</span>
+<span class="nc" id="L82">				String stateId = tagParams.getStateIds().get(i);</span>
+				
+<span class="nc" id="L84">				ProgramWorkflowState state = HtmlFormEntryUtil.getState(stateId, workflow);</span>
+				
+<span class="nc bnc" id="L86" title="All 2 branches missed.">				if (state == null) {</span>
+<span class="nc" id="L87">					throw new IllegalArgumentException(&quot;workflow with id &quot; + workflow.getId() + &quot; does not have state id &quot;</span>
+					        + stateId);
+				}
+				
+<span class="nc" id="L91">				String label = state.getConcept().getName().getName();</span>
+<span class="nc bnc" id="L92" title="All 2 branches missed.">				if (tagParams.getStateLabels() != null) {</span>
+<span class="nc" id="L93">					label = tagParams.getStateLabels().get(i);</span>
+				}
+<span class="nc" id="L95">				states.put(label, state);</span>
+			}
+		} else {
+<span class="nc bnc" id="L98" title="All 2 branches missed.">			for (ProgramWorkflowState state : workflow.getStates()) {</span>
+<span class="nc bnc" id="L99" title="All 2 branches missed.">				if (state.isRetired()) {</span>
+<span class="nc" id="L100">					continue;</span>
+				}
+				
+<span class="nc" id="L103">				String label = state.getConcept().getName().getName();</span>
+<span class="nc" id="L104">				states.put(label, state);</span>
+<span class="nc" id="L105">			}</span>
+		}
+		
+<span class="nc" id="L108">		Date encounterDatetime = new Date();</span>
+<span class="nc bnc" id="L109" title="All 2 branches missed.">		if (context.getExistingEncounter() != null) {</span>
+<span class="nc" id="L110">			encounterDatetime = context.getExistingEncounter().getEncounterDatetime();</span>
+		}
+		
+<span class="nc" id="L113">		ProgramWorkflowState currentState = null;</span>
+		
+<span class="nc" id="L115">		activePatientState = getActivePatientState(context.getExistingPatient(), encounterDatetime, workflow);</span>
+<span class="nc bnc" id="L116" title="All 2 branches missed.">		if (activePatientState != null) {</span>
+<span class="nc" id="L117">			currentState = activePatientState.getState();</span>
+		}
+		
+<span class="nc bnc" id="L120" title="All 2 branches missed.">		if (currentState == null) {</span>
+			// Remove other than initial states
+<span class="nc bnc" id="L122" title="All 2 branches missed.">			for (Iterator&lt;ProgramWorkflowState&gt; it = states.values().iterator(); it.hasNext();) {</span>
+<span class="nc" id="L123">				ProgramWorkflowState state = it.next();</span>
+<span class="nc bnc" id="L124" title="All 2 branches missed.">				if (Boolean.FALSE.equals(state.getInitial())) {</span>
+<span class="nc" id="L125">					it.remove();</span>
+				}
+<span class="nc" id="L127">			}</span>
+		}
+		
+<span class="nc bnc" id="L130" title="All 2 branches missed.">		if (tagParams.getLabelCode() != null) {</span>
+<span class="nc" id="L131">			label = context.getTranslator().translate(Context.getLocale().toString(), tagParams.getLabelCode());</span>
+		}
+		
+<span class="nc bnc" id="L134" title="All 4 branches missed.">		if (label == null &amp;&amp; tagParams.getLabelText() != null) {</span>
+<span class="nc" id="L135">			label = tagParams.getLabelText();</span>
+		}
+		
+<span class="nc bnc" id="L138" title="All 2 branches missed.">		if (tagParams.getType().equals(&quot;hidden&quot;)) {</span>
+<span class="nc" id="L139">			widget = new HiddenFieldWidget();</span>
+			// there is only one state
+<span class="nc" id="L141">			Entry&lt;String, ProgramWorkflowState&gt; state = states.entrySet().iterator().next();</span>
+<span class="nc" id="L142">			widget.setInitialValue(state.getValue().getUuid());</span>
+<span class="nc bnc" id="L143" title="All 2 branches missed.">		} else if (tagParams.getType().equals(&quot;checkbox&quot;)) {</span>
+			// there is only one state
+<span class="nc" id="L145">			Entry&lt;String, ProgramWorkflowState&gt; state = states.entrySet().iterator().next();</span>
+<span class="nc" id="L146">			widget = new CheckboxWidget(state.getKey(), state.getValue().getUuid());</span>
+<span class="nc" id="L147">		} else {</span>
+			SingleOptionWidget singleOption;
+<span class="nc bnc" id="L149" title="All 2 branches missed.">			if (tagParams.getType().equals(&quot;dropdown&quot;)) {</span>
+<span class="nc" id="L150">				singleOption = new DropdownWidget();</span>
+<span class="nc" id="L151">				singleOption.addOption(new Option(&quot;&quot;, &quot;&quot;, false));</span>
+			} else {
+<span class="nc" id="L153">				singleOption = new RadioButtonsWidget();</span>
+			}
+			
+<span class="nc bnc" id="L156" title="All 2 branches missed.">			for (Entry&lt;String, ProgramWorkflowState&gt; state : states.entrySet()) {</span>
+<span class="nc" id="L157">				boolean select = state.getValue().equals(currentState);</span>
+<span class="nc" id="L158">				singleOption.addOption(new Option(state.getKey(), state.getValue().getUuid(), select));</span>
+<span class="nc" id="L159">			}</span>
+			
+<span class="nc" id="L161">			widget = singleOption;</span>
+		}
+		
+<span class="nc bnc" id="L164" title="All 2 branches missed.">		if (currentState != null) {</span>
+<span class="nc bnc" id="L165" title="All 2 branches missed.">			if (widget instanceof CheckboxWidget) {</span>
+				// if this is a checkbox, we only want to set the initial value (ie, show the checkbox as checked) if the current state matches the state associated with the checkbox
+<span class="nc bnc" id="L167" title="All 2 branches missed.">				if (currentState.getUuid().equals(((CheckboxWidget) widget).getValue())) {</span>
+<span class="nc" id="L168">					widget.setInitialValue(currentState.getUuid());</span>
+				}
+			}
+			// &quot;initialValue&quot; has a different meaning for a hidden widget (it is set above)
+<span class="nc bnc" id="L172" title="All 2 branches missed.">			else if (!(widget instanceof HiddenFieldWidget)){</span>
+<span class="nc" id="L173">				widget.setInitialValue(currentState.getUuid());</span>
+			}
+		}
+		
+<span class="nc" id="L177">		context.registerWidget(widget);</span>
+<span class="nc" id="L178">	}</span>
+	
+	/**
+	 * @param context
+	 * @param encounterDatetime
+	 * @param workflow
+	 * @return
+	 */
+	private PatientState getActivePatientState(Patient patient, Date encounterDatetime, ProgramWorkflow workflow) {
+<span class="nc" id="L187">		PatientProgram patientProgram = HtmlFormEntryUtil.getPatientProgramByWorkflow(patient, workflow);</span>
+<span class="nc bnc" id="L188" title="All 2 branches missed.">		if (patientProgram != null) {</span>
+<span class="nc bnc" id="L189" title="All 2 branches missed.">			for (PatientState patientState : patientProgram.statesInWorkflow(workflow,false)) {</span>
+<span class="nc bnc" id="L190" title="All 2 branches missed.">				if (patientState.getActive(encounterDatetime)) {</span>
+<span class="nc" id="L191">					return patientState;</span>
+				}
+<span class="nc" id="L193">			}</span>
+		}
+<span class="nc" id="L195">		return null;</span>
+	}
+	
+	/**
+	 * @see org.openmrs.module.htmlformentry.action.FormSubmissionControllerAction#validateSubmission(org.openmrs.module.htmlformentry.FormEntryContext,
+	 *      javax.servlet.http.HttpServletRequest)
+	 */
+	@Override
+	public Collection&lt;FormSubmissionError&gt; validateSubmission(FormEntryContext context, HttpServletRequest submission) {
+<span class="nc" id="L204">		List&lt;FormSubmissionError&gt; errors = new ArrayList&lt;FormSubmissionError&gt;();</span>
+<span class="nc" id="L205">		return errors;</span>
+	}
+	
+	/**
+	 * @see org.openmrs.module.htmlformentry.action.FormSubmissionControllerAction#handleSubmission(org.openmrs.module.htmlformentry.FormEntrySession,
+	 *      javax.servlet.http.HttpServletRequest)
+	 */
+	@Override
+	public void handleSubmission(FormEntrySession session, HttpServletRequest submission) {
+<span class="nc" id="L214">		String stateUuid = (String) widget.getValue(session.getContext(), submission);</span>
+<span class="nc bnc" id="L215" title="All 2 branches missed.">		if (!StringUtils.isBlank(stateUuid)) {</span>
+<span class="nc bnc" id="L216" title="All 2 branches missed.">			if (Mode.EDIT.equals(session.getContext().getMode())) {</span>
+				
+<span class="nc" id="L218">				ProgramWorkflowState newState = Context.getProgramWorkflowService().getStateByUuid(stateUuid);</span>
+<span class="nc" id="L219">				PatientState oldPatientState = getActivePatientState(session.getContext().getExistingPatient(), session</span>
+<span class="nc" id="L220">				        .getContext().getPreviousEncounterDate(), workflow);</span>
+				
+				// if no old state, simply transition to this new state
+<span class="nc bnc" id="L223" title="All 2 branches missed.">				if (oldPatientState == null) {</span>
+
+                    // if there is an active program enrollment in this program, add it to the programs to update (so that
+                    // it is picked up by the FormSubmissionAction.transitionToState method and a new program is not created)
+<span class="nc" id="L227">                    PatientProgram patientProgram = HtmlFormEntryUtil.getPatientProgramByProgramOnDate(session.getPatient(),</span>
+<span class="nc" id="L228">                            newState.getProgramWorkflow().getProgram(), session.getEncounter().getEncounterDatetime());</span>
+
+<span class="nc bnc" id="L230" title="All 2 branches missed.">                    if (patientProgram != null) {</span>
+<span class="nc" id="L231">                        session.getSubmissionActions().getPatientProgramsToUpdate().add(patientProgram);</span>
+                    }
+
+<span class="nc" id="L234">					session.getSubmissionActions().transitionToState(newState);</span>
+<span class="nc" id="L235">				}</span>
+				else {
+<span class="nc" id="L237">					PatientProgram patientProgram = oldPatientState.getPatientProgram();</span>
+<span class="nc" id="L238">					Date previousEncounterDate = session.getContext().getPreviousEncounterDate();</span>
+<span class="nc" id="L239">					Date newEncounterDate = session.getEncounter().getEncounterDatetime();</span>
+					
+					// if the encounter date has been moved earlier
+<span class="nc bnc" id="L242" title="All 4 branches missed.">					if (previousEncounterDate != null  &amp;&amp; newEncounterDate.before(previousEncounterDate)) {</span>
+						
+						// if there is an existing patient state on the new encounter date and it differs from the state on the old encounter date
+						// we need to end it
+<span class="nc" id="L246">						PatientState existingPatientStateOnNewEncounterDate = getActivePatientState(session.getContext().getExistingPatient(), newEncounterDate, workflow);</span>
+<span class="nc bnc" id="L247" title="All 4 branches missed.">						if (existingPatientStateOnNewEncounterDate != null &amp;&amp;  !existingPatientStateOnNewEncounterDate.equals(oldPatientState)) {</span>
+<span class="nc" id="L248">							existingPatientStateOnNewEncounterDate.setEndDate(newEncounterDate);</span>
+						}
+						
+						// we also need to void any other states for this workflow that may have started between the new and old encounter dates
+<span class="nc bnc" id="L252" title="All 2 branches missed.">						for (PatientState state : patientProgram.statesInWorkflow(workflow, false)) {</span>
+<span class="nc bnc" id="L253" title="All 6 branches missed.">							if (!state.equals(oldPatientState) &amp;&amp; (state.getStartDate().after(newEncounterDate) || state.getStartDate().compareTo(newEncounterDate) == 0) </span>
+<span class="nc bnc" id="L254" title="All 2 branches missed.">									&amp;&amp; state.getStartDate().before(previousEncounterDate)) {</span>
+<span class="nc" id="L255">								state.setVoided(true);</span>
+<span class="nc" id="L256">								state.setVoidedBy(Context.getAuthenticatedUser());</span>
+<span class="nc" id="L257">								state.setVoidReason(&quot;voided during htmlformentry submission&quot;);</span>
+							}
+<span class="nc" id="L259">						}</span>
+					}
+					
+					// if the encounter date has been moved later
+<span class="nc bnc" id="L263" title="All 4 branches missed.">					if (previousEncounterDate != null &amp;&amp; newEncounterDate.after(previousEncounterDate)) {</span>
+						// make sure we aren't trying to move the state start date past its end date
+<span class="nc bnc" id="L265" title="All 4 branches missed.">						if (oldPatientState.getEndDate() != null &amp;&amp; newEncounterDate.after(oldPatientState.getEndDate())) {</span>
+<span class="nc" id="L266">							throw new FormEntryException(&quot;Cannot move encounter date ahead of end date of current active state&quot;);</span>
+						}
+						
+						// if there is a state that ended on the previous encounter date, its end date needs to be set to the new encounter date
+<span class="nc bnc" id="L270" title="All 2 branches missed.">						for (PatientState state : patientProgram.statesInWorkflow(workflow, false)) {</span>
+<span class="nc bnc" id="L271" title="All 4 branches missed.">							if (!state.equals(oldPatientState) &amp;&amp; state.getEndDate().compareTo(previousEncounterDate) == 0) {</span>
+<span class="nc" id="L272">								state.setEndDate(newEncounterDate);</span>
+							}
+<span class="nc" id="L274">						}</span>
+					}
+					
+					// change the state if necessary
+<span class="nc bnc" id="L278" title="All 2 branches missed.">					if (!newState.equals(oldPatientState.getState())) {</span>
+<span class="nc" id="L279">						oldPatientState.setState(newState);</span>
+					}
+					
+					// update the state start date
+<span class="nc" id="L283">					oldPatientState.setStartDate(newEncounterDate);</span>
+					
+					// roll the program enrollment date earlier if necessary
+<span class="nc bnc" id="L286" title="All 2 branches missed.">					if (oldPatientState.getPatientProgram().getDateEnrolled().after(oldPatientState.getStartDate())) {</span>
+<span class="nc" id="L287">						oldPatientState.getPatientProgram().setDateEnrolled(oldPatientState.getStartDate());</span>
+					}
+					
+<span class="nc" id="L290">					session.getSubmissionActions().getPatientProgramsToUpdate().add(oldPatientState.getPatientProgram());</span>
+				}
+<span class="nc" id="L292">			} else {   // handle ENTER state</span>
+<span class="nc" id="L293">				ProgramWorkflowState state = Context.getProgramWorkflowService().getStateByUuid(stateUuid);</span>
+
+                // if there is an active program enrollment in the state, add it to the programs to update (so that
+                // it is picked up by the FormSubmissionAction.transitionToState method and a new program is not created)
+<span class="nc" id="L297">                PatientProgram patientProgram = HtmlFormEntryUtil.getPatientProgramByProgramOnDate(session.getPatient(),</span>
+<span class="nc" id="L298">                        state.getProgramWorkflow().getProgram(), session.getEncounter().getEncounterDatetime());</span>
+
+<span class="nc bnc" id="L300" title="All 2 branches missed.">                if (patientProgram != null) {</span>
+<span class="nc" id="L301">                    session.getSubmissionActions().getPatientProgramsToUpdate().add(patientProgram);</span>
+                }
+
+<span class="nc" id="L304">				session.getSubmissionActions().transitionToState(state);</span>
+			}
+		}
+<span class="nc" id="L307">	}</span>
+	
+	/**
+	 * @see org.openmrs.module.htmlformentry.element.HtmlGeneratorElement#generateHtml(org.openmrs.module.htmlformentry.FormEntryContext)
+	 */
+	@Override
+	public String generateHtml(FormEntryContext context) {
+<span class="nc" id="L314">		StringBuilder ret = new StringBuilder();</span>
+<span class="nc bnc" id="L315" title="All 2 branches missed.">		if (label != null) {</span>
+<span class="nc" id="L316">			ret.append(label);</span>
+		}
+<span class="nc" id="L318">		ret.append(widget.generateHtml(context));</span>
+<span class="nc" id="L319">		return ret.toString();</span>
+	}
+	
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.8.202204050719</span></div></body></html>

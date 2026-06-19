@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>DropdownWidget.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">HTML Form Entry API</a> &gt; <a href="index.source.html" class="el_package">org.openmrs.module.htmlformentry.widget</a> &gt; <span class="el_source">DropdownWidget.java</span></div><h1>DropdownWidget.java</h1><pre class="source lang-java linenums">package org.openmrs.module.htmlformentry.widget;
+
+import org.openmrs.module.htmlformentry.FormEntryContext;
+import org.openmrs.module.htmlformentry.FormEntryContext.Mode;
+
+/**
+ * A dropdown widget, like {@code &lt;select name=&quot;...&quot;&gt;&lt;option value=&quot;...&quot;&gt;...&lt;/option&gt;&lt;/select&gt;}
+ */
+public class DropdownWidget extends SingleOptionWidget {
+
+    private Integer size;
+	/**
+	 * Default Constructor
+	 */
+<span class="fc" id="L15">    public DropdownWidget() { }</span>
+
+<span class="nc" id="L17">    public DropdownWidget(Integer size) {</span>
+<span class="nc" id="L18">           this.size = size;</span>
+<span class="nc" id="L19">    }</span>
+
+    /**
+     * 
+     * @see Widget#generateHtml(FormEntryContext)
+     */
+    @Override
+    public String generateHtml(FormEntryContext context) {
+<span class="fc" id="L27">        StringBuilder sb = new StringBuilder();</span>
+<span class="fc bfc" id="L28" title="All 2 branches covered.">        if (context.getMode() == Mode.VIEW) {</span>
+<span class="fc" id="L29">            String toPrint = &quot;&quot;;</span>
+<span class="pc bpc" id="L30" title="1 of 2 branches missed.">            if (getInitialValue() != null) {</span>
+                // lookup the label for the selected value
+<span class="fc" id="L32">                boolean found = false;</span>
+<span class="pc bpc" id="L33" title="1 of 2 branches missed.">                for (Option o : getOptions()) {</span>
+<span class="fc bfc" id="L34" title="All 2 branches covered.">                    if (getInitialValue().equals(o.getValue())) {</span>
+<span class="fc" id="L35">                        toPrint = o.getLabel();</span>
+<span class="fc" id="L36">                        found = true;</span>
+<span class="fc" id="L37">                        break;</span>
+                    }
+<span class="fc" id="L39">                }</span>
+<span class="pc bpc" id="L40" title="1 of 2 branches missed.">                if (!found)</span>
+<span class="nc" id="L41">                    toPrint = getInitialValue();</span>
+<span class="fc" id="L42">                return WidgetFactory.displayValue(toPrint);</span>
+            } else {
+<span class="nc" id="L44">                return WidgetFactory.displayDefaultEmptyValue();</span>
+            }
+        } else {
+<span class="fc" id="L47">            String id = context.getFieldName(this);</span>
+<span class="fc" id="L48">            sb.append(&quot;&lt;select id=\&quot;&quot; + id + &quot;\&quot; name=\&quot;&quot; + id +&quot;\&quot;&quot;);</span>
+<span class="pc bpc" id="L49" title="1 of 2 branches missed.">            if(size !=null){</span>
+<span class="nc bnc" id="L50" title="All 2 branches missed.">                if (size == 999) {</span>
+<span class="nc" id="L51">                    size = getOptions().size()+1; // Add one to make sure all elements show up without scrollbar</span>
+                }
+<span class="nc" id="L53">                sb.append(&quot; size=&quot;).append(&quot;\&quot;&quot; + size.intValue() + &quot;\&quot;&quot;);</span>
+            }
+<span class="fc" id="L55">            sb.append(&quot;&gt;&quot;);</span>
+<span class="fc bfc" id="L56" title="All 2 branches covered.">            for (int i = 0; i &lt; getOptions().size(); ++i) {</span>
+<span class="fc" id="L57">                Option option = getOptions().get(i);</span>
+<span class="fc" id="L58">                boolean selected = option.isSelected();</span>
+<span class="fc bfc" id="L59" title="All 2 branches covered.">                if (!selected)</span>
+<span class="fc bfc" id="L60" title="All 2 branches covered.">                    selected = getInitialValue() == null ? option.getValue().equals(&quot;&quot;) : getInitialValue().equals(option.getValue());</span>
+<span class="fc" id="L61">                sb.append(&quot;&lt;option value=\&quot;&quot;).append(option.getValue()).append(&quot;\&quot;&quot;);</span>
+<span class="fc bfc" id="L62" title="All 2 branches covered.">                if (selected)</span>
+<span class="fc" id="L63">                    sb.append(&quot; selected=\&quot;true\&quot;&quot;);</span>
+<span class="fc" id="L64">                sb.append(&quot;&gt;&quot;);</span>
+<span class="fc" id="L65">                sb.append(option.getLabel());</span>
+<span class="fc" id="L66">                sb.append(&quot;&lt;/option&gt;&quot;);</span>
+            }
+<span class="fc" id="L68">            sb.append(&quot;&lt;/select&gt;&quot;);</span>
+<span class="fc" id="L69">            return sb.toString();</span>
+        }
+    }
+
+    public DropdownWidget clone() {
+<span class="nc" id="L74">        DropdownWidget clone = new DropdownWidget(this.size);</span>
+<span class="nc" id="L75">        clone.setInitialValue(this.getInitialValue());</span>
+<span class="nc" id="L76">        clone.setOptions(this.getOptions());</span>
+<span class="nc" id="L77">        return clone;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.8.202204050719</span></div></body></html>

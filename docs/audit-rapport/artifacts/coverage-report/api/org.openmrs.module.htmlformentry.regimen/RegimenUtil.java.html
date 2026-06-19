@@ -1,0 +1,143 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>RegimenUtil.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">HTML Form Entry API</a> &gt; <a href="index.source.html" class="el_package">org.openmrs.module.htmlformentry.regimen</a> &gt; <span class="el_source">RegimenUtil.java</span></div><h1>RegimenUtil.java</h1><pre class="source lang-java linenums">package org.openmrs.module.htmlformentry.regimen;
+
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
+import org.openmrs.Drug;
+import org.openmrs.DrugOrder;
+import org.openmrs.Order;
+import org.openmrs.Patient;
+import org.openmrs.api.context.Context;
+import org.openmrs.order.DrugSuggestion;
+import org.openmrs.order.RegimenSuggestion;
+import org.openmrs.util.OpenmrsConstants;
+
+/**
+ * Helper for standardRegimen tag.
+ * 
+ * NOTE:  matching regimens to existing DrugOrders does NOT take dose or frequency into account.  All matching is by drug, start date, discontinued date.
+ * 
+ * @author dthomas
+ *
+ */
+<span class="nc" id="L28">public class RegimenUtil {</span>
+
+	
+	/**
+	 * Finds 'strongest' RegimenSuggestion match, and returns map with size 0 or 1.  If 1, map contains the RegimenSuggestion and the list of DrugOrders.
+	 * 
+	 * 'strongest' = if you have standard regimen A containing 1 drug, and you have standard regimen B containing the same drug plus one other drug,
+	 * 		then if both standard regimens pass the 'match' test, this method will return standard regimen B because of the greater number of matches.
+	 * 
+	 * In the event of a tie, the first match with the greatest 'strength' gets returned.
+	 * 
+	 * NOTE:  supports drugId in standard regimen XML being a uuid (matches on drug.uuid).
+	 * @param regimenCandidates
+	 * @param drugOrders
+	 * @return Map&lt;RegimenSuggestion, List&lt;DrugOrder&gt;&gt;
+	 */
+	public static Map&lt;RegimenSuggestion, List&lt;DrugOrder&gt;&gt; findStrongestStandardRegimenInDrugOrders(List&lt;RegimenSuggestion&gt; regimenCandidates, List&lt;Order&gt; drugOrders){
+<span class="nc" id="L45">		Map&lt;RegimenSuggestion, List&lt;DrugOrder&gt;&gt; ret = new HashMap&lt;RegimenSuggestion, List&lt;DrugOrder&gt;&gt;();</span>
+<span class="nc" id="L46">		int numComponents = 0;</span>
+<span class="nc bnc" id="L47" title="All 4 branches missed.">		if (regimenCandidates != null &amp;&amp; drugOrders != null){</span>
+<span class="nc bnc" id="L48" title="All 2 branches missed.">			for (RegimenSuggestion rs :  regimenCandidates){</span>
+<span class="nc" id="L49">				List&lt;DrugOrder&gt; matchHolder = new ArrayList&lt;DrugOrder&gt;(); //collects drug matches between encounter and RegimenSuggestion</span>
+<span class="nc" id="L50">				boolean allFound = true; //true until a DrugSuggestion from the RegimenSuggestion isn't matched.</span>
+<span class="nc" id="L51">				Date startDate = null;  //if all DrugSuggestions are matched but have different start dates, we can't match.</span>
+<span class="nc bnc" id="L52" title="All 2 branches missed.">				for (DrugSuggestion dc : rs.getDrugComponents()){</span>
+<span class="nc" id="L53">					DrugOrder dorToInspect = drugIdFoundInDrugSet(dc, drugOrders); //assumes patient will never have multiple drug orders of same drug in same encounter...</span>
+<span class="nc bnc" id="L54" title="All 2 branches missed.">					if (dorToInspect != null){ // there was a match by drug</span>
+<span class="nc bnc" id="L55" title="All 2 branches missed.">						if (startDate == null) // setup standard regimen start date</span>
+<span class="nc" id="L56">							startDate = dorToInspect.getStartDate();</span>
+<span class="nc bnc" id="L57" title="All 2 branches missed.">						if (startDate.equals(dorToInspect.getStartDate())) //this will always be true for first drug matched.</span>
+<span class="nc" id="L58">							matchHolder.add(drugIdFoundInDrugSet(dc, drugOrders));</span>
+						else {
+							//the drug was matched on drug type, but the start date was different.  This tag assumes equal start and stop dates to be a standard regimen.
+<span class="nc" id="L61">							allFound = false;</span>
+<span class="nc" id="L62">							break;</span>
+						}
+						
+					} else {
+<span class="nc" id="L66">						allFound = false;</span>
+<span class="nc" id="L67">						break;</span>
+					}
+<span class="nc" id="L69">				}</span>
+<span class="nc bnc" id="L70" title="All 4 branches missed.">				if (allFound &amp;&amp; numComponents &lt; matchHolder.size()){</span>
+<span class="nc" id="L71">					numComponents = matchHolder.size();</span>
+<span class="nc" id="L72">					ret.clear();</span>
+<span class="nc" id="L73">					ret.put(rs, matchHolder);</span>
+				}
+<span class="nc" id="L75">			}</span>
+		}
+<span class="nc" id="L77">		return ret;</span>
+	}
+	
+	/**
+	 * Finds a drug in a set of drugs by id or uuid; excludes voided DrugOrders from consideration
+	 * 
+	 * 
+	 */
+	private static DrugOrder drugIdFoundInDrugSet(DrugSuggestion ds, List&lt;Order&gt; dors){
+<span class="nc bnc" id="L86" title="All 2 branches missed.">		for (Order or : dors){</span>
+<span class="nc bnc" id="L87" title="All 2 branches missed.">			if (or instanceof DrugOrder){</span>
+<span class="nc" id="L88">				DrugOrder dor = (DrugOrder) or;</span>
+<span class="nc bnc" id="L89" title="All 8 branches missed.">				if (dor.getDrug() != null &amp;&amp; !dor.isVoided() &amp;&amp; (dor.getDrug().getDrugId().toString().equals(ds.getDrugId()) || dor.getDrug().getUuid().toString().equals(ds.getDrugId())))</span>
+<span class="nc" id="L90">					return dor;</span>
+			}
+<span class="nc" id="L92">		}</span>
+<span class="nc" id="L93">		return null;</span>
+	}
+	
+	/**
+	 * Creates DrugOrders from a given RegimenSuggestion
+	 * @param rs  the Regimen Suggestion
+	 * @param startDate  the Regimen start date
+	 * @param patient the Patient
+	 * @return
+	 */
+	public static Set&lt;Order&gt; standardRegimenToDrugOrders(RegimenSuggestion rs, Date startDate, Patient patient){
+<span class="nc" id="L104">		Set&lt;Order&gt; ret = new HashSet&lt;Order&gt;();</span>
+<span class="nc bnc" id="L105" title="All 2 branches missed.">		if (rs != null){</span>
+<span class="nc bnc" id="L106" title="All 2 branches missed.">			for (DrugSuggestion ds : rs.getDrugComponents()){</span>
+<span class="nc" id="L107">				DrugOrder dor = new DrugOrder();</span>
+<span class="nc" id="L108">				dor.setVoided(false);</span>
+<span class="nc" id="L109">				Drug drug = Context.getConceptService().getDrugByNameOrId(ds.getDrugId());</span>
+<span class="nc bnc" id="L110" title="All 2 branches missed.">				if (drug == null)</span>
+<span class="nc" id="L111">					drug = Context.getConceptService().getDrugByUuid(ds.getDrugId());</span>
+<span class="nc bnc" id="L112" title="All 2 branches missed.">				if (drug == null)</span>
+<span class="nc" id="L113">					throw new RuntimeException(&quot;Your standard regimen xml file constains a drugId that can't be found, for regimen &quot; + rs.getCodeName() + &quot;, DrugComponent.id = &quot; + ds.getDrugId());</span>
+<span class="nc" id="L114">				dor.setDrug(Context.getConceptService().getDrugByNameOrId(ds.getDrugId()));</span>
+<span class="nc" id="L115">				dor.setFrequency(ds.getFrequency());</span>
+<span class="nc" id="L116">				dor.setUnits(ds.getUnits());</span>
+<span class="nc" id="L117">				dor.setInstructions(ds.getInstructions());</span>
+<span class="nc" id="L118">				dor.setDose(Double.valueOf(ds.getDose()));</span>
+<span class="nc" id="L119">				dor.setStartDate(startDate);</span>
+<span class="nc" id="L120">				dor.setDiscontinued(false);</span>
+<span class="nc" id="L121">				dor.setPatient(patient);</span>
+<span class="nc" id="L122">				dor.setDateChanged(new Date());</span>
+<span class="nc" id="L123">				dor.setCreator(Context.getAuthenticatedUser());</span>
+<span class="nc" id="L124">				dor.setOrderType(Context.getOrderService().getOrderType(OpenmrsConstants.ORDERTYPE_DRUG));</span>
+<span class="nc" id="L125">				dor.setConcept(drug.getConcept());</span>
+<span class="nc" id="L126">				ret.add(dor);</span>
+<span class="nc" id="L127">			}</span>
+		}	
+<span class="nc" id="L129">		return ret;</span>
+	}
+	
+	/**
+	 * finds the RegimenSuggestion by its code.
+	 */
+	public static RegimenSuggestion getStandardRegimenByCode(List&lt;RegimenSuggestion&gt; regimens, String code){
+<span class="nc bnc" id="L136" title="All 2 branches missed.">		for (RegimenSuggestion rs : regimens){</span>
+<span class="nc bnc" id="L137" title="All 2 branches missed.">			if (rs.getCodeName().equals(code))</span>
+<span class="nc" id="L138">				return rs;</span>
+<span class="nc" id="L139">		}</span>
+<span class="nc" id="L140">		return null;</span>
+	}
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.8.202204050719</span></div></body></html>

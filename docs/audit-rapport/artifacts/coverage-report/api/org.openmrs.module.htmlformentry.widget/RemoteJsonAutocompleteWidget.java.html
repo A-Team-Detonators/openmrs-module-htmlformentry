@@ -1,0 +1,140 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>RemoteJsonAutocompleteWidget.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">HTML Form Entry API</a> &gt; <a href="index.source.html" class="el_package">org.openmrs.module.htmlformentry.widget</a> &gt; <span class="el_source">RemoteJsonAutocompleteWidget.java</span></div><h1>RemoteJsonAutocompleteWidget.java</h1><pre class="source lang-java linenums">package org.openmrs.module.htmlformentry.widget;
+
+import org.openmrs.Concept;
+import org.openmrs.Drug;
+import org.openmrs.module.htmlformentry.FormEntryContext;
+
+import javax.servlet.http.HttpServletRequest;
+
+/**
+ * Uses jQuery-ui, and uses handlebars for custom display and value templates
+ */
+public class RemoteJsonAutocompleteWidget implements Widget {
+
+    private Option initialValue;
+    private String remoteUrl;
+<span class="nc" id="L16">    private String valueTemplate = &quot;{{value}}&quot;;</span>
+<span class="nc" id="L17">    private String displayTemplate = &quot;{{label}}&quot;;</span>
+
+<span class="nc" id="L19">    public RemoteJsonAutocompleteWidget(String remoteUrl) {</span>
+<span class="nc" id="L20">        this.remoteUrl = remoteUrl;</span>
+<span class="nc" id="L21">    }</span>
+
+    public void setValueTemplate(String valueTemplate) {
+<span class="nc" id="L24">        this.valueTemplate = valueTemplate;</span>
+<span class="nc" id="L25">    }</span>
+
+    public void setDisplayTemplate(String displayTemplate) {
+<span class="nc" id="L28">        this.displayTemplate = displayTemplate;</span>
+<span class="nc" id="L29">    }</span>
+
+    @Override
+    public void setInitialValue(Object initialValue) {
+<span class="nc bnc" id="L33" title="All 2 branches missed.">        if (initialValue instanceof Drug) {</span>
+<span class="nc" id="L34">            Drug asDrug = (Drug) initialValue;</span>
+<span class="nc" id="L35">            this.initialValue = new Option(asDrug.getName(), &quot;Drug:&quot; + asDrug.getId(), true, asDrug.getRetired());</span>
+<span class="nc" id="L36">        }</span>
+<span class="nc bnc" id="L37" title="All 2 branches missed.">        else if (initialValue instanceof Concept) {</span>
+<span class="nc" id="L38">            Concept asConcept = (Concept) initialValue;</span>
+<span class="nc" id="L39">            this.initialValue = new Option((asConcept.getName().getName()), asConcept.getConceptId().toString(), true);</span>
+<span class="nc" id="L40">        }</span>
+        else {
+<span class="nc" id="L42">            this.initialValue = (Option) initialValue;</span>
+        }
+<span class="nc" id="L44">    }</span>
+
+    @Override
+    public String generateHtml(FormEntryContext context) {
+<span class="nc bnc" id="L48" title="All 2 branches missed.">        if (FormEntryContext.Mode.VIEW == context.getMode()) {</span>
+<span class="nc bnc" id="L49" title="All 2 branches missed.">            return initialValue == null ? &quot;&quot; : initialValue.getLabel();</span>
+        }
+<span class="nc" id="L51">        String formFieldName = context.getFieldName(this);</span>
+<span class="nc" id="L52">        StringBuilder sb = new StringBuilder();</span>
+<span class="nc" id="L53">        sb.append(&quot;&lt;input id=\&quot;&quot; + formFieldName + &quot;-display\&quot;&quot;);</span>
+<span class="nc bnc" id="L54" title="All 4 branches missed.">        if (initialValue != null &amp;&amp; initialValue.isRetired()) {</span>
+<span class="nc" id="L55">            sb.append(&quot; style=\&quot;color: gray; font-style: italic\&quot;&quot;);</span>
+        }
+<span class="nc bnc" id="L57" title="All 2 branches missed.">        if (initialValue != null) {</span>
+<span class="nc" id="L58">            sb.append(&quot; value=\&quot;&quot; + initialValue.getLabel() + &quot;\&quot;&quot;);</span>
+        }
+<span class="nc" id="L60">        sb.append(&quot;/&gt;\n&quot;);</span>
+<span class="nc" id="L61">        sb.append(&quot;&lt;input id=\&quot;&quot; + formFieldName + &quot;-value\&quot; type=\&quot;hidden\&quot; name=\&quot;&quot; + formFieldName + &quot;\&quot;&quot;);</span>
+<span class="nc bnc" id="L62" title="All 2 branches missed.">        if (initialValue != null) {</span>
+<span class="nc" id="L63">            sb.append(&quot; value=\&quot;&quot; + initialValue.getValue() + &quot;\&quot;&quot;);</span>
+        }
+<span class="nc" id="L65">        sb.append(&quot;/&gt;\n&quot;);</span>
+<span class="nc" id="L66">        sb.append(&quot;&lt;script type=\&quot;text/javascript\&quot;&gt;\n&quot;);</span>
+<span class="nc" id="L67">        sb.append(&quot;$j(function() {\n&quot;);</span>
+<span class="nc" id="L68">        sb.append(&quot;  var displayTemplate&quot; + formFieldName + &quot; = htmlForm.compileMustacheTemplate('&quot; + escapeJs(displayTemplate) + &quot;');\n&quot;);</span>
+<span class="nc" id="L69">        sb.append(&quot;  var valueTemplate&quot; + formFieldName + &quot; = htmlForm.compileMustacheTemplate('&quot; + escapeJs(valueTemplate) + &quot;');\n&quot;);</span>
+<span class="nc" id="L70">        sb.append(&quot;  $j('#&quot; + formFieldName + &quot;-display').autocomplete({\n&quot;);</span>
+<span class="nc" id="L71">        sb.append(&quot;    source: '&quot; + remoteUrl + &quot;',\n&quot;);</span>
+<span class="nc" id="L72">        sb.append(&quot;    minLength: 2,\n&quot;);</span>
+<span class="nc" id="L73">        sb.append(&quot;    focus: function(event, ui) {\n&quot;);</span>
+<span class="nc" id="L74">        sb.append(&quot;      if (ui.item.name != 'No results') {\n&quot;);</span>
+<span class="nc" id="L75">        sb.append(&quot;         $j('#&quot; + formFieldName + &quot;-display').val(displayTemplate&quot; + formFieldName + &quot;(ui.item));\n&quot;);</span>
+<span class="nc" id="L76">        sb.append(&quot;      } else {\n&quot;);</span>
+<span class="nc" id="L77">        sb.append(&quot;         $j('#&quot; + formFieldName + &quot;-value').val('');\n&quot;);</span>
+<span class="nc" id="L78">        sb.append(&quot;      }\n&quot;);</span>
+<span class="nc" id="L79">        sb.append(&quot;      return false;\n&quot;);</span>
+<span class="nc" id="L80">        sb.append(&quot;    },\n&quot;);</span>
+<span class="nc" id="L81">        sb.append(&quot;    select: function(event, ui) {\n&quot;);</span>
+<span class="nc" id="L82">        sb.append(&quot;      if (ui.item.name != 'No results') {\n&quot;);</span>
+<span class="nc" id="L83">        sb.append(&quot;         $j('#&quot; + formFieldName + &quot;-display').val(displayTemplate&quot; + formFieldName + &quot;(ui.item));\n&quot;);</span>
+<span class="nc" id="L84">        sb.append(&quot;         $j('#&quot; + formFieldName + &quot;-value').val(valueTemplate&quot; + formFieldName + &quot;(ui.item));\n&quot;);</span>
+<span class="nc" id="L85">        sb.append(&quot;         if (ui.item.retired) {\n&quot;);</span>
+<span class="nc" id="L86">        sb.append(&quot;             $j('#&quot; + formFieldName + &quot;-display').css('color', 'gray');\n&quot;);</span>
+<span class="nc" id="L87">        sb.append(&quot;             $j('#&quot; + formFieldName + &quot;-display').css('font-style', 'italic');\n&quot;);</span>
+<span class="nc" id="L88">        sb.append(&quot;             \n&quot;);</span>
+<span class="nc" id="L89">        sb.append(&quot;         } else { \n&quot;);</span>
+<span class="nc" id="L90">        sb.append(&quot;             $j('#&quot; + formFieldName + &quot;-display').css('color', '');\n&quot;);</span>
+<span class="nc" id="L91">        sb.append(&quot;             $j('#&quot; + formFieldName + &quot;-display').css('font-style', '');\n&quot;);</span>
+<span class="nc" id="L92">        sb.append(&quot;         }\n&quot;);</span>
+<span class="nc" id="L93">        sb.append(&quot;      } else {\n&quot;);</span>
+<span class="nc" id="L94">        sb.append(&quot;         $j('#&quot; + formFieldName + &quot;-value').val('');\n&quot;);</span>
+<span class="nc" id="L95">        sb.append(&quot;      }\n&quot;);</span>
+<span class="nc" id="L96">        sb.append(&quot;      return false;&quot;);</span>
+<span class="nc" id="L97">        sb.append(&quot;    },\n&quot;);</span>
+<span class="nc" id="L98">        sb.append(&quot;    change: function(event, ui) {\n&quot;);</span>
+<span class="nc" id="L99">        sb.append(&quot;      if (!ui.item) {\n&quot;);</span>
+<span class="nc" id="L100">        sb.append(&quot;         $j('#&quot; + formFieldName + &quot;-value').val('');\n&quot;);</span>
+<span class="nc" id="L101">        sb.append(&quot;      }\n&quot;);</span>
+<span class="nc" id="L102">        sb.append(&quot;    },\n&quot;);</span>
+<span class="nc" id="L103">        sb.append(&quot;    response: function(event, ui) {\n&quot;);</span>
+<span class="nc" id="L104">        sb.append(&quot;      var results = ui.content;\n&quot;);</span>
+<span class="nc" id="L105">        sb.append(&quot;      if (results.length === 0) {\n&quot;);</span>
+<span class="nc" id="L106">        sb.append(&quot;         results.push({ value: '', name: 'No results', label: '' });\n&quot;);</span>
+<span class="nc" id="L107">        sb.append(&quot;      }\n&quot;);</span>
+<span class="nc" id="L108">        sb.append(&quot;    }\n&quot;);</span>
+<span class="nc" id="L109">        sb.append(&quot;  })\n&quot;);</span>
+<span class="nc" id="L110">        sb.append(&quot;  .data('ui-autocomplete')._renderItem = function(ul, item) {\n&quot;);</span>
+<span class="nc" id="L111">        sb.append(&quot;    var anchorItem = $j('&lt;a&gt;' + displayTemplate&quot; + formFieldName + &quot;(item) + '&lt;/a&gt;');\n&quot;);</span>
+<span class="nc" id="L112">        sb.append(&quot;    if(item.retired) { ;\n&quot;);</span>
+<span class="nc" id="L113">        sb.append(&quot;         anchorItem.css('color', 'gray');\n&quot;);</span>
+<span class="nc" id="L114">        sb.append(&quot;         anchorItem.css('font-style', 'italic');\n&quot;);</span>
+<span class="nc" id="L115">        sb.append(&quot;    }\n&quot;);</span>
+<span class="nc" id="L116">        sb.append(&quot;    var listItem = $j('&lt;li&gt;').data('autocomplete-item', item).append(anchorItem).appendTo(ul);\n&quot;);</span>
+<span class="nc" id="L117">        sb.append(&quot;    return listItem;\n&quot;);</span>
+<span class="nc" id="L118">        sb.append(&quot;  };\n&quot;);</span>
+<span class="nc" id="L119">        sb.append(&quot;});\n&quot;);</span>
+<span class="nc" id="L120">        sb.append(&quot;&lt;/script&gt;\n&quot;);</span>
+<span class="nc" id="L121">        return sb.toString();</span>
+    }
+
+    private String escapeJs(String input) {
+<span class="nc" id="L125">        input = input.replaceAll(&quot;\n&quot;, &quot;\\\\n&quot;);</span>
+<span class="nc" id="L126">        input = input.replaceAll(&quot;'&quot;, &quot;\\\\'&quot;);</span>
+<span class="nc" id="L127">        input = input.replaceAll(&quot;\&quot;&quot;, &quot;\\\\\&quot;&quot;);</span>
+<span class="nc" id="L128">        return input;</span>
+    }
+
+    /**
+     * @see Widget#getValue(FormEntryContext, HttpServletRequest)
+     */
+    @Override
+    public Object getValue(FormEntryContext context, HttpServletRequest request) {
+<span class="nc" id="L136">        return request.getParameter(context.getFieldName(this));</span>
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.8.202204050719</span></div></body></html>

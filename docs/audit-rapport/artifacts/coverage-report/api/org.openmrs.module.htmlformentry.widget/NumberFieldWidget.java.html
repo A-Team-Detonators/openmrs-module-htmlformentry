@@ -1,0 +1,233 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>NumberFieldWidget.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">HTML Form Entry API</a> &gt; <a href="index.source.html" class="el_package">org.openmrs.module.htmlformentry.widget</a> &gt; <span class="el_source">NumberFieldWidget.java</span></div><h1>NumberFieldWidget.java</h1><pre class="source lang-java linenums">package org.openmrs.module.htmlformentry.widget;
+
+import org.openmrs.ConceptNumeric;
+import org.openmrs.api.context.Context;
+import org.openmrs.module.htmlformentry.FormEntryContext;
+import org.openmrs.module.htmlformentry.FormEntryContext.Mode;
+import org.openmrs.module.htmlformentry.HtmlFormEntryUtil;
+import org.openmrs.module.htmlformentry.compatibility.ConceptCompatibility;
+import org.openmrs.util.OpenmrsUtil;
+
+import javax.servlet.http.HttpServletRequest;
+import java.util.ArrayList;
+import java.util.List;
+
+/**
+ * A widget that implements an input field that takes a numeric answer.
+ */
+public class NumberFieldWidget implements Widget {
+
+    private Number initialValue;
+<span class="nc" id="L21">    private boolean floatingPoint = true;</span>
+    private Double absoluteMinimum;
+    private Double absoluteMaximum;
+<span class="nc" id="L24">    private Integer numberFieldSize = 5;</span>
+
+    /**
+     * Creates a widget with certain absolute maximum and minimum values. Floating point numbers are allowed if floatingPoint=true.
+     * 
+     * @param absoluteMinimum
+     * @param absoluteMaximum
+     * @param floatingPoint
+     */
+<span class="nc" id="L33">    public NumberFieldWidget(Double absoluteMinimum, Double absoluteMaximum, boolean floatingPoint) {</span>
+<span class="nc" id="L34">    	this.absoluteMinimum = absoluteMinimum;</span>
+<span class="nc" id="L35">    	this.absoluteMaximum = absoluteMaximum;</span>
+<span class="nc" id="L36">    	this.floatingPoint = floatingPoint;</span>
+<span class="nc" id="L37">    }</span>
+    
+    /**
+     * Creates a widget with certain absolute maximum and minimum values as defined by a specific numeric Concept
+     * 
+     * @param concept
+     * @param size, the size of the text field to render
+     */
+    public NumberFieldWidget(ConceptNumeric concept, String size) {
+<span class="nc" id="L46">        this(concept, size, null, null);</span>
+<span class="nc" id="L47">    }</span>
+
+    /**
+     * Creates a widget with certain absolute maximum and minimum values as defined by a specific numeric Concept,
+     * but allowing overriding
+     *
+     * @param concept
+     * @param size, the size of the text field to render
+     */
+<span class="nc" id="L56">    public NumberFieldWidget(ConceptNumeric concept, String size, Double absoluteMinimum, Double absoluteMaximum) {</span>
+<span class="nc bnc" id="L57" title="All 2 branches missed.">        if (concept != null) {</span>
+
+<span class="nc" id="L59">            ConceptCompatibility conceptCompatibility = Context.getRegisteredComponent(&quot;htmlformentry.ConceptCompatibility&quot;, ConceptCompatibility.class);</span>
+
+<span class="nc bnc" id="L61" title="All 2 branches missed.">            setAbsoluteMaximum(absoluteMaximum != null ? absoluteMaximum : concept.getHiAbsolute());</span>
+<span class="nc bnc" id="L62" title="All 2 branches missed.">            setAbsoluteMinimum(absoluteMinimum != null ? absoluteMinimum : concept.getLowAbsolute());</span>
+
+<span class="nc" id="L64">            setFloatingPoint(conceptCompatibility.isAllowDecimal(concept));</span>
+<span class="nc bnc" id="L65" title="All 4 branches missed.">            if (size != null &amp;&amp; !size.equals(&quot;&quot;)){</span>
+                try {
+<span class="nc" id="L67">                    setNumberFieldSize(Integer.valueOf(size));</span>
+<span class="nc" id="L68">                } catch (Exception ex){</span>
+<span class="nc" id="L69">                    throw new IllegalArgumentException(&quot;Value for 'size' attribute in numeric obs must be a number.&quot;);</span>
+<span class="nc" id="L70">                }</span>
+            }
+        }
+<span class="nc" id="L73">    }</span>
+
+    /**
+     * Returns whether or not this widget accepts floating point values
+     * 
+     * @return true/false
+     */
+    public boolean isFloatingPoint() {
+<span class="nc" id="L81">        return floatingPoint;</span>
+    }
+
+    /**
+     * Sets whether or not this widget accepts floating point values
+     * 
+     * @param floatingPoint
+     */
+    public void setFloatingPoint(boolean floatingPoint) {
+<span class="nc" id="L90">        this.floatingPoint = floatingPoint;</span>
+<span class="nc" id="L91">    }</span>
+
+    /**
+     * Gets the absolute minimum value allowed for this widget
+     * 
+     * @return absoluteMinimum
+     */
+    public Double getAbsoluteMinimum() {
+<span class="nc" id="L99">        return absoluteMinimum;</span>
+    }
+
+    /**
+     * Sets the absolute minimum value allowed for this widget
+     * 
+     * @param minimum
+     */
+    public void setAbsoluteMinimum(Double minimum) {
+<span class="nc" id="L108">        this.absoluteMinimum = minimum;</span>
+<span class="nc" id="L109">    }</span>
+    
+    /**
+     * Gets the absolute maximum value allowed for this widget 
+     * 
+     * @return absoluteMaximum
+     */
+    public Double getAbsoluteMaximum() {
+<span class="nc" id="L117">        return absoluteMaximum;</span>
+    }
+
+    /**
+     * Sets the absolute maximum value allows for this widget
+     * 
+     * @param maximum
+     */
+    public void setAbsoluteMaximum(Double maximum) {
+<span class="nc" id="L126">        this.absoluteMaximum = maximum;</span>
+<span class="nc" id="L127">    }</span>
+
+    @Override
+    public void setInitialValue(Object initialValue) {
+<span class="nc" id="L131">        this.initialValue = (Number) initialValue;</span>
+<span class="nc" id="L132">    }</span>
+
+    public Object getInitialValue() {
+<span class="nc" id="L135">        return this.initialValue;</span>
+    }
+
+    @Override
+    public String generateHtml(FormEntryContext context) {
+<span class="nc" id="L140">        StringBuilder sb = new StringBuilder();</span>
+<span class="nc bnc" id="L141" title="All 2 branches missed.">        if (context.getMode() == Mode.VIEW) {</span>
+<span class="nc" id="L142">            String toPrint = &quot;&quot;;</span>
+<span class="nc bnc" id="L143" title="All 2 branches missed.">            if (initialValue != null) {</span>
+<span class="nc" id="L144">                toPrint = userFriendlyDisplay(initialValue);</span>
+<span class="nc" id="L145">                return WidgetFactory.displayValue(toPrint);</span>
+            } else {
+<span class="nc" id="L147">                toPrint = &quot;____&quot;;</span>
+<span class="nc" id="L148">                return WidgetFactory.displayEmptyValue(toPrint);</span>
+            }
+        } else {
+<span class="nc" id="L151">            String id = context.getFieldName(this);</span>
+<span class="nc" id="L152">            String errorId = context.getErrorFieldId(this);</span>
+<span class="nc" id="L153">            sb.append(&quot;&lt;input type=\&quot;text\&quot; size=\&quot;&quot; + numberFieldSize + &quot;\&quot; id=\&quot;&quot; + id + &quot;\&quot; name=\&quot;&quot; + id + &quot;\&quot;&quot;);</span>
+<span class="nc bnc" id="L154" title="All 2 branches missed.">            if (initialValue != null) {</span>
+<span class="nc" id="L155">                sb.append(&quot; value=\&quot;&quot; + userFriendlyDisplay(initialValue) + &quot;\&quot;&quot;);</span>
+            }
+<span class="nc bnc" id="L157" title="All 2 branches missed.">            if (context.isAutomaticClientSideValidation()) {</span>
+<span class="nc" id="L158">                sb.append(&quot; onBlur=\&quot;checkNumber(this,'&quot; + errorId + &quot;',&quot; + floatingPoint + &quot;,&quot;);</span>
+<span class="nc" id="L159">                sb.append(absoluteMinimum + &quot;,&quot;);</span>
+<span class="nc" id="L160">                sb.append(absoluteMaximum + &quot;,&quot;);</span>
+<span class="nc" id="L161">                sb.append(getLocalizedErrorMessages() + &quot;)\&quot;&quot;);</span>
+            }
+<span class="nc bnc" id="L163" title="All 2 branches missed.">            if (context.isClientSideValidationHints()) {</span>
+<span class="nc bnc" id="L164" title="All 2 branches missed.">                if (absoluteMinimum != null) {</span>
+<span class="nc" id="L165">                    sb.append(&quot; min=\&quot;&quot; + absoluteMinimum + &quot;\&quot;&quot;);</span>
+                }
+<span class="nc bnc" id="L167" title="All 2 branches missed.">                if (absoluteMaximum != null) {</span>
+<span class="nc" id="L168">                    sb.append(&quot; max=\&quot;&quot; + absoluteMaximum + &quot;\&quot;&quot;);</span>
+                }
+<span class="nc" id="L170">                List&lt;String&gt; classes = new ArrayList&lt;String&gt;();</span>
+<span class="nc bnc" id="L171" title="All 2 branches missed.">                classes.add(floatingPoint ? &quot;number&quot; : &quot;integer&quot;);</span>
+<span class="nc bnc" id="L172" title="All 4 branches missed.">                if (absoluteMinimum != null || absoluteMaximum != null) {</span>
+<span class="nc" id="L173">                    classes.add(&quot;numeric-range&quot;);</span>
+                }
+<span class="nc" id="L175">                sb.append(&quot; class=\&quot;&quot; + OpenmrsUtil.join(classes, &quot; &quot;) + &quot;\&quot;&quot;);</span>
+            }
+<span class="nc" id="L177">            sb.append(&quot;/&gt;&quot;);</span>
+        }
+<span class="nc" id="L179">        return sb.toString();</span>
+    }
+
+    private String userFriendlyDisplay(Number number) {
+<span class="nc bnc" id="L183" title="All 2 branches missed.">        if (number == null) {</span>
+<span class="nc" id="L184">            return &quot;&quot;;</span>
+        }
+<span class="nc bnc" id="L186" title="All 2 branches missed.">        else if (number.doubleValue() == number.intValue()) {</span>
+<span class="nc" id="L187">            return &quot;&quot; + number.intValue();</span>
+        }
+        else {
+<span class="nc" id="L190">            return &quot;&quot; + number.toString();</span>
+        }
+    }
+
+    private String getLocalizedErrorMessages() {
+<span class="nc" id="L195">        StringBuffer localizedErrorMessages = new StringBuffer();</span>
+<span class="nc" id="L196">        localizedErrorMessages.append(&quot;{ notANumber: '&quot; + Context.getMessageSourceService().getMessage(&quot;htmlformentry.error.notANumber&quot;) +&quot;',&quot;);</span>
+<span class="nc" id="L197">        localizedErrorMessages.append(&quot;notAnInteger: '&quot; + Context.getMessageSourceService().getMessage(&quot;htmlformentry.error.notAnInteger&quot;) +&quot;',&quot;);</span>
+<span class="nc" id="L198">        localizedErrorMessages.append(&quot;notLessThan: '&quot; + Context.getMessageSourceService().getMessage(&quot;htmlformentry.error.notLessThan&quot;) +&quot;',&quot;);</span>
+<span class="nc" id="L199">        localizedErrorMessages.append(&quot;notGreaterThan: '&quot; + Context.getMessageSourceService().getMessage(&quot;htmlformentry.error.notGreaterThan&quot;) +&quot;' } &quot;);</span>
+<span class="nc" id="L200">        return localizedErrorMessages.toString();</span>
+    }
+
+    @Override
+    public Double getValue(FormEntryContext context, HttpServletRequest request) {
+        try {
+<span class="nc" id="L206">            Double d = (Double) HtmlFormEntryUtil.getParameterAsType(request, context.getFieldName(this), Double.class);</span>
+<span class="nc bnc" id="L207" title="All 6 branches missed.">            if (d != null &amp;&amp; absoluteMinimum != null &amp;&amp; d &lt; absoluteMinimum)</span>
+<span class="nc" id="L208">                throw new IllegalArgumentException(Context.getMessageSourceService().getMessage(&quot;htmlformentry.error.mustBeAtLeast&quot;) + &quot; &quot; + absoluteMinimum);</span>
+<span class="nc bnc" id="L209" title="All 6 branches missed.">            if (d != null &amp;&amp; absoluteMaximum != null &amp;&amp; d &gt; absoluteMaximum)</span>
+<span class="nc" id="L210">                throw new IllegalArgumentException(Context.getMessageSourceService().getMessage(&quot;htmlformentry.error.notGreaterThan&quot;) + &quot; &quot; + absoluteMaximum);</span>
+<span class="nc" id="L211">            return d;</span>
+<span class="nc" id="L212">        } catch (NumberFormatException ex) {</span>
+<span class="nc" id="L213">            throw new IllegalArgumentException(Context.getMessageSourceService().getMessage(&quot;htmlformentry.error.notANumber&quot;));</span>
+        }
+    }
+
+    public void setNumberFieldSize(Integer numberFieldSize) {
+<span class="nc" id="L218">        this.numberFieldSize = numberFieldSize;</span>
+<span class="nc" id="L219">    }</span>
+
+    public Integer getNumberFieldSize() {
+<span class="nc" id="L222">        return numberFieldSize;</span>
+    }
+
+    public NumberFieldWidget clone() {
+<span class="nc" id="L226">        NumberFieldWidget clone = new NumberFieldWidget(this.getAbsoluteMinimum(), this.getAbsoluteMaximum(), this.isFloatingPoint());</span>
+<span class="nc" id="L227">        clone.setNumberFieldSize(this.getNumberFieldSize());</span>
+<span class="nc" id="L228">        clone.setInitialValue(this.getInitialValue());</span>
+<span class="nc" id="L229">        return clone;</span>
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.8.202204050719</span></div></body></html>

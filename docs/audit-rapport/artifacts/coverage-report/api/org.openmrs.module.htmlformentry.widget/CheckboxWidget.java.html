@@ -1,0 +1,173 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>CheckboxWidget.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">HTML Form Entry API</a> &gt; <a href="index.source.html" class="el_package">org.openmrs.module.htmlformentry.widget</a> &gt; <span class="el_source">CheckboxWidget.java</span></div><h1>CheckboxWidget.java</h1><pre class="source lang-java linenums">package org.openmrs.module.htmlformentry.widget;
+
+import org.openmrs.module.htmlformentry.FormEntryContext;
+import org.openmrs.module.htmlformentry.FormEntryContext.Mode;
+
+import javax.servlet.http.HttpServletRequest;
+
+/**
+ * A checkbox widget, like {@code &lt;input type=&quot;checkbox&quot;/&gt;}
+ */
+public class CheckboxWidget implements Widget {
+
+    private Object initialValue;
+<span class="fc" id="L14">    private String value = &quot;true&quot;;</span>
+    private String label;
+<span class="fc" id="L16">    private boolean toggleDimInd = false;</span>
+    private String toggleTarget;
+<span class="fc" id="L18">    private boolean disabled = false;</span>
+
+<span class="fc" id="L20">    public CheckboxWidget() { }</span>
+    
+<span class="fc" id="L22">    public CheckboxWidget(String value) {</span>
+<span class="fc" id="L23">        this.value = value;</span>
+<span class="fc" id="L24">    }</span>
+
+<span class="fc" id="L26">    public CheckboxWidget(String label, String value) {</span>
+<span class="fc" id="L27">        this.label = label;</span>
+<span class="fc" id="L28">        this.value = value;</span>
+<span class="fc" id="L29">    }</span>
+
+<span class="fc" id="L31">    public CheckboxWidget(String label, String value, String toggleTarget) {</span>
+<span class="fc" id="L32">        this.label = label;</span>
+<span class="fc" id="L33">        this.value = value;</span>
+<span class="fc" id="L34">        this.toggleTarget = toggleTarget;</span>
+<span class="fc" id="L35">    }</span>
+    
+<span class="fc" id="L37">    public CheckboxWidget(String label, String value, String toggleTarget, boolean toggleDimInd) {</span>
+<span class="fc" id="L38">        this.label = label;</span>
+<span class="fc" id="L39">        this.value = value;</span>
+<span class="fc" id="L40">        this.toggleTarget = toggleTarget;</span>
+<span class="fc" id="L41">        this.toggleDimInd = toggleDimInd;</span>
+<span class="fc" id="L42">    }</span>
+
+<span class="fc" id="L44">    public CheckboxWidget(String label, String value, String toggleTarget, boolean toggleDimInd, boolean disabled) {</span>
+<span class="fc" id="L45">        this.label = label;</span>
+<span class="fc" id="L46">        this.value = value;</span>
+<span class="fc" id="L47">        this.toggleTarget = toggleTarget;</span>
+<span class="fc" id="L48">        this.toggleDimInd = toggleDimInd;</span>
+<span class="fc" id="L49">        this.disabled = disabled;</span>
+<span class="fc" id="L50">    }</span>
+
+    /**
+     * Gets the value attribute for the checkbox. Not to be confused with {@see getValue(FormEntryContext,HttpServletRequest)}.
+     * 
+     * @return value of the widget
+     */
+    public String getValue() {
+<span class="fc" id="L58">        return value;</span>
+    }
+
+    /**
+     * Sets the value attribute for the checkbox.
+     * 
+     * @param value
+     */
+    public void setValue(String value) {
+<span class="fc" id="L67">        this.value = value;</span>
+<span class="fc" id="L68">    }</span>
+
+    /**
+     * Gets the text label to display before the checkbox.
+     * 
+     * @return the label
+     */
+    public String getLabel() {
+<span class="fc" id="L76">        return label;</span>
+    }
+
+    /**
+     * Sets the text label to display after the checkbox.
+     * 
+     * @param label
+     */
+    public void setLabel(String label) {
+<span class="fc" id="L85">        this.label = label;</span>
+<span class="fc" id="L86">    }</span>
+
+    /**
+     * @see org.openmrs.module.htmlformentry.widget.Widget#generateHtml(org.openmrs.module.htmlformentry.FormEntryContext)
+     */
+    @Override
+    public String generateHtml(FormEntryContext context) {
+<span class="fc" id="L93">        StringBuilder sb = new StringBuilder();</span>
+<span class="pc bpc" id="L94" title="1 of 2 branches missed.">        if (context.getMode() == Mode.VIEW) {</span>
+<span class="nc" id="L95">            String labelString = &quot;&quot;;</span>
+<span class="nc bnc" id="L96" title="All 2 branches missed.">            if  (label != null)</span>
+<span class="nc" id="L97">                labelString = &quot;&amp;#160;&quot; + label;</span>
+<span class="nc bnc" id="L98" title="All 2 branches missed.">            if (initialValue != null) {</span>
+<span class="nc" id="L99">                sb.append(WidgetFactory.displayValue(&quot;[X]&quot; + labelString));</span>
+            } else {
+<span class="nc" id="L101">                sb.append(WidgetFactory.displayEmptyValue(&quot;[&amp;#160;&amp;#160;]&quot; + labelString));</span>
+            }    
+<span class="nc" id="L103">        } else {</span>
+<span class="fc" id="L104">            sb.append(&quot;&lt;input type=\&quot;checkbox\&quot; id=\&quot;&quot;).append(context.getFieldName(this)).append(&quot;\&quot; name=\&quot;&quot;).append(context.getFieldName(this))</span>
+<span class="fc" id="L105">                .append(&quot;\&quot; value=\&quot;&quot;).append(value).append(&quot;\&quot;&quot;);</span>
+<span class="pc bpc" id="L106" title="2 of 4 branches missed.">            if (initialValue != null &amp;&amp; !&quot;&quot;.equals(initialValue))</span>
+<span class="fc" id="L107">                sb.append(&quot; checked=\&quot;true\&quot;&quot;);</span>
+<span class="pc bpc" id="L108" title="3 of 4 branches missed.">            if (toggleTarget != null &amp;&amp; toggleTarget.trim().length() &gt; 0) </span>
+<span class="nc bnc" id="L109" title="All 2 branches missed.">            	sb.append(&quot; toggle&quot; + (toggleDimInd ? &quot;Dim&quot; : &quot;Hide&quot;) + &quot;=\&quot;&quot; + toggleTarget + &quot;\&quot;&quot;);</span>
+<span class="fc bfc" id="L110" title="All 2 branches covered.">            if (disabled) {</span>
+<span class="fc" id="L111">                sb.append(&quot; disabled=\&quot;disabled\&quot;&quot;);</span>
+            }
+<span class="fc" id="L113">            sb.append(&quot;/&gt;&quot;);</span>
+<span class="pc bpc" id="L114" title="1 of 2 branches missed.">            if (label != null)</span>
+<span class="fc" id="L115">                sb.append(&quot;&lt;label for=\&quot;&quot;).append(context.getFieldName(this)).append(&quot;\&quot;&gt;&quot;).append(label).append(&quot;&lt;/label&gt;&quot;);</span>
+<span class="fc" id="L116">            sb.append(&quot;&lt;input type=\&quot;hidden\&quot; name=\&quot;_&quot;).append(context.getFieldName(this)).append(&quot;\&quot;/&gt;&quot;);</span>
+        }
+<span class="fc" id="L118">        return sb.toString();</span>
+    }
+
+    /**
+     * @see org.openmrs.module.htmlformentry.widget.Widget#getValue(org.openmrs.module.htmlformentry.FormEntryContext, javax.servlet.http.HttpServletRequest)
+     */
+    @Override
+    public Object getValue(FormEntryContext context, HttpServletRequest request) {
+<span class="nc" id="L126">        return request.getParameter(context.getFieldName(this));</span>
+    }
+
+    /**
+     * @see org.openmrs.module.htmlformentry.widget.Widget#setInitialValue(java.lang.Object)
+     */
+    @Override
+    public void setInitialValue(Object initialValue) {
+<span class="fc" id="L134">        this.initialValue = initialValue;</span>
+<span class="fc" id="L135">    }</span>
+
+    public Object getInitialValue() {
+<span class="nc" id="L138">        return initialValue;</span>
+    }
+
+	public String getToggleTarget() {
+<span class="fc" id="L142">		return toggleTarget;</span>
+	}
+
+	public void setToggleTarget(String toggleTarget) {
+<span class="nc" id="L146">		this.toggleTarget = toggleTarget;</span>
+<span class="nc" id="L147">	}</span>
+
+	public boolean isToggleDimInd() {
+<span class="fc" id="L150">		return toggleDimInd;</span>
+	}
+
+	public void setToggleDimInd(boolean toggleDimInd) {
+<span class="nc" id="L154">		this.toggleDimInd = toggleDimInd;</span>
+<span class="nc" id="L155">	}</span>
+
+    public boolean isDisabled() {
+<span class="fc" id="L158">        return disabled;</span>
+    }
+
+    public void setDisabled(boolean disabled) {
+<span class="fc" id="L162">        this.disabled = disabled;</span>
+<span class="fc" id="L163">    }</span>
+
+
+	public CheckboxWidget clone() {
+<span class="nc" id="L167">        CheckboxWidget clone = new CheckboxWidget(this.getLabel(), this.getValue(), this.getToggleTarget(), this.isToggleDimInd());</span>
+<span class="nc" id="L168">        clone.setInitialValue(this.getInitialValue());</span>
+<span class="nc" id="L169">        return clone;</span>
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.8.202204050719</span></div></body></html>

@@ -1,0 +1,2319 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>HtmlFormEntryUtil.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">HTML Form Entry API</a> &gt; <a href="index.source.html" class="el_package">org.openmrs.module.htmlformentry</a> &gt; <span class="el_source">HtmlFormEntryUtil.java</span></div><h1>HtmlFormEntryUtil.java</h1><pre class="source lang-java linenums">package org.openmrs.module.htmlformentry;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.xml.XMLConstants;
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.transform.OutputKeys;
+import javax.xml.transform.Transformer;
+import javax.xml.transform.TransformerException;
+import javax.xml.transform.TransformerFactory;
+import javax.xml.transform.dom.DOMSource;
+import javax.xml.transform.stream.StreamResult;
+import java.io.File;
+import java.io.IOException;
+import java.io.StringReader;
+import java.io.StringWriter;
+import java.lang.reflect.Field;
+import java.lang.reflect.Method;
+import java.text.DateFormat;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Calendar;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Date;
+import java.util.GregorianCalendar;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Set;
+
+import org.apache.commons.lang.StringEscapeUtils;
+import org.apache.commons.lang.StringUtils;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+import org.openmrs.Concept;
+import org.openmrs.ConceptDatatype;
+import org.openmrs.ConceptName;
+import org.openmrs.Drug;
+import org.openmrs.Encounter;
+import org.openmrs.EncounterRole;
+import org.openmrs.EncounterType;
+import org.openmrs.FormField;
+import org.openmrs.Location;
+import org.openmrs.LocationTag;
+import org.openmrs.Obs;
+import org.openmrs.OpenmrsMetadata;
+import org.openmrs.Order;
+import org.openmrs.Patient;
+import org.openmrs.PatientIdentifier;
+import org.openmrs.PatientIdentifierType;
+import org.openmrs.PatientProgram;
+import org.openmrs.PatientState;
+import org.openmrs.Person;
+import org.openmrs.PersonAddress;
+import org.openmrs.PersonAttribute;
+import org.openmrs.PersonAttributeType;
+import org.openmrs.PersonName;
+import org.openmrs.Program;
+import org.openmrs.ProgramWorkflow;
+import org.openmrs.ProgramWorkflowState;
+import org.openmrs.Provider;
+import org.openmrs.User;
+import org.openmrs.api.APIException;
+import org.openmrs.api.context.Context;
+import org.openmrs.messagesource.MessageSourceService;
+import org.openmrs.module.htmlformentry.FormEntryContext.Mode;
+import org.openmrs.module.htmlformentry.action.FormSubmissionControllerAction;
+import org.openmrs.module.htmlformentry.action.ObsGroupAction;
+import org.openmrs.module.htmlformentry.compatibility.EncounterCompatibility;
+import org.openmrs.module.htmlformentry.element.GettingExistingOrder;
+import org.openmrs.module.htmlformentry.element.ObsSubmissionElement;
+import org.openmrs.module.htmlformentry.element.ProviderStub;
+import org.openmrs.module.htmlformentry.schema.HtmlFormSchema;
+import org.openmrs.module.htmlformentry.util.MatchMode;
+import org.openmrs.module.htmlformentry.util.Predicate;
+import org.openmrs.module.htmlformentry.util.ProviderTransformer;
+import org.openmrs.module.providermanagement.ProviderRole;
+import org.openmrs.module.providermanagement.api.ProviderManagementService;
+import org.openmrs.obs.ComplexData;
+import org.openmrs.propertyeditor.ConceptEditor;
+import org.openmrs.propertyeditor.DrugEditor;
+import org.openmrs.propertyeditor.EncounterTypeEditor;
+import org.openmrs.propertyeditor.LocationEditor;
+import org.openmrs.propertyeditor.PatientEditor;
+import org.openmrs.propertyeditor.PersonEditor;
+import org.openmrs.propertyeditor.UserEditor;
+import org.openmrs.util.OpenmrsUtil;
+import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.multipart.MultipartHttpServletRequest;
+import org.w3c.dom.Document;
+import org.w3c.dom.NamedNodeMap;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
+import org.xml.sax.InputSource;
+
+/**
+ * HTML Form Entry utility methods
+ */
+<span class="nc" id="L105">public class HtmlFormEntryUtil {</span>
+
+<span class="fc" id="L107">	public static Log log = LogFactory.getLog(HtmlFormEntryUtil.class);</span>
+
+	private static MetadataMappingResolver getMetadaMappingResolver(){
+<span class="nc" id="L110">		return Context.getRegisteredComponent(&quot;metadataMappingResolver&quot;, MetadataMappingResolver.class);</span>
+	}
+
+	/**
+	 * Returns the HTML Form Entry service from the Context
+	 *
+	 * @return HTML Form Entry service
+	 */
+	public static HtmlFormEntryService getService() {
+<span class="fc" id="L119">		return Context.getService(HtmlFormEntryService.class);</span>
+	}
+
+	private static &lt;T extends OpenmrsMetadata&gt; T getMetadataByMapping(Class&lt;T&gt; type, String identifier){
+<span class="nc" id="L123">		MetadataMappingResolver metadataMappingResolver = getMetadaMappingResolver();</span>
+<span class="nc bnc" id="L124" title="All 2 branches missed.">		if (metadataMappingResolver != null) {</span>
+<span class="nc" id="L125">			return metadataMappingResolver.getMetadataItem(type, identifier);</span>
+		}
+<span class="nc" id="L127">		return null;</span>
+	}
+
+	/**
+	 * Fetches a http request parameter from an http request and returns it as a specific type
+	 *
+	 * @param request an http servlet request
+	 * @param name the name of the parameter to retrieve
+	 * @param clazz the type to convert the parameter to
+	 * @return parameter, converted to appropriate type
+	 */
+	public static Object getParameterAsType(HttpServletRequest request, String name, Class&lt;?&gt; clazz) {
+<span class="pc bpc" id="L139" title="3 of 4 branches missed.">		if (ComplexData.class.isAssignableFrom(clazz) &amp;&amp; request instanceof MultipartHttpServletRequest) {</span>
+<span class="nc" id="L140">			return convertToComplexData(request, name);</span>
+		} else {
+<span class="fc" id="L142">			String val = request.getParameter(name);</span>
+<span class="fc" id="L143">			return convertToType(val, clazz);</span>
+		}
+	}
+
+	public static ComplexData convertToComplexData(HttpServletRequest request, String name) {
+<span class="nc" id="L148">		MultipartHttpServletRequest mRequest = (MultipartHttpServletRequest) request;</span>
+<span class="nc" id="L149">		MultipartFile file = mRequest.getFile(name);</span>
+<span class="nc bnc" id="L150" title="All 4 branches missed.">		if (file != null &amp;&amp; file.getSize() &gt; 0) {</span>
+			try {
+<span class="nc" id="L152">				return new ComplexData(file.getOriginalFilename(), file.getInputStream());</span>
+			}
+<span class="nc" id="L154">			catch (IOException e) {</span>
+<span class="nc" id="L155">				throw new IllegalArgumentException(e);</span>
+			}
+		} else {
+<span class="nc" id="L158">			return null;</span>
+		}
+	}
+
+	/**
+	 * Converts a string to specified type
+	 *
+	 * @param val the string to convert
+	 * @param clazz the type to convert to
+	 * @return an instance of the specified type, with it's value set to val
+	 */
+	public static Object convertToType(String val, Class&lt;?&gt; clazz) {
+<span class="pc bpc" id="L170" title="1 of 2 branches missed.">		if (val == null)</span>
+<span class="nc" id="L171">			return null;</span>
+<span class="pc bpc" id="L172" title="3 of 4 branches missed.">		if (&quot;&quot;.equals(val) &amp;&amp; !String.class.equals(clazz))</span>
+<span class="nc" id="L173">			return null;</span>
+<span class="fc bfc" id="L174" title="All 2 branches covered.">		if (Location.class.isAssignableFrom(clazz)) {</span>
+<span class="fc" id="L175">			LocationEditor ed = new LocationEditor();</span>
+<span class="fc" id="L176">			ed.setAsText(val);</span>
+<span class="fc" id="L177">			return ed.getValue();</span>
+<span class="pc bpc" id="L178" title="1 of 2 branches missed.">		} else if (User.class.isAssignableFrom(clazz)) {</span>
+<span class="nc" id="L179">			UserEditor ed = new UserEditor();</span>
+<span class="nc" id="L180">			ed.setAsText(val);</span>
+<span class="nc" id="L181">			return ed.getValue();</span>
+<span class="pc bpc" id="L182" title="1 of 2 branches missed.">		} else if (Date.class.isAssignableFrom(clazz)) {</span>
+			// all HTML Form Entry dates should be submitted as yyyy-mm-dd
+			try {
+<span class="fc" id="L185">				DateFormat df = new SimpleDateFormat(&quot;yyyy-MM-dd&quot;);</span>
+<span class="fc" id="L186">				df.setLenient(false);</span>
+<span class="fc" id="L187">				return df.parse(val);</span>
+			}
+<span class="nc" id="L189">			catch (ParseException e) {</span>
+<span class="nc" id="L190">				throw new IllegalArgumentException(e);</span>
+			}
+<span class="nc bnc" id="L192" title="All 2 branches missed.">		} else if (Double.class.isAssignableFrom(clazz)) {</span>
+<span class="nc" id="L193">			return Double.valueOf(val);</span>
+<span class="nc bnc" id="L194" title="All 2 branches missed.">		} else if (Integer.class.isAssignableFrom(clazz)) {</span>
+<span class="nc" id="L195">			return Integer.valueOf(val);</span>
+<span class="nc bnc" id="L196" title="All 2 branches missed.">		} else if (Concept.class.isAssignableFrom(clazz)) {</span>
+<span class="nc" id="L197">			ConceptEditor ed = new ConceptEditor();</span>
+<span class="nc" id="L198">			ed.setAsText(val);</span>
+<span class="nc" id="L199">			return ed.getValue();</span>
+<span class="nc bnc" id="L200" title="All 2 branches missed.">        } else if (Drug.class.isAssignableFrom(clazz)) {</span>
+<span class="nc" id="L201">            DrugEditor ed = new DrugEditor();</span>
+<span class="nc" id="L202">            ed.setAsText(val);</span>
+<span class="nc" id="L203">            return ed.getValue();</span>
+<span class="nc bnc" id="L204" title="All 2 branches missed.">        } else if (Patient.class.isAssignableFrom(clazz)) {</span>
+<span class="nc" id="L205">			PatientEditor ed = new PatientEditor();</span>
+<span class="nc" id="L206">			ed.setAsText(val);</span>
+<span class="nc" id="L207">			return ed.getValue();</span>
+<span class="nc bnc" id="L208" title="All 2 branches missed.">		} else if (Person.class.isAssignableFrom(clazz)) {</span>
+<span class="nc" id="L209">			PersonEditor ed = new PersonEditor();</span>
+<span class="nc" id="L210">			ed.setAsText(val);</span>
+<span class="nc" id="L211">			return ed.getValue();</span>
+<span class="nc bnc" id="L212" title="All 2 branches missed.">		} else if (EncounterType.class.isAssignableFrom(clazz)) {</span>
+<span class="nc" id="L213">			EncounterTypeEditor ed = new EncounterTypeEditor();</span>
+<span class="nc" id="L214">			ed.setAsText(val);</span>
+<span class="nc" id="L215">			return ed.getValue();</span>
+		} else {
+<span class="nc" id="L217">			return val;</span>
+		}
+	}
+
+	/**
+	 * Creaets an OpenMRS Obs instance
+	 *
+	 * @param formField the form field that specifies the concept associated with the Obs
+	 * @param value value associated with the Obs
+	 * @param datetime date/time associated with the Obs (may be null)
+	 * @param accessionNumber accession number associatd with the Obs (may be null)
+	 * @return the created Obs instance
+	 */
+
+	public static Obs createObs(FormField formField, Object value, Date datetime, String accessionNumber) {
+<span class="nc" id="L232">		Concept concept = formField.getField().getConcept();</span>
+<span class="nc bnc" id="L233" title="All 2 branches missed.">		if (concept == null)</span>
+<span class="nc" id="L234">			throw new FormEntryException(&quot;Can't create an Obs for a formField that doesn't represent a Concept&quot;);</span>
+<span class="nc" id="L235">		return createObs(concept, value, datetime, accessionNumber);</span>
+	}
+
+	/**
+	 * Creates an OpenMRS Obs instance
+	 *
+	 * @param concept concept associated with the Obs
+	 * @param value value associated with the Obs
+	 * @param datetime date/time associated with the Obs (may be null)
+	 * @param accessionNumber accession number associated with the Obs (may be null)
+	 * @return the created Obs instance
+	 */
+	public static Obs createObs(Concept concept, Object value, Date datetime, String accessionNumber) {
+<span class="nc" id="L248">		Obs obs = new Obs();</span>
+<span class="nc" id="L249">		obs.setConcept(concept);</span>
+<span class="nc" id="L250">		ConceptDatatype dt = obs.getConcept().getDatatype();</span>
+<span class="nc bnc" id="L251" title="All 2 branches missed.">		if (dt.isNumeric()) {</span>
+<span class="nc" id="L252">			obs.setValueNumeric(Double.parseDouble(value.toString()));</span>
+<span class="nc bnc" id="L253" title="All 2 branches missed.">		} else if (HtmlFormEntryConstants.COMPLEX_UUID.equals(dt.getUuid())) {</span>
+<span class="nc" id="L254">			obs.setComplexData((ComplexData) value);</span>
+<span class="nc" id="L255">			obs.setValueComplex(obs.getComplexData().getTitle());</span>
+<span class="nc bnc" id="L256" title="All 2 branches missed.">		} else if (dt.isText()) {</span>
+<span class="nc bnc" id="L257" title="All 2 branches missed.">			if (value instanceof Location) {</span>
+<span class="nc" id="L258">				Location location = (Location) value;</span>
+<span class="nc" id="L259">				obs.setValueText(location.getId().toString() + &quot; - &quot; + location.getName());</span>
+<span class="nc bnc" id="L260" title="All 2 branches missed.">			} else if (value instanceof Person) {</span>
+<span class="nc" id="L261">				Person person = (Person) value;</span>
+<span class="nc" id="L262">				obs.setValueText(person.getId().toString() + &quot; - &quot; + person.getPersonName().toString());</span>
+<span class="nc" id="L263">			} else {</span>
+<span class="nc" id="L264">				obs.setValueText(value.toString());</span>
+			}
+<span class="nc bnc" id="L266" title="All 2 branches missed.">		} else if (dt.isCoded()) {</span>
+<span class="nc bnc" id="L267" title="All 2 branches missed.">            if (value instanceof Drug) {</span>
+<span class="nc" id="L268">                obs.setValueDrug((Drug) value);</span>
+<span class="nc" id="L269">                obs.setValueCoded(((Drug) value).getConcept());</span>
+<span class="nc bnc" id="L270" title="All 2 branches missed.">            } else if (value instanceof ConceptName) {</span>
+<span class="nc" id="L271">                obs.setValueCodedName((ConceptName) value);</span>
+<span class="nc" id="L272">                obs.setValueCoded(obs.getValueCodedName().getConcept());</span>
+<span class="nc bnc" id="L273" title="All 2 branches missed.">            } else if (value instanceof Concept) {</span>
+<span class="nc" id="L274">				obs.setValueCoded((Concept) value);</span>
+            } else {
+<span class="nc" id="L276">				obs.setValueCoded((Concept) convertToType(value.toString(), Concept.class));</span>
+            }
+<span class="nc bnc" id="L278" title="All 2 branches missed.">		} else if (dt.isBoolean()) {</span>
+<span class="nc bnc" id="L279" title="All 2 branches missed.">			if (value != null) {</span>
+				try {
+<span class="nc" id="L281">					obs.setValueAsString(value.toString());</span>
+				}
+<span class="nc" id="L283">				catch (ParseException e) {</span>
+<span class="nc" id="L284">					throw new IllegalArgumentException(&quot;Unable to convert &quot; + value + &quot; to a Boolean Obs value&quot;, e);</span>
+<span class="nc" id="L285">				}</span>
+			}
+<span class="nc bnc" id="L287" title="All 2 branches missed.">		} else if (ConceptDatatype.DATE.equals(dt.getHl7Abbreviation())</span>
+<span class="nc bnc" id="L288" title="All 2 branches missed.">		        || ConceptDatatype.TIME.equals(dt.getHl7Abbreviation())</span>
+<span class="nc bnc" id="L289" title="All 2 branches missed.">		        || ConceptDatatype.DATETIME.equals(dt.getHl7Abbreviation())) {</span>
+<span class="nc" id="L290">			Date date = (Date) value;</span>
+<span class="nc" id="L291">			obs.setValueDatetime(date);</span>
+<span class="nc bnc" id="L292" title="All 2 branches missed.">		} else if (&quot;ZZ&quot;.equals(dt.getHl7Abbreviation())) {</span>
+			// don't set a value
+		} else {
+<span class="nc" id="L295">			throw new IllegalArgumentException(&quot;concept datatype not yet implemented: &quot; + dt.getName()</span>
+<span class="nc" id="L296">			        + &quot; with Hl7 Abbreviation: &quot; + dt.getHl7Abbreviation());</span>
+		}
+<span class="nc bnc" id="L298" title="All 2 branches missed.">		if (datetime != null)</span>
+<span class="nc" id="L299">			obs.setObsDatetime(datetime);</span>
+<span class="nc bnc" id="L300" title="All 2 branches missed.">		if (accessionNumber != null)</span>
+<span class="nc" id="L301">			obs.setAccessionNumber(accessionNumber);</span>
+<span class="nc" id="L302">		return obs;</span>
+	}
+
+	/**
+	 * Converts an xml string to a Document object
+	 *
+	 * @param xml the xml string to convert
+	 * @return the resulting Document object
+	 * @throws Exception
+	 */
+	public static Document stringToDocument(String xml) throws Exception {
+		try {
+<span class="fc" id="L314">			DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();</span>
+
+			// Disable XXE: security measure to prevent DOS, arbitrary-file-read, and possibly RCE
+<span class="fc" id="L317">			dbf.setExpandEntityReferences(false);</span>
+<span class="fc" id="L318">			dbf.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true);</span>
+<span class="fc" id="L319">			dbf.setFeature(&quot;http://xml.org/sax/features/external-general-entities&quot;,false);</span>
+<span class="fc" id="L320">			dbf.setFeature(&quot;http://xml.org/sax/features/external-parameter-entities&quot;,false);</span>
+
+<span class="fc" id="L322">			DocumentBuilder db = dbf.newDocumentBuilder();</span>
+<span class="fc" id="L323">			Document document = db.parse(new InputSource(new StringReader(xml)));</span>
+<span class="fc" id="L324">			return document;</span>
+		}
+<span class="nc" id="L326">		catch (Exception e) {</span>
+<span class="nc" id="L327">			log.error(&quot;Error converting String to Document:\n&quot; + xml);</span>
+<span class="nc" id="L328">			throw e;</span>
+		}
+	}
+
+	/**
+	 * Converts a Document object to an xml string
+	 *
+	 * @param document the Document instance to convert
+	 * @return the resulting xml string
+	 * @throws Exception
+	 */
+	public static String documentToString(Document document) throws Exception {
+		//set up a transformer
+<span class="nc" id="L341">		Transformer trans = null;</span>
+<span class="nc" id="L342">		TransformerFactory transfac = TransformerFactory.newInstance();</span>
+
+		try {
+<span class="nc" id="L345">			trans = transfac.newTransformer();</span>
+		}
+<span class="nc" id="L347">		catch (TransformerException te) {</span>
+<span class="nc" id="L348">			System.out.println(HtmlFormEntryConstants.ERROR_TRANSFORMER_1 + te);</span>
+<span class="nc" id="L349">		}</span>
+<span class="nc" id="L350">		trans.setOutputProperty(OutputKeys.OMIT_XML_DECLARATION, HtmlFormEntryConstants.CONSTANT_YES);</span>
+<span class="nc" id="L351">		trans.setOutputProperty(OutputKeys.INDENT, HtmlFormEntryConstants.CONSTANT_YES);</span>
+<span class="nc" id="L352">		trans.setOutputProperty(OutputKeys.METHOD, HtmlFormEntryConstants.CONSTANT_XML);</span>
+<span class="nc" id="L353">        trans.setOutputProperty(OutputKeys.ENCODING, &quot;UTF-8&quot;);</span>
+
+		//create string from xml tree
+<span class="nc" id="L356">		StringWriter sw = new StringWriter();</span>
+<span class="nc" id="L357">		StreamResult result = new StreamResult(sw);</span>
+<span class="nc" id="L358">		DOMSource source = new DOMSource(document);</span>
+		try {
+<span class="nc" id="L360">			trans.transform(source, result);</span>
+		}
+<span class="nc" id="L362">		catch (TransformerException te) {</span>
+<span class="nc" id="L363">			System.out.println(HtmlFormEntryConstants.ERROR_TRANSFORMER_2 + te);</span>
+<span class="nc" id="L364">		}</span>
+<span class="nc" id="L365">		String xmlString = sw.toString();</span>
+
+<span class="nc" id="L367">		return xmlString;</span>
+	}
+
+	/**
+	 * Retrieves a child Node by name
+	 *
+	 * @param content the parent Node
+	 * @param name the name of the child Node
+	 * @return the child Node with the specified name
+	 */
+	public static Node findChild(Node content, String name) {
+<span class="pc bpc" id="L378" title="1 of 2 branches missed.">		if (content == null)</span>
+<span class="nc" id="L379">			return null;</span>
+<span class="fc" id="L380">		NodeList children = content.getChildNodes();</span>
+<span class="fc bfc" id="L381" title="All 2 branches covered.">		for (int i = 0; i &lt; children.getLength(); ++i) {</span>
+<span class="fc" id="L382">			Node node = children.item(i);</span>
+<span class="fc bfc" id="L383" title="All 2 branches covered.">			if (name.equals(node.getNodeName()))</span>
+<span class="fc" id="L384">				return node;</span>
+		}
+<span class="fc" id="L386">		return null;</span>
+	}
+
+    /**
+     * Finds the first descendant of this node with the given tag name
+     * @param node
+     * @param tagName
+     * @return
+     */
+    public static Node findDescendant(Node node, String tagName) {
+<span class="nc bnc" id="L396" title="All 2 branches missed.">        if (node == null)</span>
+<span class="nc" id="L397">            return null;</span>
+<span class="nc" id="L398">        NodeList children = node.getChildNodes();</span>
+<span class="nc bnc" id="L399" title="All 2 branches missed.">        for (int i = 0; i &lt; children.getLength(); ++i) {</span>
+<span class="nc" id="L400">            Node child = children.item(i);</span>
+<span class="nc bnc" id="L401" title="All 2 branches missed.">            if (tagName.equals(node.getNodeName()))</span>
+<span class="nc" id="L402">                return node;</span>
+<span class="nc" id="L403">            Node matchingDescendant = findDescendant(child, tagName);</span>
+<span class="nc bnc" id="L404" title="All 2 branches missed.">            if (matchingDescendant != null) {</span>
+<span class="nc" id="L405">                return matchingDescendant;</span>
+            }
+        }
+<span class="nc" id="L408">        return null;</span>
+    }
+
+    /**
+	 * Returns all the attributes associated with a Node
+	 *
+	 * @param node the Node to retrieve attributes from
+	 * @return a Map containing all the attributes of the Node
+	 */
+	public static Map&lt;String, String&gt; getNodeAttributes(Node node) {
+<span class="nc" id="L418">		Map&lt;String, String&gt; ret = new HashMap&lt;String, String&gt;();</span>
+<span class="nc" id="L419">		NamedNodeMap atts = node.getAttributes();</span>
+<span class="nc bnc" id="L420" title="All 2 branches missed.">		for (int i = 0; i &lt; atts.getLength(); i++) {</span>
+<span class="nc" id="L421">			Node attribute = atts.item(i);</span>
+<span class="nc" id="L422">			ret.put(attribute.getNodeName(), attribute.getNodeValue());</span>
+		}
+<span class="nc" id="L424">		return ret;</span>
+	}
+
+	/**
+	 * Returns a specific attribute of a Node
+	 *
+	 * @param node the Node to retrieve the attribute from
+	 * @param attributeName the name of the attribute to return
+	 * @param defaultVal a default value to return if the attribute is not specified for the
+	 *            selected Node
+	 * @return
+	 */
+	public static String getNodeAttribute(Node node, String attributeName, String defaultVal) {
+<span class="nc" id="L437">		String ret = getNodeAttributes(node).get(attributeName);</span>
+<span class="nc bnc" id="L438" title="All 2 branches missed.">		return (ret == null ? defaultVal : ret);</span>
+	}
+
+    /**
+     * @param node
+     * @return the contents of node as a String
+     */
+    public static String getNodeContentsAsString(Node node) {
+<span class="nc" id="L446">        StringWriter sw = new StringWriter();</span>
+        try {
+<span class="nc" id="L448">            Transformer t = TransformerFactory.newInstance().newTransformer();</span>
+<span class="nc" id="L449">            t.setOutputProperty(OutputKeys.OMIT_XML_DECLARATION, &quot;yes&quot;);</span>
+<span class="nc" id="L450">            t.setOutputProperty(OutputKeys.INDENT, &quot;yes&quot;);</span>
+<span class="nc" id="L451">            t.transform(new DOMSource(node), new StreamResult(sw));</span>
+<span class="nc" id="L452">        } catch (TransformerException ex) {</span>
+<span class="nc" id="L453">            throw new RuntimeException(&quot;Error transforming node&quot;, ex);</span>
+<span class="nc" id="L454">        }</span>
+<span class="nc" id="L455">        return sw.toString();</span>
+    }
+
+    /**
+	 * Creates a non-persistent &quot;Fake&quot; Person (used when previewing or validating an HTML Form)
+	 *
+	 * @return the &quot;fake&quot; person
+	 */
+	public static Patient getFakePerson() {
+<span class="nc" id="L464">		Patient demo = new Patient(12345);</span>
+<span class="nc" id="L465">		demo.addName(new PersonName(&quot;Demo&quot;, &quot;The&quot;, &quot;Person&quot;));</span>
+<span class="nc" id="L466">		Location l = Context.getLocationService().getAllLocations().iterator().next();</span>
+<span class="nc bnc" id="L467" title="All 2 branches missed.">		for (PatientIdentifierType pit : Context.getPatientService().getAllPatientIdentifierTypes()) {</span>
+<span class="nc bnc" id="L468" title="All 2 branches missed.">			if (StringUtils.isEmpty(pit.getValidator())) {</span>
+<span class="nc" id="L469">				demo.addIdentifier(new PatientIdentifier(&quot;Testing&quot; + pit.getName() + &quot;123&quot;, pit, l));</span>
+			}
+<span class="nc" id="L471">		}</span>
+<span class="nc" id="L472">		demo.setGender(&quot;F&quot;);</span>
+<span class="nc" id="L473">		demo.setUuid(&quot;testing-html-form-entry&quot;);</span>
+		{
+<span class="nc" id="L475">			Calendar cal = Calendar.getInstance();</span>
+<span class="nc" id="L476">			cal.add(Calendar.YEAR, -31);</span>
+<span class="nc" id="L477">			demo.setBirthdate(cal.getTime());</span>
+		}
+
+<span class="nc bnc" id="L480" title="All 2 branches missed.">		for (PersonAttributeType type : Context.getPersonService().getAllPersonAttributeTypes()) {</span>
+<span class="nc bnc" id="L481" title="All 4 branches missed.">			if (type.getFormat() != null &amp;&amp; type.getFormat().equals(&quot;java.lang.String&quot;)) {</span>
+<span class="nc" id="L482">				demo.addAttribute(new PersonAttribute(type, &quot;Test &quot; + type.getName() + &quot; Attribute&quot;));</span>
+			}
+<span class="nc" id="L484">		}</span>
+<span class="nc" id="L485">		PersonAddress addr = new PersonAddress();</span>
+<span class="nc" id="L486">		addr.setCityVillage(&quot;Rwinkwavu&quot;);</span>
+<span class="nc" id="L487">		addr.setCountyDistrict(&quot;Kayonza District&quot;);</span>
+<span class="nc" id="L488">		addr.setStateProvince(&quot;Eastern Province&quot;);</span>
+<span class="nc" id="L489">		addr.setCountry(&quot;Rwanda&quot;);</span>
+<span class="nc" id="L490">		demo.addAddress(addr);</span>
+<span class="nc" id="L491">		return demo;</span>
+	}
+
+	public static HtmlFormSchema getHtmlFormSchema(HtmlForm htmlForm, FormEntryContext.Mode mode) {
+		try {
+<span class="nc" id="L496">			Patient patient = HtmlFormEntryUtil.getFakePerson();</span>
+<span class="nc" id="L497">			FormEntrySession fes = new FormEntrySession(patient, null, mode, htmlForm, null);</span>
+<span class="nc" id="L498">			fes.getHtmlToDisplay();</span>
+<span class="nc" id="L499">			return fes.getContext().getSchema();</span>
+		}
+<span class="nc" id="L501">		catch (Exception e) {</span>
+<span class="nc" id="L502">			throw new IllegalStateException(&quot;Unable to load html form schema for htmlform: &quot; + htmlForm, e);</span>
+		}
+	}
+
+	/**
+	 * Combines a Date object that contains only a date component (day, month, year) with a Date
+	 * object that contains only a time component (hour, minute, second) into a single Date object
+	 *
+	 * @param date the Date object that contains date information
+	 * @param time the Date object that contains time information
+	 * @return a Date object with the combined date/time
+	 */
+	public static Date combineDateAndTime(Date date, Date time) {
+<span class="nc bnc" id="L515" title="All 2 branches missed.">		if (date == null)</span>
+<span class="nc" id="L516">			return null;</span>
+<span class="nc" id="L517">		Calendar cal = Calendar.getInstance();</span>
+
+<span class="nc" id="L519">		cal.setTime(date);</span>
+<span class="nc bnc" id="L520" title="All 2 branches missed.">		if (time != null) {</span>
+<span class="nc" id="L521">			Calendar temp = Calendar.getInstance();</span>
+<span class="nc" id="L522">			temp.setTime(time);</span>
+<span class="nc" id="L523">			cal.set(Calendar.HOUR_OF_DAY, temp.get(Calendar.HOUR_OF_DAY));</span>
+<span class="nc" id="L524">			cal.set(Calendar.MINUTE, temp.get(Calendar.MINUTE));</span>
+<span class="nc" id="L525">			cal.set(Calendar.SECOND, temp.get(Calendar.SECOND));</span>
+<span class="nc" id="L526">			cal.set(Calendar.MILLISECOND, temp.get(Calendar.MILLISECOND));</span>
+		}
+<span class="nc" id="L528">		return cal.getTime();</span>
+	}
+
+	/**
+	 * Find Drug by UUID
+	 * @param uuid
+	 * @return
+	 */
+	public static Drug getDrug(String uuid) {
+<span class="nc" id="L537">		Drug drug = null;</span>
+<span class="nc bnc" id="L538" title="All 2 branches missed.">		if (StringUtils.isNotBlank(uuid)) {</span>
+			try {
+<span class="nc" id="L540">				drug = Context.getConceptService().getDrugByUuid(uuid);</span>
+<span class="nc" id="L541">			} catch (Exception e) {</span>
+<span class="nc" id="L542">				log.error(&quot;Failed to find drug: &quot;, e);</span>
+<span class="nc" id="L543">			}</span>
+		}
+<span class="nc" id="L545">		return drug;</span>
+	}
+
+	/**
+	 * Get the concept by id where the id can either be:
+	 *   1) an integer id like 5090
+	 *   2) a mapping type id like &quot;XYZ:HT&quot;
+	 *   3) a uuid like &quot;a3e12268-74bf-11df-9768-17cfc9833272&quot;
+	 *   4) the fully qualified name of a Java constant that contains one of above
+	 *
+	 * @param id the concept identifier
+	 * @return the concept if exist, else null
+	 * &lt;strong&gt;Should&lt;/strong&gt; find a concept by its conceptId
+	 * &lt;strong&gt;Should&lt;/strong&gt; find a concept by its mapping
+	 * &lt;strong&gt;Should&lt;/strong&gt; find a concept by its uuid
+	 * &lt;strong&gt;Should&lt;/strong&gt; find a concept by static constant
+	 * &lt;strong&gt;Should&lt;/strong&gt; return null otherwise
+	 * &lt;strong&gt;Should&lt;/strong&gt; find a concept by its mapping with a space in between
+	 */
+	public static Concept getConcept(String id) {
+
+<span class="nc" id="L566">		Concept cpt = null;</span>
+
+<span class="nc bnc" id="L568" title="All 2 branches missed.">		if (id != null) {</span>
+
+<span class="nc" id="L570">			id = id.trim();</span>
+
+			// see if this is a parseable int; if so, try looking up concept by id
+			try { //handle integer: id
+<span class="nc" id="L574">				int conceptId = Integer.parseInt(id);</span>
+<span class="nc" id="L575">				cpt = Context.getConceptService().getConcept(conceptId);</span>
+
+<span class="nc bnc" id="L577" title="All 2 branches missed.">				if (cpt != null) {</span>
+<span class="nc" id="L578">					return cpt;</span>
+				}
+			}
+<span class="nc" id="L581">			catch (Exception ex) {</span>
+				//do nothing
+<span class="nc" id="L583">			}</span>
+
+			// handle  mapping id: xyz:ht
+<span class="nc" id="L586">			int index = id.indexOf(&quot;:&quot;);</span>
+<span class="nc bnc" id="L587" title="All 2 branches missed.">			if (index != -1) {</span>
+<span class="nc" id="L588">				cpt = Context.getService(HtmlFormEntryService.class).getConceptByMapping(id);</span>
+<span class="nc bnc" id="L589" title="All 2 branches missed.">				if (cpt != null) {</span>
+<span class="nc" id="L590">					return cpt;</span>
+				}
+			}
+
+			// handle uuid id: &quot;a3e1302b-74bf-11df-9768-17cfc9833272&quot;, if the id matches a uuid format
+<span class="nc bnc" id="L595" title="All 2 branches missed.">			if (isValidUuidFormat(id)) {</span>
+<span class="nc" id="L596">				cpt = Context.getConceptService().getConceptByUuid(id);</span>
+			}
+			// finally, if input contains at least one period handle recursively as a code constant
+<span class="nc bnc" id="L599" title="All 2 branches missed.">			else if (id.contains(&quot;.&quot;)) {</span>
+<span class="nc" id="L600">				return getConcept(evaluateStaticConstant(id));</span>
+			}
+		}
+
+<span class="nc" id="L604">		return cpt;</span>
+	}
+
+	/**
+	 * Gets a concept by id, mapping, or uuid. (See #getConcept(String) for precise details.) If no
+	 * concept is found, throws an IllegalArgumentException with the given message.
+	 *
+	 * @param id
+	 * @param errorMessageIfNotFound
+	 * @return
+	 * @throws IllegalArgumentException
+	 */
+	public static Concept getConcept(String id, String errorMessageIfNotFound) throws IllegalArgumentException {
+
+<span class="nc" id="L618">		Concept c = null;</span>
+		try {
+<span class="nc" id="L620">			c = getConcept(id);</span>
+		}
+<span class="nc" id="L622">		catch (Exception ex) {</span>
+<span class="nc" id="L623">			throw new IllegalArgumentException(errorMessageIfNotFound, ex);</span>
+<span class="nc" id="L624">		}</span>
+<span class="nc bnc" id="L625" title="All 2 branches missed.">		if (c == null)</span>
+<span class="nc" id="L626">			throw new IllegalArgumentException(errorMessageIfNotFound);</span>
+<span class="nc" id="L627">		return c;</span>
+	}
+
+	/**
+     * This method doesn't support &quot;SessionAttribute:&quot;, but is otherwise like the similarly-named method.
+	 * @see #getLocation(String, FormEntryContext)
+	 */
+	public static Location getLocation(String id) {
+<span class="nc" id="L635">        return getLocation(id, null);</span>
+    }
+
+    /**
+     * Get the location by:
+     * &lt;ol&gt;
+     *     &lt;li&gt;an integer id like 5090&lt;/li&gt;
+     *     &lt;li&gt;a uuid like &quot;a3e12268-74bf-11df-9768-17cfc9833272&quot;&lt;/li&gt;
+     *     &lt;li&gt;a name like &quot;Boston&quot;&lt;/li&gt;
+     *     &lt;li&gt;an id/name pair like &quot;501 - Boston&quot; (this format is used when saving a location on a obs as a value text)&lt;/li&gt;
+     *     &lt;li&gt;&quot;GlobalProperty:property.name&quot;&lt;/li&gt;
+     *     &lt;li&gt;&quot;UserProperty:propertyName&quot;&lt;/li&gt;
+     *     &lt;li&gt;&quot;SessionAttribute:attributeName&quot;&lt;/li&gt;
+     * &lt;/ol&gt;
+     *
+     *
+     * @param id
+     * @param context
+     * @return the location if exist, else null
+     * &lt;strong&gt;Should&lt;/strong&gt; find a location by its locationId
+     * &lt;strong&gt;Should&lt;/strong&gt; find a location by name
+     * &lt;strong&gt;Should&lt;/strong&gt; find a location by its uuid
+     * &lt;strong&gt;Should&lt;/strong&gt; find a location by global property
+     * &lt;strong&gt;Should&lt;/strong&gt; find a location by user property
+     * &lt;strong&gt;Should&lt;/strong&gt; find a location by session attribute
+     * &lt;strong&gt;Should&lt;/strong&gt; not fail if trying to find a location by session attribute and we have no session
+     * &lt;strong&gt;Should&lt;/strong&gt; return null otherwise
+     */
+	public static Location getLocation(String id, FormEntryContext context) {
+
+<span class="nc" id="L665">		Location location = null;</span>
+
+<span class="nc bnc" id="L667" title="All 2 branches missed.">		if (id != null) {</span>
+
+<span class="nc" id="L669">            id = id.trim();</span>
+
+            // handle &quot;SystemDefault&quot; setting
+<span class="nc bnc" id="L672" title="All 2 branches missed.">            if(id.equals(HtmlFormEntryConstants.SYSTEM_DEFAULT)) {</span>
+<span class="nc" id="L673">                location= Context.getLocationService().getDefaultLocation();</span>
+<span class="nc bnc" id="L674" title="All 2 branches missed.">                if (location != null) {</span>
+<span class="nc" id="L675">                    return location;</span>
+
+                }
+            }
+			// handle GlobalProperty:property.name
+<span class="nc bnc" id="L680" title="All 2 branches missed.">			if (id.startsWith(&quot;GlobalProperty:&quot;)) {</span>
+<span class="nc" id="L681">				String gpName = id.substring(&quot;GlobalProperty:&quot;.length());</span>
+<span class="nc" id="L682">				String gpValue = Context.getAdministrationService().getGlobalProperty(gpName);</span>
+<span class="nc bnc" id="L683" title="All 2 branches missed.">				if (StringUtils.isNotEmpty(gpValue)) {</span>
+<span class="nc" id="L684">					return getLocation(gpValue, context);</span>
+				}
+			}
+
+			// handle UserProperty:propName
+<span class="nc bnc" id="L689" title="All 2 branches missed.">			if (id.startsWith(&quot;UserProperty:&quot;)) {</span>
+<span class="nc" id="L690">				String upName = id.substring(&quot;UserProperty:&quot;.length());</span>
+<span class="nc" id="L691">				String upValue = Context.getAuthenticatedUser().getUserProperty(upName);</span>
+<span class="nc bnc" id="L692" title="All 2 branches missed.">				if (StringUtils.isNotEmpty(upValue)) {</span>
+<span class="nc" id="L693">					return getLocation(upValue, context);</span>
+				}
+			}
+            // handle SessionAttribute:attributeName
+<span class="nc bnc" id="L697" title="All 2 branches missed.">            if (id.startsWith(&quot;SessionAttribute:&quot;)) {</span>
+<span class="nc bnc" id="L698" title="All 2 branches missed.">                if (context.getHttpSession() == null) {</span>
+                    // if we don't have access to a session, e.g. when validating a form, we can't do anything
+<span class="nc" id="L700">                    return null;</span>
+                }
+<span class="nc" id="L702">                String saName = id.substring(&quot;SessionAttribute:&quot;.length());</span>
+<span class="nc" id="L703">                Object saValue = context.getHttpSession().getAttribute(saName);</span>
+<span class="nc bnc" id="L704" title="All 2 branches missed.">                if (saValue == null) {</span>
+<span class="nc" id="L705">                    return null;</span>
+<span class="nc bnc" id="L706" title="All 2 branches missed.">                } else if (saValue instanceof Location) {</span>
+<span class="nc" id="L707">                    return (Location) saValue;</span>
+<span class="nc bnc" id="L708" title="All 2 branches missed.">                } else if (saValue instanceof String) {</span>
+<span class="nc" id="L709">                    return getLocation((String) saValue, context);</span>
+                } else {
+<span class="nc" id="L711">                    return getLocation(saValue.toString(), context);</span>
+                }
+            }
+
+            // see if this is parseable int; if so, try looking up by id
+			try { //handle integer: id
+<span class="nc" id="L717">				int locationId = Integer.parseInt(id);</span>
+<span class="nc" id="L718">				location = Context.getLocationService().getLocation(locationId);</span>
+
+<span class="nc bnc" id="L720" title="All 2 branches missed.">				if (location != null) {</span>
+<span class="nc" id="L721">					return location;</span>
+				}
+			}
+<span class="nc" id="L724">			catch (Exception ex) {</span>
+				//do nothing
+<span class="nc" id="L726">			}</span>
+
+			// handle uuid id: &quot;a3e1302b-74bf-11df-9768-17cfc9833272&quot; if id matches a uuid format
+<span class="nc bnc" id="L729" title="All 2 branches missed.">			if (isValidUuidFormat(id)) {</span>
+<span class="nc" id="L730">				location = Context.getLocationService().getLocationByUuid(id);</span>
+
+<span class="nc bnc" id="L732" title="All 2 branches missed.">				if (location != null) {</span>
+<span class="nc" id="L733">					return location;</span>
+				}
+			}
+
+			//get by mapping &quot;source:code&quot;
+<span class="nc" id="L738">			location = getMetadataByMapping(Location.class, id);</span>
+<span class="nc bnc" id="L739" title="All 2 branches missed.">			if(location != null){</span>
+<span class="nc" id="L740">				return location;</span>
+			}
+
+			// if it's neither a uuid or id, try location name
+<span class="nc" id="L744">			location = Context.getLocationService().getLocation(id);</span>
+
+<span class="nc bnc" id="L746" title="All 2 branches missed.">			if (location != null) {</span>
+<span class="nc" id="L747">				return location;</span>
+			}
+
+			// try the &quot;101 - Cange&quot; case
+<span class="nc bnc" id="L751" title="All 2 branches missed.">			if (id.contains(&quot; &quot;)) {</span>
+<span class="nc" id="L752">				String[] values = id.split(&quot; &quot;);</span>
+				try {
+<span class="nc" id="L754">					int locationId = Integer.parseInt(values[0]);</span>
+<span class="nc" id="L755">					location = Context.getLocationService().getLocation(locationId);</span>
+
+<span class="nc bnc" id="L757" title="All 2 branches missed.">					if (location != null) {</span>
+<span class="nc" id="L758">						return location;</span>
+					}
+				}
+<span class="nc" id="L761">				catch (Exception ex) {</span>
+					//do nothing
+<span class="nc" id="L763">				}</span>
+			}
+		}
+
+		// no match found, so return null
+<span class="nc" id="L768">		return null;</span>
+	}
+
+	/***
+	 * Get the program by: 1)an integer id like 5090 or 2) uuid like
+	 * &quot;a3e12268-74bf-11df-9768-17cfc9833272&quot; or 3) name of *associated concept* (not name of
+	 * program), like &quot;MDR-TB Program&quot;
+	 *
+	 * @param id
+	 * @return the program if exist, else null
+	 * &lt;strong&gt;Should&lt;/strong&gt; find a program by its id
+	 * &lt;strong&gt;Should&lt;/strong&gt; find a program by name of associated concept
+	 * &lt;strong&gt;Should&lt;/strong&gt; find a program by its uuid
+	 * &lt;strong&gt;Should&lt;/strong&gt; return null otherwise
+	 */
+	public static Program getProgram(String id) {
+
+<span class="nc" id="L785">		Program program = null;</span>
+
+<span class="nc bnc" id="L787" title="All 2 branches missed.">		if (id != null) {</span>
+
+<span class="nc" id="L789">            id = id.trim();</span>
+
+			// see if this is parseable int; if so, try looking up by id
+			try {//handle integer: id
+<span class="nc" id="L793">				int programId = Integer.parseInt(id);</span>
+<span class="nc" id="L794">				program = Context.getProgramWorkflowService().getProgram(programId);</span>
+
+<span class="nc bnc" id="L796" title="All 2 branches missed.">				if (program != null) {</span>
+<span class="nc" id="L797">					return program;</span>
+				}
+			}
+<span class="nc" id="L800">			catch (Exception ex) {</span>
+				//do nothing
+<span class="nc" id="L802">			}</span>
+
+			//get Program by mapping
+<span class="nc" id="L805">			program = getMetadataByMapping(Program.class, id);</span>
+<span class="nc bnc" id="L806" title="All 2 branches missed.">			if(program != null){</span>
+<span class="nc" id="L807">				return program;</span>
+			}
+
+			//handle uuid id: &quot;a3e1302b-74bf-11df-9768-17cfc9833272&quot;, if id matches uuid format
+<span class="nc bnc" id="L811" title="All 2 branches missed.">			if (isValidUuidFormat(id)) {</span>
+<span class="nc" id="L812">				program = Context.getProgramWorkflowService().getProgramByUuid(id);</span>
+
+<span class="nc bnc" id="L814" title="All 2 branches missed.">				if (program != null) {</span>
+<span class="nc" id="L815">					return program;</span>
+				}
+			} else {
+				// if it's neither a uuid or id, try program name
+				// (note that this API method actually checks based on name of the associated concept, not the name of the program itself)
+<span class="nc" id="L820">				program = Context.getProgramWorkflowService().getProgramByName(id);</span>
+			}
+			
+		}
+<span class="nc" id="L824">		return program;</span>
+	}
+
+	/***
+	 * Get the person by: 1)an integer id like 5090 or 2) uuid like
+	 * &quot;a3e12268-74bf-11df-9768-17cfc9833272&quot; or 3) a username like &quot;mgoodrich&quot; or 4) an id/name
+	 * pair like &quot;5090 - Bob Jones&quot; (this format is used when saving a person on a obs as a value
+	 * text)
+	 * 
+	 * @param id
+	 * @return the person if exist, else null
+	 * &lt;strong&gt;Should&lt;/strong&gt; find a person by its id
+	 * &lt;strong&gt;Should&lt;/strong&gt; find a person by its uuid
+	 * &lt;strong&gt;Should&lt;/strong&gt; find a person by username of corresponding user
+	 * &lt;strong&gt;Should&lt;/strong&gt; return null otherwise
+	 */
+	public static Person getPerson(String id) {
+		
+<span class="nc" id="L842">		Person person = null;</span>
+		
+<span class="nc bnc" id="L844" title="All 2 branches missed.">		if (id != null) {</span>
+
+<span class="nc" id="L846">            id = id.trim();</span>
+
+			// see if this is parseable int; if so, try looking up by id
+			try { //handle integer: id
+<span class="nc" id="L850">				int personId = Integer.parseInt(id);</span>
+<span class="nc" id="L851">				person = Context.getPersonService().getPerson(personId);</span>
+				
+<span class="nc bnc" id="L853" title="All 2 branches missed.">				if (person != null) {</span>
+<span class="nc" id="L854">					return person;</span>
+				}
+			}
+<span class="nc" id="L857">			catch (Exception ex) {</span>
+				//do nothing 
+<span class="nc" id="L859">			}</span>
+			
+			// handle uuid id: &quot;a3e1302b-74bf-11df-9768-17cfc9833272&quot;, if id matches uuid format
+<span class="nc bnc" id="L862" title="All 2 branches missed.">			if (isValidUuidFormat(id)) {</span>
+<span class="nc" id="L863">				person = Context.getPersonService().getPersonByUuid(id);</span>
+				
+<span class="nc bnc" id="L865" title="All 2 branches missed.">				if (person != null) {</span>
+<span class="nc" id="L866">					return person;</span>
+				}
+			}
+			
+			// handle username
+<span class="nc" id="L871">			User personByUsername = Context.getUserService().getUserByUsername(id);</span>
+<span class="nc bnc" id="L872" title="All 2 branches missed.">			if (personByUsername != null) {</span>
+<span class="nc" id="L873">				return personByUsername.getPerson();</span>
+			}
+			
+			// try the &quot;5090 - Bob Jones&quot; case
+<span class="nc bnc" id="L877" title="All 2 branches missed.">			if (id.contains(&quot; &quot;)) {</span>
+<span class="nc" id="L878">				String[] values = id.split(&quot; &quot;);</span>
+				try {
+<span class="nc" id="L880">					int personId = Integer.parseInt(values[0]);</span>
+<span class="nc" id="L881">					person = Context.getPersonService().getPerson(personId);</span>
+					
+<span class="nc bnc" id="L883" title="All 2 branches missed.">					if (person != null) {</span>
+<span class="nc" id="L884">						return person;</span>
+					}
+				}
+<span class="nc" id="L887">				catch (Exception ex) {</span>
+					//do nothing 
+<span class="nc" id="L889">				}</span>
+			}
+		}
+		
+		// no match found, so return null
+<span class="nc" id="L894">		return null;</span>
+	}
+	
+	/***
+	 * Get the patient identifier type by: 1)an integer id like 5090 or 2) uuid like
+	 * &quot;a3e12268-74bf-11df-9768-17cfc9833272&quot; or 3) a name like &quot;Temporary Identifier&quot;
+	 * 
+	 * @param id
+	 * @return the identifier type if exist, else null
+	 * &lt;strong&gt;Should&lt;/strong&gt; find an identifier type by its id
+	 * &lt;strong&gt;Should&lt;/strong&gt; find an identifier type by its uuid
+	 * &lt;strong&gt;Should&lt;/strong&gt; find an identifier type by its name
+	 * &lt;strong&gt;Should&lt;/strong&gt; return null otherwise
+	 */
+	public static PatientIdentifierType getPatientIdentifierType(String id) {
+<span class="fc" id="L909">		PatientIdentifierType identifierType = null;</span>
+		
+<span class="pc bpc" id="L911" title="1 of 2 branches missed.">		if (id != null) {</span>
+
+<span class="fc" id="L913">            id = id.trim();</span>
+
+			// see if this is parseable int; if so, try looking up by id
+			try { //handle integer: id
+<span class="fc" id="L917">				int identifierTypeId = Integer.parseInt(id);</span>
+<span class="fc" id="L918">				identifierType = Context.getPatientService().getPatientIdentifierType(identifierTypeId);</span>
+				
+<span class="pc bpc" id="L920" title="1 of 2 branches missed.">				if (identifierType != null) {</span>
+<span class="fc" id="L921">					return identifierType;</span>
+				}
+			}
+<span class="nc" id="L924">			catch (Exception ex) {</span>
+				//do nothing 
+<span class="nc" id="L926">			}</span>
+
+			//get PatientIdentifierType by mapping
+<span class="nc" id="L929">			identifierType = getMetadataByMapping(PatientIdentifierType.class, id);</span>
+<span class="nc bnc" id="L930" title="All 2 branches missed.">			if(identifierType != null){</span>
+<span class="nc" id="L931">				return identifierType;</span>
+			}
+			
+			//handle uuid id: &quot;a3e1302b-74bf-11df-9768-17cfc9833272&quot;, if id matches uuid format
+<span class="nc bnc" id="L935" title="All 2 branches missed.">			if (isValidUuidFormat(id)) {</span>
+<span class="nc" id="L936">				identifierType = Context.getPatientService().getPatientIdentifierTypeByUuid(id);</span>
+				
+<span class="nc bnc" id="L938" title="All 2 branches missed.">				if (identifierType != null) {</span>
+<span class="nc" id="L939">					return identifierType;</span>
+				}
+			}
+			// handle name
+			else {
+				// if it's neither a uuid or id, try identifier type name
+<span class="nc" id="L945">				identifierType = Context.getPatientService().getPatientIdentifierTypeByName(id);</span>
+			}
+		}
+<span class="nc" id="L948">		return identifierType;</span>
+	}
+	
+	public static ProgramWorkflow getWorkflow(Integer id) {
+<span class="nc bnc" id="L952" title="All 2 branches missed.">		for (Program p : Context.getProgramWorkflowService().getAllPrograms()) {</span>
+<span class="nc bnc" id="L953" title="All 2 branches missed.">			for (ProgramWorkflow w : p.getAllWorkflows()) {</span>
+<span class="nc bnc" id="L954" title="All 2 branches missed.">				if (w.getProgramWorkflowId().equals(id)) {</span>
+<span class="nc" id="L955">					return w;</span>
+				}
+<span class="nc" id="L957">			}</span>
+<span class="nc" id="L958">		}</span>
+<span class="nc" id="L959">		return null;</span>
+	}
+	
+	/**
+	 * Looks up a {@link ProgramWorkflow} by id, uuid or by concept map of the underlying concept
+	 */
+	@SuppressWarnings(&quot;deprecation&quot;)
+	public static ProgramWorkflow getWorkflow(String identifier) {
+<span class="nc" id="L967">		ProgramWorkflow workflow = null;</span>
+		
+<span class="nc bnc" id="L969" title="All 2 branches missed.">		if (identifier != null) {</span>
+
+<span class="nc" id="L971">            identifier = identifier.trim();</span>
+
+			// first try to fetch by id
+			try {
+<span class="nc" id="L975">				Integer id = Integer.valueOf(identifier);</span>
+<span class="nc" id="L976">				workflow = getWorkflow(id);</span>
+				
+<span class="nc bnc" id="L978" title="All 2 branches missed.">				if (workflow != null) {</span>
+<span class="nc" id="L979">					return workflow;</span>
+				}
+			}
+<span class="nc" id="L982">			catch (NumberFormatException e) {}</span>
+			
+			// if not, try to fetch by uuid
+<span class="nc bnc" id="L985" title="All 2 branches missed.">			if (isValidUuidFormat(identifier)) {</span>
+<span class="nc" id="L986">				workflow = Context.getProgramWorkflowService().getWorkflowByUuid(identifier);</span>
+				
+<span class="nc bnc" id="L988" title="All 2 branches missed.">				if (workflow != null) {</span>
+<span class="nc" id="L989">					return workflow;</span>
+				}
+			}
+			
+			// finally, try to fetch by concept map
+			// handle  mapping id: xyz:ht
+<span class="nc" id="L995">			int index = identifier.indexOf(&quot;:&quot;);</span>
+<span class="nc bnc" id="L996" title="All 2 branches missed.">			if (index != -1) {</span>
+<span class="nc" id="L997">				Concept concept = getConcept(identifier);</span>
+				
+				// iterate through workflows until we see if we find a match
+<span class="nc bnc" id="L1000" title="All 2 branches missed.">				if (concept != null) {</span>
+<span class="nc bnc" id="L1001" title="All 2 branches missed.">					for (Program program : Context.getProgramWorkflowService().getAllPrograms(false)) {</span>
+<span class="nc bnc" id="L1002" title="All 2 branches missed.">						for (ProgramWorkflow w : program.getAllWorkflows()) {</span>
+<span class="nc bnc" id="L1003" title="All 2 branches missed.">							if (w.getConcept().equals(concept)) {</span>
+<span class="nc" id="L1004">								return w;</span>
+							}
+<span class="nc" id="L1006">						}</span>
+<span class="nc" id="L1007">					}</span>
+				}
+			}
+		}
+		
+<span class="nc" id="L1012">		return workflow;</span>
+	}
+	
+	/**
+	 * Looks up a {@link ProgramWorkflowState} from the specified program by programWorkflowStateId,
+	 * uuid, or by a concept map to the the underlying concept (Note that if there are multiple
+	 * states associated with the same concept in the program, this method will return an arbitrary
+	 * one if fetched by concept mapping)
+	 * 
+	 * @param identifier the programWorkflowStateId, uuid or the concept name to match against
+	 * @param program
+	 * @return
+	 * &lt;strong&gt;Should&lt;/strong&gt; return the state with the matching id
+	 * &lt;strong&gt;Should&lt;/strong&gt; return the state with the matching uuid
+	 * &lt;strong&gt;Should&lt;/strong&gt; return the state associated with a concept that matches the passed concept map
+	 */
+	public static ProgramWorkflowState getState(String identifier, Program program) {
+<span class="nc bnc" id="L1029" title="All 2 branches missed.">		if (identifier == null) {</span>
+<span class="nc" id="L1030">			return null;</span>
+		}
+		
+		// first try to fetch by id or uuid
+<span class="nc" id="L1034">		ProgramWorkflowState state = getState(identifier);</span>
+		
+<span class="nc bnc" id="L1036" title="All 2 branches missed.">		if (state != null) {</span>
+<span class="nc" id="L1037">			return state;</span>
+		}
+		// if we didn't find a match, see if this is a concept mapping
+		else {
+<span class="nc" id="L1041">			identifier = identifier.trim();</span>
+
+<span class="nc" id="L1043">            int index = identifier.indexOf(&quot;:&quot;);</span>
+<span class="nc bnc" id="L1044" title="All 2 branches missed.">			if (index != -1) {</span>
+<span class="nc" id="L1045">				Concept concept = getConcept(identifier);</span>
+<span class="nc bnc" id="L1046" title="All 2 branches missed.">				if (concept != null) {</span>
+<span class="nc bnc" id="L1047" title="All 2 branches missed.">					for (ProgramWorkflow workflow : program.getAllWorkflows()) {</span>
+<span class="nc bnc" id="L1048" title="All 2 branches missed.">						for (ProgramWorkflowState s : workflow.getStates(false)) {</span>
+<span class="nc bnc" id="L1049" title="All 2 branches missed.">							if (s.getConcept().equals(concept)) {</span>
+<span class="nc" id="L1050">								return s;</span>
+							}
+<span class="nc" id="L1052">						}</span>
+<span class="nc" id="L1053">					}</span>
+				}
+			}
+		}
+<span class="nc" id="L1057">		return null;</span>
+	}
+	
+	/**
+	 * Looks up a {@link ProgramWorkflowState} from the specified workflow by
+	 * programWorkflowStateId, uuid, or by a concept map to the the underlying concept (Note that if
+	 * there are multiple states associated with the same concept in the workflow, this method will
+	 * return an arbitrary one if fetched by concept mapping)
+	 * 
+	 * @param identifier the programWorkflowStateId, uuid or the concept name to match against
+	 * @param workflow
+	 * @return
+	 * &lt;strong&gt;Should&lt;/strong&gt; return the state with the matching id
+	 * &lt;strong&gt;Should&lt;/strong&gt; return the state with the matching uuid
+	 * &lt;strong&gt;Should&lt;/strong&gt; return the state associated with a concept that matches the passed concept map
+	 */
+	public static ProgramWorkflowState getState(String identifier, ProgramWorkflow workflow) {
+<span class="nc bnc" id="L1074" title="All 2 branches missed.">		if (identifier == null) {</span>
+<span class="nc" id="L1075">			return null;</span>
+		}
+		
+		// first try to fetch by id or uuid
+<span class="nc" id="L1079">		ProgramWorkflowState state = getState(identifier);</span>
+		
+<span class="nc bnc" id="L1081" title="All 4 branches missed.">		if (state != null &amp;&amp; state.getProgramWorkflow().equals(workflow)) {</span>
+<span class="nc" id="L1082">			return state;</span>
+		}
+		
+		// if we didn't find a match, see if this is a concept mapping
+		else {
+<span class="nc" id="L1087">            identifier = identifier.trim();</span>
+
+<span class="nc" id="L1089">			int index = identifier.indexOf(&quot;:&quot;);</span>
+<span class="nc bnc" id="L1090" title="All 2 branches missed.">			if (index != -1) {</span>
+<span class="nc" id="L1091">				Concept concept = getConcept(identifier);</span>
+<span class="nc bnc" id="L1092" title="All 2 branches missed.">				if (concept != null) {</span>
+<span class="nc bnc" id="L1093" title="All 2 branches missed.">					for (ProgramWorkflowState s : workflow.getStates(false)) {</span>
+<span class="nc bnc" id="L1094" title="All 2 branches missed.">						if (s.getConcept().equals(concept)) {</span>
+<span class="nc" id="L1095">							return s;</span>
+						}
+<span class="nc" id="L1097">					}</span>
+				}
+			}
+		}
+<span class="nc" id="L1101">		return null;</span>
+	}
+
+    public static List&lt;Location&gt; getLocationsByTags(String attributeName, Map&lt;String, String&gt; parameters){
+<span class="nc" id="L1105">        List&lt;Location&gt; locations = null;</span>
+
+<span class="nc" id="L1107">        String locationTags = parameters.get(attributeName);</span>
+
+<span class="nc bnc" id="L1109" title="All 2 branches missed.">        if ( locationTags != null) {</span>
+<span class="nc" id="L1110">            List&lt;LocationTag&gt; tags = new ArrayList&lt;LocationTag&gt;();</span>
+<span class="nc" id="L1111">            String[] temp = locationTags.split(&quot;,&quot;);</span>
+<span class="nc bnc" id="L1112" title="All 2 branches missed.">            for (String s : temp) {</span>
+<span class="nc bnc" id="L1113" title="All 4 branches missed.">				if (s != null &amp;&amp; !s.isEmpty()) {</span>
+<span class="nc" id="L1114">					LocationTag tag = getLocationTag(s);</span>
+<span class="nc bnc" id="L1115" title="All 2 branches missed.">					if (tag == null) {</span>
+<span class="nc" id="L1116">						throw new RuntimeException(&quot;Cannot find tag: &quot; + tag);</span>
+					}
+<span class="nc" id="L1118">					tags.add(tag);</span>
+				}
+            }
+<span class="nc" id="L1121">            locations =  new ArrayList&lt;Location&gt;();</span>
+<span class="nc" id="L1122">            locations.addAll(Context.getLocationService().getLocationsHavingAnyTag(tags));</span>
+        }
+<span class="nc" id="L1124">        return locations;</span>
+    }
+    /**
+     * Fetches a location tag by name or id
+     * (Will add support for uuid once we stop supporting OpenMRS 1.6, which doesn't a uuid on location tag)
+     *
+     * @param identifier
+     * @return
+     */
+    public static LocationTag getLocationTag(String identifier) {
+
+<span class="nc" id="L1135">        LocationTag tag = null;</span>
+
+<span class="nc bnc" id="L1137" title="All 2 branches missed.">        if (identifier != null) {</span>
+
+<span class="nc" id="L1139">            identifier = identifier.trim();</span>
+
+            // first try to fetch by id
+            try {
+<span class="nc" id="L1143">                Integer id = Integer.valueOf(identifier);</span>
+<span class="nc" id="L1144">                tag = Context.getLocationService().getLocationTag(id);</span>
+
+<span class="nc bnc" id="L1146" title="All 2 branches missed.">                if (tag != null) {</span>
+<span class="nc" id="L1147">                    return tag;</span>
+                }
+            }
+<span class="nc" id="L1150">            catch (NumberFormatException e) {}</span>
+
+            // if not, try to fetch by name
+<span class="nc" id="L1153">            tag = Context.getLocationService().getLocationTagByName(identifier);</span>
+
+<span class="nc bnc" id="L1155" title="All 2 branches missed.">            if (tag != null) {</span>
+<span class="nc" id="L1156">                return tag;</span>
+            }
+
+           // TODO add ability to fetch by uuid once we are no longer worried about being compatible with OpenMRS 1.6 (since getLocationTagByUuid is not available in 1.6)
+
+        }
+
+<span class="nc" id="L1163">        return null;</span>
+    }
+    
+    private static List&lt;ProgramWorkflowState&gt; getStates(boolean includeRetired) {
+<span class="nc" id="L1167">		List&lt;ProgramWorkflowState&gt; ret = new ArrayList&lt;ProgramWorkflowState&gt;();</span>
+<span class="nc bnc" id="L1168" title="All 2 branches missed.">		for (Program p : Context.getProgramWorkflowService().getAllPrograms()) {</span>
+<span class="nc bnc" id="L1169" title="All 2 branches missed.">			for (ProgramWorkflow w : p.getAllWorkflows()) {</span>
+<span class="nc bnc" id="L1170" title="All 2 branches missed.">				for (ProgramWorkflowState s : w.getStates()) {</span>
+<span class="nc bnc" id="L1171" title="All 4 branches missed.">					if (includeRetired || !s.isRetired()) {</span>
+<span class="nc" id="L1172">						ret.add(s);</span>
+					}
+<span class="nc" id="L1174">				}</span>
+<span class="nc" id="L1175">			}</span>
+<span class="nc" id="L1176">		}</span>
+<span class="nc" id="L1177">		return ret;</span>
+	}
+    
+    private static ProgramWorkflowState getState(Integer id) {
+<span class="nc bnc" id="L1181" title="All 2 branches missed.">		for (ProgramWorkflowState s : getStates(true)) {</span>
+<span class="nc bnc" id="L1182" title="All 2 branches missed.">			if (s.getProgramWorkflowStateId().equals(id)) {</span>
+<span class="nc" id="L1183">				return s;</span>
+			}
+<span class="nc" id="L1185">		}</span>
+<span class="nc" id="L1186">		return null;</span>
+	}
+
+	/**
+	 * Looks up a {@link ProgramWorkflowState} from the specified workflow by
+	 * programWorkflowStateId, or uuid
+	 * 
+	 * @param identifier the programWorkflowStateId or uuid to match against
+	 * @param
+	 * @return
+	 * &lt;strong&gt;Should&lt;/strong&gt; return the state with the matching id
+	 * &lt;strong&gt;Should&lt;/strong&gt; return the state with the matching uuid
+	 */
+	@SuppressWarnings(&quot;deprecation&quot;)
+	public static ProgramWorkflowState getState(String identifier) {
+<span class="nc" id="L1201">		ProgramWorkflowState state = null;</span>
+		
+<span class="nc bnc" id="L1203" title="All 2 branches missed.">		if (identifier != null) {</span>
+			try {
+
+<span class="nc" id="L1206">				identifier = identifier.trim();</span>
+
+<span class="nc" id="L1208">				Integer id = Integer.valueOf(identifier);</span>
+<span class="nc" id="L1209">				state = getState(id);</span>
+				
+<span class="nc bnc" id="L1211" title="All 2 branches missed.">				if (state != null) {</span>
+<span class="nc" id="L1212">					return state;</span>
+				}
+			}
+<span class="nc" id="L1215">			catch (NumberFormatException e) {}</span>
+
+			//get ProgramWorkflowState by mapping
+<span class="nc" id="L1218">			state = getMetadataByMapping(ProgramWorkflowState.class, identifier);</span>
+<span class="nc bnc" id="L1219" title="All 2 branches missed.">			if (state != null) {</span>
+<span class="nc" id="L1220">				return state;</span>
+			}
+
+<span class="nc bnc" id="L1223" title="All 2 branches missed.">			if (isValidUuidFormat(identifier)) {</span>
+<span class="nc" id="L1224">				state = Context.getProgramWorkflowService().getStateByUuid(identifier);</span>
+				
+<span class="nc bnc" id="L1226" title="All 2 branches missed.">				if (state != null) {</span>
+<span class="nc" id="L1227">					return state;</span>
+				}
+			}
+		}
+<span class="nc" id="L1231">		return null;</span>
+	}
+
+	/***
+	 * Determines if the passed string is in valid uuid format By OpenMRS standards, a uuid must be
+	 * 36 characters in length and not contain whitespace, but we do not enforce that a uuid be in
+	 * the &quot;canonical&quot; form, with alphanumerics seperated by dashes, since the MVP dictionary does
+	 * not use this format (We also are being slightly lenient and accepting uuids that are 37 or 38
+	 * characters in length, since the uuid data field is 38 characters long)
+	 */
+	public static boolean isValidUuidFormat(String uuid) {
+<span class="pc bpc" id="L1242" title="3 of 8 branches missed.">		if (uuid.length() &lt; 36 || uuid.length() &gt; 38 || uuid.contains(&quot; &quot;) || uuid.contains(&quot;.&quot;)) {</span>
+<span class="fc" id="L1243">			return false;</span>
+		}
+		
+<span class="fc" id="L1246">		return true;</span>
+	}
+
+	/**
+	 * Evaluates the specified Java constant using reflection
+	 * @param fqn the fully qualified name of the constant
+	 * @return the constant value
+	 */
+	protected static String evaluateStaticConstant(String fqn) {
+<span class="nc" id="L1255">		int lastPeriod = fqn.lastIndexOf(&quot;.&quot;);</span>
+<span class="nc" id="L1256">		String clazzName = fqn.substring(0, lastPeriod);</span>
+<span class="nc" id="L1257">		String constantName = fqn.substring(lastPeriod + 1);</span>
+
+		try {
+<span class="nc" id="L1260">			Class&lt;?&gt; clazz = Context.loadClass(clazzName);</span>
+<span class="nc" id="L1261">			Field constantField = clazz.getField(constantName);</span>
+<span class="nc" id="L1262">			Object val = constantField.get(null);</span>
+<span class="nc bnc" id="L1263" title="All 2 branches missed.">			return val != null ? String.valueOf(val) : null;</span>
+		}
+<span class="nc" id="L1265">		catch (Exception ex) {</span>
+<span class="nc" id="L1266">			throw new IllegalArgumentException(&quot;Unable to evaluate &quot; + fqn, ex);</span>
+		}
+	}
+
+	/**
+	 * Gets all patient identifier types
+	 * @return the patient identifier types
+	 */
+	public static List&lt;PatientIdentifierType&gt; getPatientIdentifierTypes() {
+<span class="nc" id="L1275">		return Context.getPatientService().getAllPatientIdentifierTypes();</span>
+	}
+	
+	/**
+	 * Utility method to void an encounter. If the voidEncounterByHtmlFormSchema global property has
+	 * been set to true, OR if the Html Form Flowsheet module has been started AND the
+	 * voidEncounterByHtmlFormSchema global property has not been explicitly set to false, void the
+	 * encounter via the special voidEncounterByHtmlFormSchema algorithm. Otherwise simply void the
+	 * encounter normally. This test is done because when using the Html Form Flowsheet module we
+	 * only want to void observations associated with the current form, not the entire encounter
+	 */
+	public static void voidEncounter(Encounter e, HtmlForm htmlform, String voidReason) throws Exception {
+<span class="nc bnc" id="L1287" title="All 2 branches missed.">		if (voidReason == null) {</span>
+<span class="nc" id="L1288">			voidReason = &quot;htmlformentry&quot;;</span>
+		}
+		
+<span class="nc bnc" id="L1291" title="All 2 branches missed.">		if (HtmlFormEntryGlobalProperties.VOID_ENCOUNTER_BY_HTML_FORM_SCHEMA() != null) {</span>
+			
+<span class="nc bnc" id="L1293" title="All 2 branches missed.">			if (HtmlFormEntryGlobalProperties.VOID_ENCOUNTER_BY_HTML_FORM_SCHEMA() == true) {</span>
+<span class="nc" id="L1294">				voidEncounterByHtmlFormSchema(e, htmlform, voidReason);</span>
+			} else {
+<span class="nc" id="L1296">				Context.getEncounterService().voidEncounter(e, voidReason);</span>
+			}
+			
+<span class="nc bnc" id="L1299" title="All 2 branches missed.">		} else if (HtmlFormEntryGlobalProperties.HTML_FORM_FLOWSHEET_STARTED() != null</span>
+<span class="nc bnc" id="L1300" title="All 2 branches missed.">		        &amp;&amp; HtmlFormEntryGlobalProperties.HTML_FORM_FLOWSHEET_STARTED() == true) {</span>
+<span class="nc" id="L1301">			voidEncounterByHtmlFormSchema(e, htmlform, voidReason);</span>
+		} else {
+<span class="nc" id="L1303">			Context.getEncounterService().voidEncounter(e, voidReason);</span>
+		}
+<span class="nc" id="L1305">	}</span>
+	
+	/**
+	 * Utility method that sets all matched obs and orders to voided, and voids encounter if all obs
+	 * and orders in encounter are voided. Does not call save, just updates the voided fields on all
+	 * objects in encounter Uses a 'dummy' FormEntrySession to use htmlformentry schema matching
+	 * mechanism, and then examines the leftover Obs, Orders from the FormEntrySession constructor
+	 */
+	public static void voidEncounterByHtmlFormSchema(Encounter e, HtmlForm htmlform, String voidReason) throws Exception {
+<span class="nc bnc" id="L1314" title="All 4 branches missed.">		if (e != null &amp;&amp; htmlform != null) {</span>
+<span class="nc bnc" id="L1315" title="All 2 branches missed.">			if (voidReason == null)</span>
+<span class="nc" id="L1316">				voidReason = &quot;htmlformentry&quot;;</span>
+<span class="nc" id="L1317">			boolean shouldVoidEncounter = true;</span>
+<span class="nc" id="L1318">			Map&lt;Obs, Obs&gt; replacementObs = new HashMap&lt;Obs, Obs&gt;();//new, then source</span>
+<span class="nc" id="L1319">			Map&lt;Order, Order&gt; replacementOrders = new HashMap&lt;Order, Order&gt;();//new, then source</span>
+<span class="nc" id="L1320">			Encounter eTmp = returnEncounterCopy(e, replacementObs, replacementOrders);</span>
+<span class="nc" id="L1321">			FormEntrySession session = new FormEntrySession(eTmp.getPatient(), eTmp, Mode.VIEW, htmlform, null); // session gets a null HttpSession</span>
+<span class="nc" id="L1322">            session.getHtmlToDisplay();</span>
+<span class="nc" id="L1323">			List&lt;FormSubmissionControllerAction&gt; actions = session.getSubmissionController().getActions();</span>
+<span class="nc" id="L1324">			Set&lt;Obs&gt; matchedObs = new HashSet&lt;Obs&gt;();</span>
+<span class="nc" id="L1325">			Set&lt;Order&gt; matchedOrders = new HashSet&lt;Order&gt;();</span>
+<span class="nc bnc" id="L1326" title="All 2 branches missed.">			for (FormSubmissionControllerAction lfca : actions) {</span>
+<span class="nc bnc" id="L1327" title="All 2 branches missed.">				if (lfca instanceof ObsSubmissionElement) {</span>
+<span class="nc" id="L1328">					ObsSubmissionElement ose = (ObsSubmissionElement) lfca;</span>
+<span class="nc bnc" id="L1329" title="All 2 branches missed.">					if (ose.getExistingObs() != null) {</span>
+<span class="nc" id="L1330">						matchedObs.add(ose.getExistingObs());</span>
+					}
+				}
+<span class="nc bnc" id="L1333" title="All 2 branches missed.">				if (lfca instanceof ObsGroupAction) {</span>
+<span class="nc" id="L1334">					ObsGroupAction oga = (ObsGroupAction) lfca;</span>
+<span class="nc bnc" id="L1335" title="All 2 branches missed.">					if (oga.getExistingGroup() != null) {</span>
+<span class="nc" id="L1336">						matchedObs.add(oga.getExistingGroup());</span>
+					}
+				}
+<span class="nc bnc" id="L1339" title="All 2 branches missed.">				if (lfca instanceof GettingExistingOrder) {</span>
+<span class="nc" id="L1340">					GettingExistingOrder dse = (GettingExistingOrder) lfca;</span>
+<span class="nc bnc" id="L1341" title="All 2 branches missed.">					if (dse.getExistingOrder() != null) {</span>
+<span class="nc" id="L1342">						matchedOrders.add(dse.getExistingOrder());</span>
+					}
+				}
+<span class="nc" id="L1345">			}</span>
+			
+<span class="nc bnc" id="L1347" title="All 2 branches missed.">			for (Obs o : e.getAllObs(false)) { //ignore voided obs</span>
+<span class="nc" id="L1348">				boolean matched = false;</span>
+<span class="nc bnc" id="L1349" title="All 2 branches missed.">				for (Obs oMatched : matchedObs) {</span>
+<span class="nc bnc" id="L1350" title="All 4 branches missed.">					if (replacementObs.get(oMatched) != null &amp;&amp; replacementObs.get(oMatched).equals(o)) {</span>
+<span class="nc" id="L1351">						o.setVoided(true);</span>
+<span class="nc" id="L1352">						o.setVoidedBy(Context.getAuthenticatedUser());</span>
+<span class="nc" id="L1353">						o.setVoidReason(voidReason);</span>
+<span class="nc" id="L1354">						o.setDateVoided(new Date());</span>
+<span class="nc" id="L1355">						matched = true;</span>
+<span class="nc" id="L1356">						break;</span>
+					}
+<span class="nc" id="L1358">				}</span>
+<span class="nc bnc" id="L1359" title="All 2 branches missed.">				if (!matched)</span>
+<span class="nc" id="L1360">					shouldVoidEncounter = false;</span>
+<span class="nc" id="L1361">			}</span>
+			
+<span class="nc bnc" id="L1363" title="All 2 branches missed.">			for (Order o : e.getOrders()) {</span>
+<span class="nc bnc" id="L1364" title="All 2 branches missed.">				if (!o.isVoided()) { //ignore voided orders</span>
+<span class="nc" id="L1365">					boolean matched = false;</span>
+<span class="nc bnc" id="L1366" title="All 2 branches missed.">					for (Order oMatched : matchedOrders) {</span>
+						//Order.equals only checks Id value
+<span class="nc bnc" id="L1368" title="All 4 branches missed.">						if (replacementOrders.get(oMatched) != null &amp;&amp; replacementOrders.get(oMatched).equals(o)</span>
+<span class="nc bnc" id="L1369" title="All 2 branches missed.">						        &amp;&amp; !o.isVoided()) {</span>
+<span class="nc" id="L1370">							o.setVoided(true);</span>
+<span class="nc" id="L1371">							o.setVoidedBy(Context.getAuthenticatedUser());</span>
+<span class="nc" id="L1372">							o.setVoidReason(voidReason);</span>
+<span class="nc" id="L1373">							o.setDateVoided(new Date());</span>
+<span class="nc" id="L1374">							matched = true;</span>
+<span class="nc" id="L1375">							break;</span>
+						}
+<span class="nc" id="L1377">					}</span>
+<span class="nc bnc" id="L1378" title="All 2 branches missed.">					if (!matched)</span>
+<span class="nc" id="L1379">						shouldVoidEncounter = false;</span>
+				}
+<span class="nc" id="L1381">			}</span>
+			
+<span class="nc bnc" id="L1383" title="All 2 branches missed.">			if (shouldVoidEncounter) {</span>
+<span class="nc" id="L1384">				e.setVoided(true);</span>
+<span class="nc" id="L1385">				e.setVoidedBy(Context.getAuthenticatedUser());</span>
+<span class="nc" id="L1386">				e.setVoidReason(voidReason);</span>
+<span class="nc" id="L1387">				e.setDateVoided(new Date());</span>
+			}
+<span class="nc" id="L1389">			eTmp = null;</span>
+		}
+<span class="nc" id="L1391">	}</span>
+	
+	/**
+	 * Method that returns a copy of an Encounter. Includes copies of all Obs tree structures and
+	 * Orders.
+	 * 
+	 * @param source
+	 * @param replacementObs
+	 * @param replacementOrders
+	 * @return
+	 * @throws Exception
+	 */
+	private static Encounter returnEncounterCopy(Encounter source, Map&lt;Obs, Obs&gt; replacementObs,
+	                                             Map&lt;Order, Order&gt; replacementOrders) throws Exception {
+<span class="nc bnc" id="L1405" title="All 2 branches missed.">		if (source != null) {</span>
+<span class="nc" id="L1406">			Encounter encNew = (Encounter) returnCopy(source);</span>
+			
+			//note: we can do this because we're not going to manipulate anything about these obs or orders, and this copy won't be persisted...
+			
+<span class="nc" id="L1410">			Set&lt;Obs&gt; newObs = new HashSet&lt;Obs&gt;();</span>
+<span class="nc bnc" id="L1411" title="All 2 branches missed.">			for (Obs o : source.getAllObs(true)) {</span>
+<span class="nc" id="L1412">				Obs oNew = returnObsCopy(o, replacementObs);</span>
+<span class="nc" id="L1413">				newObs.add(oNew);</span>
+<span class="nc" id="L1414">			}</span>
+<span class="nc" id="L1415">			encNew.setObs(newObs);</span>
+			
+<span class="nc" id="L1417">			Set&lt;Order&gt; newOrders = new HashSet&lt;Order&gt;();</span>
+<span class="nc bnc" id="L1418" title="All 2 branches missed.">			for (Order o : source.getOrders()) {</span>
+<span class="nc" id="L1419">				Order oNew = (Order) returnOrderCopy(o, replacementOrders);</span>
+<span class="nc" id="L1420">				newOrders.add(oNew);</span>
+<span class="nc" id="L1421">			}</span>
+<span class="nc" id="L1422">			encNew.setOrders(newOrders);</span>
+<span class="nc" id="L1423">			return encNew;</span>
+		}
+<span class="nc" id="L1425">		return null;</span>
+	}
+	
+	/**
+	 * Returns a copy of an Obs. Recurses through GroupMembers to return copies of those also, so
+	 * the whole Obs tree is a copy.
+	 * 
+	 * @param obsToCopy
+	 * @param replacements
+	 * @return
+	 * @throws Exception
+	 */
+	private static Obs returnObsCopy(Obs obsToCopy, Map&lt;Obs, Obs&gt; replacements) throws Exception {
+<span class="nc" id="L1438">		Obs newObs = (Obs) returnCopy(obsToCopy);</span>
+		
+<span class="nc bnc" id="L1440" title="All 2 branches missed.">		if (obsToCopy.isObsGrouping()) {</span>
+<span class="nc" id="L1441">			newObs.setGroupMembers(null);</span>
+<span class="nc bnc" id="L1442" title="All 2 branches missed.">			for (Obs oinner : obsToCopy.getGroupMembers()) {</span>
+<span class="nc" id="L1443">				Obs oinnerNew = returnObsCopy(oinner, replacements);</span>
+<span class="nc" id="L1444">				newObs.addGroupMember(oinnerNew);</span>
+<span class="nc" id="L1445">			}</span>
+		}
+		
+<span class="nc" id="L1448">		replacements.put(newObs, obsToCopy);</span>
+<span class="nc" id="L1449">		return newObs;</span>
+	}
+	
+	/**
+	 * Utility to return a copy of an Order. Uses reflection so that this code will support any
+	 * subclassing of Order, such as DrugOrder
+	 * 
+	 * @param source
+	 * @param replacementOrders
+	 * @return A copy of an Order
+	 * @throws Exception
+	 */
+	private static Object returnOrderCopy(Order source, Map&lt;Order, Order&gt; replacementOrders) throws Exception {
+<span class="nc" id="L1462">		Object ret = returnCopy(source);</span>
+<span class="nc" id="L1463">		replacementOrders.put((Order) ret, (Order) source);</span>
+<span class="nc" id="L1464">		return ret;</span>
+	}
+	
+	/**
+	 * Utility to return a copy of an Object. Copies all properties that are referencese by getters
+	 * and setters and *are not* collection
+	 * 
+	 * @param source
+	 * @return A copy of an object
+	 * @throws Exception
+	 */
+	private static Object returnCopy(Object source) throws Exception {
+<span class="nc" id="L1476">		Class&lt;? extends Object&gt; clazz = source.getClass();</span>
+<span class="nc" id="L1477">		Object ret = clazz.newInstance();</span>
+<span class="nc" id="L1478">		Set&lt;String&gt; fieldNames = new HashSet&lt;String&gt;();</span>
+<span class="nc" id="L1479">		List&lt;Field&gt; fields = new ArrayList&lt;Field&gt;();</span>
+<span class="nc" id="L1480">		addSuperclassFields(fields, clazz);</span>
+<span class="nc bnc" id="L1481" title="All 2 branches missed.">		for (Field f : fields) {</span>
+<span class="nc" id="L1482">			fieldNames.add(f.getName());</span>
+<span class="nc" id="L1483">		}</span>
+<span class="nc bnc" id="L1484" title="All 2 branches missed.">		for (String root : fieldNames) {</span>
+<span class="nc bnc" id="L1485" title="All 2 branches missed.">			for (Method getter : clazz.getMethods()) {</span>
+<span class="nc bnc" id="L1486" title="All 2 branches missed.">				if (getter.getName().toUpperCase().equals(&quot;GET&quot; + root.toUpperCase())</span>
+<span class="nc bnc" id="L1487" title="All 2 branches missed.">				        &amp;&amp; getter.getParameterTypes().length == 0) {</span>
+<span class="nc" id="L1488">					Method setter = getSetter(clazz, getter, &quot;SET&quot; + root.toUpperCase());</span>
+					//NOTE: Collection properties are not copied
+<span class="nc bnc" id="L1490" title="All 4 branches missed.">					if (setter != null &amp;&amp; methodsSupportSameArgs(getter, setter)</span>
+<span class="nc bnc" id="L1491" title="All 2 branches missed.">					        &amp;&amp; !(getter.getReturnType().isInstance(Collection.class))) {</span>
+<span class="nc" id="L1492">						Object o = getter.invoke(source, Collections.EMPTY_LIST.toArray());</span>
+<span class="nc bnc" id="L1493" title="All 2 branches missed.">						if (o != null) {</span>
+<span class="nc" id="L1494">							setter.invoke(ret, o);</span>
+						}
+					}
+				}
+			}
+<span class="nc" id="L1499">		}</span>
+<span class="nc" id="L1500">		return ret;</span>
+	}
+	
+	/**
+	 * The Encounter.setProvider() contains the different overloaded methods and this filters the
+	 * correct setter from those
+	 * 
+	 * @param clazz
+	 * @param getter
+	 * @param methodname
+	 * @return
+	 */
+	private static Method getSetter(Class&lt;? extends Object&gt; clazz, Method getter, String methodname) {
+		
+<span class="nc" id="L1514">		List&lt;Method&gt; setterMethods = getMethodCaseInsensitive(clazz, methodname);</span>
+<span class="nc bnc" id="L1515" title="All 4 branches missed.">		if (setterMethods != null &amp;&amp; !setterMethods.isEmpty()) {</span>
+<span class="nc bnc" id="L1516" title="All 2 branches missed.">			if (setterMethods.size() == 1) {</span>
+<span class="nc" id="L1517">				return setterMethods.get(0);</span>
+<span class="nc bnc" id="L1518" title="All 2 branches missed.">			} else if (setterMethods.size() &gt; 1) {</span>
+<span class="nc bnc" id="L1519" title="All 2 branches missed.">				for (Method m : setterMethods) {</span>
+<span class="nc" id="L1520">					Class&lt;?&gt;[] parameters = m.getParameterTypes();</span>
+<span class="nc bnc" id="L1521" title="All 2 branches missed.">					for (Class&lt;?&gt; parameter : parameters) {</span>
+<span class="nc bnc" id="L1522" title="All 2 branches missed.">						if (getter.getReturnType().equals(parameter)) {</span>
+<span class="nc" id="L1523">							return m;</span>
+						}
+					}
+<span class="nc" id="L1526">				}</span>
+			}
+		}
+<span class="nc" id="L1529">		return null;</span>
+	}
+	
+	/**
+	 * Performs a case insensitive search on a class for a method by name.
+	 * 
+	 * @param clazz
+	 * @param methodName
+	 * @return the found Method
+	 */
+	private static List&lt;Method&gt; getMethodCaseInsensitive(Class&lt;? extends Object&gt; clazz, String methodName) {
+		
+<span class="nc" id="L1541">		List&lt;Method&gt; methodList = new ArrayList&lt;Method&gt;();</span>
+<span class="nc bnc" id="L1542" title="All 2 branches missed.">		for (Method m : clazz.getMethods()) {</span>
+<span class="nc bnc" id="L1543" title="All 2 branches missed.">			if (m.getName().toUpperCase().equals(methodName.toUpperCase())) {</span>
+<span class="nc" id="L1544">				methodList.add(m);</span>
+				
+			}
+		}
+<span class="nc" id="L1548">		return methodList;</span>
+	}
+	
+	/**
+	 * compares getter return types to setter parameter types
+	 * 
+	 * @param getter
+	 * @param setter
+	 * @return true if getter return types are the same as setter parameter types. Else false.
+	 */
+	private static boolean methodsSupportSameArgs(Method getter, Method setter) {
+<span class="nc bnc" id="L1559" title="All 8 branches missed.">		if (getter != null &amp;&amp; setter != null &amp;&amp; setter.getParameterTypes() != null &amp;&amp; setter.getParameterTypes().length == 1</span>
+<span class="nc bnc" id="L1560" title="All 4 branches missed.">		        &amp;&amp; getter.getReturnType() != null &amp;&amp; getter.getReturnType().equals(setter.getParameterTypes()[0]))</span>
+<span class="nc" id="L1561">			return true;</span>
+<span class="nc" id="L1562">		return false;</span>
+	}
+	
+	/**
+	 * recurses through all superclasses of a class and adds the fields from that superclass
+	 * 
+	 * @param fields
+	 * @param clazz
+	 */
+	private static void addSuperclassFields(List&lt;Field&gt; fields, Class&lt;? extends Object&gt; clazz) {
+<span class="nc" id="L1572">		fields.addAll(Arrays.asList(clazz.getDeclaredFields()));</span>
+<span class="nc bnc" id="L1573" title="All 2 branches missed.">		if (clazz.getSuperclass() != null) {</span>
+<span class="nc" id="L1574">			addSuperclassFields(fields, clazz.getSuperclass());</span>
+		}
+<span class="nc" id="L1576">	}</span>
+	
+	/**
+	 * Translates a String into a Date.
+	 * 
+	 * @param value use &quot;now&quot; for the current timestamp, &quot;today&quot; for the current date with a
+	 *            timestamp of 00:00, or a date string that can be parsed by SimpleDateFormat with
+	 *            the format parameter.
+	 * @param format the pattern SimpleDateTime will use to parse the value, if other than &quot;now&quot; or
+	 *            &quot;today&quot;.
+	 * @return Date on success; null for an invalid value
+	 * @throws IllegalArgumentException if a date string cannot be parsed with the format string you
+	 *             provided
+	 * @see java.text.SimpleDateFormat
+	 * &lt;strong&gt;Should&lt;/strong&gt; return a Date object with current date and time for &quot;now&quot;
+	 * &lt;strong&gt;Should&lt;/strong&gt; return a Date with current date, but time of 00:00:00:00, for &quot;today&quot;
+	 * &lt;strong&gt;Should&lt;/strong&gt; return a Date object matching the value param if a format is specified
+	 * &lt;strong&gt;Should&lt;/strong&gt; return null for null value
+	 * &lt;strong&gt;Should&lt;/strong&gt; return null if format is null and value not in [ null, &quot;now&quot;, &quot;today&quot; ]
+	 * &lt;strong&gt;Should&lt;/strong&gt; fail if date parsing fails
+	 */
+	public static Date translateDatetimeParam(String value, String format) {
+<span class="nc bnc" id="L1598" title="All 2 branches missed.">		if (value == null)</span>
+<span class="nc" id="L1599">			return null;</span>
+<span class="nc bnc" id="L1600" title="All 2 branches missed.">		if (&quot;now&quot;.equals(value)) {</span>
+<span class="nc" id="L1601">			return new Date();</span>
+<span class="nc bnc" id="L1602" title="All 2 branches missed.">		} else if (&quot;today&quot;.equals(value)) {</span>
+<span class="nc" id="L1603">			Calendar cal = Calendar.getInstance();</span>
+<span class="nc" id="L1604">			cal.set(Calendar.HOUR_OF_DAY, 0);</span>
+<span class="nc" id="L1605">			cal.set(Calendar.MINUTE, 0);</span>
+<span class="nc" id="L1606">			cal.set(Calendar.SECOND, 0);</span>
+<span class="nc" id="L1607">			cal.set(Calendar.MILLISECOND, 0);</span>
+<span class="nc" id="L1608">			return cal.getTime();</span>
+<span class="nc bnc" id="L1609" title="All 2 branches missed.">		} else if (format != null) { // the value is a timestamp; parse it with</span>
+			                         // the format pattern
+			try {
+<span class="nc" id="L1612">				SimpleDateFormat df = new SimpleDateFormat(format);</span>
+<span class="nc" id="L1613">				return df.parse(value);</span>
+			}
+<span class="nc" id="L1615">			catch (ParseException ex) {</span>
+<span class="nc" id="L1616">				throw new IllegalArgumentException(ex);</span>
+			}
+		}
+<span class="nc" id="L1619">		return null;</span>
+	}
+
+    /**
+     * Given a list of patient programs and a program, returns the first patient program
+     * that matches the specified program
+     *
+     * @param patientPrograms
+     * @param program
+     * @return
+     */
+    public static PatientProgram getPatientProgramByProgram(List&lt;PatientProgram&gt; patientPrograms, Program program) {
+
+<span class="nc bnc" id="L1632" title="All 2 branches missed.">        for (PatientProgram patientProgram : patientPrograms) {</span>
+<span class="nc bnc" id="L1633" title="All 2 branches missed.">            if (patientProgram.getProgram().equals(program)) {</span>
+<span class="nc" id="L1634">                return patientProgram;</span>
+            }
+<span class="nc" id="L1636">        }</span>
+
+<span class="nc" id="L1638">        return null;</span>
+    }
+
+    /**
+     * Given a patient and a program workflow, returns the first patient program that contains
+     * a state in the specified workflow
+     *
+     * @param patient
+     * @param workflow
+     * @return
+     */
+	public static PatientProgram getPatientProgramByWorkflow(Patient patient, ProgramWorkflow workflow) {
+<span class="nc" id="L1650">		List&lt;PatientProgram&gt; patientPrograms = Context.getProgramWorkflowService().getPatientPrograms(patient,</span>
+<span class="nc" id="L1651">		    workflow.getProgram(), null, null, null, null, false);</span>
+		
+<span class="nc" id="L1653">		PatientProgram patientProgram = null;</span>
+		
+<span class="nc bnc" id="L1655" title="All 2 branches missed.">		for (PatientProgram eachPatientProgram : patientPrograms) {</span>
+<span class="nc" id="L1656">			boolean foundState = false;</span>
+<span class="nc bnc" id="L1657" title="All 2 branches missed.">			for (PatientState patientState : eachPatientProgram.getStates()) {</span>
+<span class="nc bnc" id="L1658" title="All 2 branches missed.">				if (patientState.getState().getProgramWorkflow().equals(workflow)) {</span>
+<span class="nc" id="L1659">					foundState = true;</span>
+				}
+<span class="nc" id="L1661">			}</span>
+			
+<span class="nc bnc" id="L1663" title="All 2 branches missed.">			if (foundState) {</span>
+<span class="nc bnc" id="L1664" title="All 2 branches missed.">				if (patientProgram != null) {</span>
+<span class="nc" id="L1665">					throw new IllegalStateException(&quot;Does not support multiple programs&quot;);</span>
+				} else {
+<span class="nc" id="L1667">					patientProgram = eachPatientProgram;</span>
+				}
+			}
+<span class="nc" id="L1670">		}</span>
+		
+<span class="nc" id="L1672">		return patientProgram;</span>
+	}
+
+    /**
+     * If the specified patient is enrolled in the specified program on the specified date,
+     * return the associated patient program, otherwise return null
+     *
+     * @param patient
+     * @param program
+     * @param date
+     * @return
+     */
+    public static PatientProgram getPatientProgramByProgramOnDate(Patient patient, Program program, Date date) {
+
+<span class="nc" id="L1686">        List&lt;PatientProgram&gt; patientPrograms = Context.getProgramWorkflowService().getPatientPrograms(patient, program, null, date, date, null, false);</span>
+
+<span class="nc bnc" id="L1688" title="All 2 branches missed.">        if (patientPrograms.size() &gt; 1) {</span>
+<span class="nc" id="L1689">            throw new APIException(&quot;Simultaneous program enrollments in same program not supported&quot;);</span>
+        }
+
+<span class="nc bnc" id="L1692" title="All 2 branches missed.">        if (patientPrograms.size() == 1) {</span>
+<span class="nc" id="L1693">            return patientPrograms.get(0);</span>
+        }
+        else {
+<span class="nc" id="L1696">            return null;</span>
+        }
+
+    }
+
+	/**
+	 * Checks whether the encounter has a provider specified (including ugly reflection code for
+	 * 1.9+)
+	 * 
+	 * @param e
+	 * @return whether e has one or more providers specified
+	 */
+	@SuppressWarnings(&quot;rawtypes&quot;)
+	public static boolean hasProvider(Encounter e) {
+		try {
+<span class="nc" id="L1711">			Method method = e.getClass().getMethod(&quot;getProvidersByRoles&quot;);</span>
+			// this is a Map&lt;EncounterRole, Set&lt;Provider&gt;&gt;
+<span class="nc" id="L1713">			Map providersByRoles = (Map) method.invoke(e);</span>
+<span class="nc bnc" id="L1714" title="All 4 branches missed.">			return providersByRoles != null &amp;&amp; providersByRoles.size() &gt; 0;</span>
+		}
+<span class="nc" id="L1716">		catch (Exception ex) {</span>
+<span class="nc bnc" id="L1717" title="All 2 branches missed.">			return EncounterCompatibility.getProvider(e) != null;</span>
+		}
+	}
+	
+	/**
+	 * Checks if the user is enrolled in a program at the specified date
+	 * 
+	 * @param patient the patient that should be enrolled in the program
+	 * @param program the program the patient be enrolled in
+	 * @param date the date at which to check
+	 * @return
+	 * &lt;strong&gt;Should&lt;/strong&gt; return true if the patient is enrolled in the program at the specified date
+	 * &lt;strong&gt;Should&lt;/strong&gt; return false if the patient is not enrolled in the program
+	 * &lt;strong&gt;Should&lt;/strong&gt; return false if the program was completed
+	 * &lt;strong&gt;Should&lt;/strong&gt; return false if the date is before the existing patient program enrollment date
+	 */
+	public static boolean isEnrolledInProgramOnDate(Patient patient, Program program, Date date) {
+<span class="nc bnc" id="L1734" title="All 2 branches missed.">		if (patient == null)</span>
+<span class="nc" id="L1735">			throw new IllegalArgumentException(&quot;patient should not be null&quot;);</span>
+<span class="nc bnc" id="L1736" title="All 2 branches missed.">		if (program == null)</span>
+<span class="nc" id="L1737">			throw new IllegalArgumentException(&quot;program should not be null&quot;);</span>
+<span class="nc bnc" id="L1738" title="All 2 branches missed.">		if (date == null)</span>
+<span class="nc" id="L1739">			throw new IllegalArgumentException(&quot;date should not be null&quot;);</span>
+		
+<span class="nc bnc" id="L1741" title="All 2 branches missed.">		if (patient.getPatientId() == null)</span>
+<span class="nc" id="L1742">			return false;</span>
+		
+<span class="nc" id="L1744">		List&lt;PatientProgram&gt; patientPrograms = Context.getProgramWorkflowService().getPatientPrograms(patient, program,</span>
+		    null, date, date, null, false);
+		
+<span class="nc bnc" id="L1747" title="All 2 branches missed.">		return (patientPrograms.size() &gt; 0);</span>
+		
+	}
+	
+	/**
+	 * Checks to see if the patient has a program enrollment in the specified program after the
+	 * given date If multiple patient programs, returns the earliest enrollment If no enrollments,
+	 * returns null
+	 */
+	public static PatientProgram getClosestFutureProgramEnrollment(Patient patient, Program program, Date date) {
+<span class="nc bnc" id="L1757" title="All 2 branches missed.">		if (patient == null)</span>
+<span class="nc" id="L1758">			throw new IllegalArgumentException(&quot;patient should not be null&quot;);</span>
+<span class="nc bnc" id="L1759" title="All 2 branches missed.">		if (program == null)</span>
+<span class="nc" id="L1760">			throw new IllegalArgumentException(&quot;program should not be null&quot;);</span>
+<span class="nc bnc" id="L1761" title="All 2 branches missed.">		if (date == null)</span>
+<span class="nc" id="L1762">			throw new IllegalArgumentException(&quot;date should not be null&quot;);</span>
+		
+<span class="nc bnc" id="L1764" title="All 2 branches missed.">		if (patient.getPatientId() == null)</span>
+<span class="nc" id="L1765">			return null;</span>
+		
+<span class="nc" id="L1767">		PatientProgram closestProgram = null;</span>
+<span class="nc" id="L1768">		List&lt;PatientProgram&gt; patientPrograms = Context.getProgramWorkflowService().getPatientPrograms(patient, program,</span>
+		    date, null, null, null, false);
+		
+<span class="nc bnc" id="L1771" title="All 2 branches missed.">		for (PatientProgram pp : patientPrograms) {</span>
+<span class="nc bnc" id="L1772" title="All 4 branches missed.">			if ((closestProgram == null || pp.getDateEnrolled().before(closestProgram.getDateEnrolled()))</span>
+<span class="nc bnc" id="L1773" title="All 2 branches missed.">			        &amp;&amp; pp.getDateEnrolled().after(date)) {</span>
+<span class="nc" id="L1774">				closestProgram = pp;</span>
+			}
+			
+<span class="nc" id="L1777">		}</span>
+		
+<span class="nc" id="L1779">		return closestProgram;</span>
+	}
+	
+	/**
+	 * Given a Date object, returns a Date object for the same date but with the time component
+	 * (hours, minutes, seconds &amp; milliseconds) removed
+	 */
+	public static Date clearTimeComponent(Date date) {
+		// Get Calendar object set to the date and time of the given Date object  
+<span class="nc" id="L1788">		Calendar cal = Calendar.getInstance();</span>
+<span class="nc" id="L1789">		cal.setTime(date);</span>
+		
+		// Set time fields to zero  
+<span class="nc" id="L1792">		cal.set(Calendar.HOUR_OF_DAY, 0);</span>
+<span class="nc" id="L1793">		cal.set(Calendar.MINUTE, 0);</span>
+<span class="nc" id="L1794">		cal.set(Calendar.SECOND, 0);</span>
+<span class="nc" id="L1795">		cal.set(Calendar.MILLISECOND, 0);</span>
+		
+<span class="nc" id="L1797">		return cal.getTime();</span>
+	}
+	
+	/**
+	 * @param s the string to conver to camelcase
+	 * @return should return the passed in string in the camelcase format
+	 */
+	public static String toCamelCase(String s) {
+<span class="nc" id="L1805">		StringBuffer sb = new StringBuffer();</span>
+<span class="nc" id="L1806">		String[] words = s.replaceAll(&quot;[^A-Za-z]&quot;, &quot; &quot;).replaceAll(&quot;\\s+&quot;, &quot; &quot;).trim().split(&quot; &quot;);</span>
+		
+<span class="nc bnc" id="L1808" title="All 2 branches missed.">		for (int i = 0; i &lt; words.length; i++) {</span>
+<span class="nc bnc" id="L1809" title="All 2 branches missed.">			if (i == 0)</span>
+<span class="nc" id="L1810">				words[i] = words[i].toLowerCase();</span>
+			else
+<span class="nc" id="L1812">				words[i] = String.valueOf(words[i].charAt(0)).toUpperCase() + words[i].substring(1);</span>
+			
+<span class="nc" id="L1814">			sb.append(words[i]);</span>
+		}
+<span class="nc" id="L1816">		return sb.toString();</span>
+	}
+	
+	/***
+	 * Get the encountger type by: 1)an integer id like 1 or 2) uuid like
+	 * &quot;a3e12268-74bf-11df-9768-17cfc9833272&quot; or 3) encounter type name like &quot;AdultInitial&quot;.
+	 * 
+	 * @param id
+	 * @return the encounter type if exist, else null
+	 * &lt;strong&gt;Should&lt;/strong&gt; find a encounter type by its encounterTypeId
+	 * &lt;strong&gt;Should&lt;/strong&gt; find a encounter type by name
+	 * &lt;strong&gt;Should&lt;/strong&gt; find a encounter type by its uuid
+	 * &lt;strong&gt;Should&lt;/strong&gt; return null otherwise
+	 */
+	public static EncounterType getEncounterType(String id) {
+		
+<span class="nc" id="L1832">		EncounterType encounterType = null;</span>
+		
+<span class="nc bnc" id="L1834" title="All 2 branches missed.">		if (StringUtils.isNotBlank(id)) {</span>
+<span class="nc" id="L1835">			id = id.trim();</span>
+			// see if this is parseable int; if so, try looking up by id
+			try {
+<span class="nc" id="L1838">				int encounterTypeId = Integer.parseInt(id);</span>
+<span class="nc" id="L1839">				encounterType = Context.getEncounterService().getEncounterType(encounterTypeId);</span>
+				
+<span class="nc bnc" id="L1841" title="All 2 branches missed.">				if (encounterType != null)</span>
+<span class="nc" id="L1842">					return encounterType;</span>
+			}
+<span class="nc" id="L1844">			catch (Exception ex) {</span>
+				//do nothing
+<span class="nc" id="L1846">			}</span>
+
+			//get EncounterType by mapping
+<span class="nc" id="L1849">			encounterType = getMetadataByMapping(EncounterType.class, id);</span>
+<span class="nc bnc" id="L1850" title="All 2 branches missed.">			if (encounterType != null) {</span>
+<span class="nc" id="L1851">				return  encounterType;</span>
+			}
+
+			// handle uuid id: &quot;a3e1302b-74bf-11df-9768-17cfc9833272&quot; if id matches a uuid format
+<span class="nc bnc" id="L1855" title="All 2 branches missed.">			if (isValidUuidFormat(id)) {</span>
+<span class="nc" id="L1856">				encounterType = Context.getEncounterService().getEncounterTypeByUuid(id);</span>
+				
+<span class="nc bnc" id="L1858" title="All 2 branches missed.">				if (encounterType != null)</span>
+<span class="nc" id="L1859">					return encounterType;</span>
+			}
+			
+			// if it's neither a uuid or id, try encounter type name
+<span class="nc" id="L1863">			encounterType = Context.getEncounterService().getEncounterType(id);</span>
+			
+<span class="nc bnc" id="L1865" title="All 2 branches missed.">			if (encounterType != null)</span>
+<span class="nc" id="L1866">				return encounterType;</span>
+		}
+		
+		// no match found
+<span class="nc" id="L1870">		return null;</span>
+	}
+
+	public static EncounterRole getEncounterRole(String id) {
+<span class="fc" id="L1874">		EncounterRole role = null;</span>
+<span class="pc bpc" id="L1875" title="1 of 2 branches missed.">		if (StringUtils.isNotBlank(id)) {</span>
+<span class="fc" id="L1876">			id = id.trim();</span>
+			try {
+<span class="fc" id="L1878">				int encounterRoleId = Integer.parseInt(id);</span>
+<span class="fc" id="L1879">				role = Context.getEncounterService().getEncounterRole(encounterRoleId);</span>
+			}
+<span class="nc" id="L1881">			catch (Exception ex) {</span>
+<span class="nc" id="L1882">				role = Context.getEncounterService().getEncounterRoleByUuid(id);</span>
+<span class="fc" id="L1883">			}</span>
+		}
+<span class="fc" id="L1885">		return role;</span>
+	}
+
+	/**
+	 * Removes any Obs that are empty or which have only empty children
+	 */
+	public static void removeEmptyObs(Collection&lt;Obs&gt; obsList) {
+<span class="pc bpc" id="L1892" title="1 of 2 branches missed.">		if (obsList != null) {</span>
+<span class="fc" id="L1893">			Set&lt;Obs&gt; obsToRemove = new HashSet&lt;Obs&gt;();</span>
+<span class="pc bpc" id="L1894" title="1 of 2 branches missed.">			for (Obs o : obsList) {</span>
+<span class="nc" id="L1895">				removeEmptyObs(o.getGroupMembers());</span>
+<span class="nc" id="L1896">				boolean valueEmpty = StringUtils.isEmpty(o.getValueAsString(Context.getLocale()));</span>
+<span class="nc bnc" id="L1897" title="All 4 branches missed.">				boolean membersEmpty = o.getGroupMembers() == null || o.getGroupMembers().isEmpty();</span>
+<span class="nc bnc" id="L1898" title="All 4 branches missed.">				if (valueEmpty &amp;&amp; membersEmpty) {</span>
+<span class="nc" id="L1899">					obsToRemove.add(o);</span>
+				}
+<span class="nc" id="L1901">			}</span>
+<span class="pc bpc" id="L1902" title="1 of 2 branches missed.">			for (Obs o : obsToRemove) {</span>
+<span class="nc bnc" id="L1903" title="All 2 branches missed.">				if (o.getObsGroup() != null) {</span>
+<span class="nc" id="L1904">					o.getObsGroup().removeGroupMember(o);</span>
+<span class="nc" id="L1905">					o.setObsGroup(null);</span>
+				}
+<span class="nc bnc" id="L1907" title="All 2 branches missed.">				if (o.getEncounter() != null) {</span>
+<span class="nc" id="L1908">					o.getEncounter().removeObs(o);</span>
+<span class="nc" id="L1909">					o.setEncounter(null);</span>
+				}
+<span class="nc" id="L1911">				obsList.remove(o);</span>
+<span class="nc" id="L1912">			}</span>
+		}
+<span class="fc" id="L1914">	}</span>
+
+
+    /**
+     * Formats a piece of Metadata for Display
+     *
+     * @param md
+     * @return
+     */
+    public static String format(OpenmrsMetadata md) {
+<span class="fc" id="L1924">        return format(md, Context.getLocale());</span>
+    }
+
+    /**
+     * Formats a piece of Metadata for Display
+     *
+     * TODO This was copied from UiFramework--we probably should come up with a way to inject a formatter directly into HFE
+     *
+     * @param md
+     * @param locale
+     * @return
+     */
+    public static String format(OpenmrsMetadata md, Locale locale) {
+<span class="fc" id="L1937">        String override = getLocalization(locale, md.getClass().getSimpleName(), md.getUuid());</span>
+<span class="pc bpc" id="L1938" title="1 of 2 branches missed.">        return override != null ? override : StringEscapeUtils.escapeHtml(md.getName());</span>
+    }
+
+    /**
+     * See if there is a custom name for this message in the messages.properties files
+     *
+     * TODO This was copied from UiFramework--we probably should come up with a way to inject a formatter directly into HFE
+     *
+     * @param locale
+     * @return
+     */
+    private static String getLocalization(Locale locale, String shortClassName, String uuid) {
+
+        // in case this is a hibernate proxy, strip off anything after an underscore
+        // ie: EncounterType_$$_javassist_26 needs to be converted to EncounterType
+<span class="fc" id="L1953">        int underscoreIndex = shortClassName.indexOf(&quot;_$&quot;);</span>
+<span class="fc bfc" id="L1954" title="All 2 branches covered.">        if (underscoreIndex &gt; 0) {</span>
+<span class="fc" id="L1955">            shortClassName = shortClassName.substring(0, underscoreIndex);</span>
+        }
+
+<span class="fc" id="L1958">        String code = &quot;ui.i18n.&quot; + shortClassName + &quot;.name.&quot; + uuid;</span>
+<span class="fc" id="L1959">        String localization = Context.getService(MessageSourceService.class).getMessage(code, null, locale);</span>
+<span class="pc bpc" id="L1960" title="2 of 4 branches missed.">        if (localization == null || localization.equals(code)) {</span>
+<span class="fc" id="L1961">            return null;</span>
+        } else {
+<span class="nc" id="L1963">            return localization;</span>
+        }
+    }
+
+    /**
+     * Given a include/exclude string. fetch the test expression
+     *
+     * @param teststr
+     * @return a substring of a test expression
+     * @throws BadFormDesignException
+     * &lt;strong&gt;Should&lt;/strong&gt; extract the correct expression from teststr
+     */
+    public static String getTestStr(String teststr) throws BadFormDesignException {
+<span class="nc bnc" id="L1976" title="All 2 branches missed.">        if (StringUtils.isBlank(teststr))</span>
+<span class="nc" id="L1977">            throw new BadFormDesignException(&quot;Can't extract the test expression from &quot; + teststr);</span>
+
+        //get the text inside the quotes, i.e the expression
+<span class="nc" id="L1980">        String[] actualExpression = StringUtils.substringsBetween(teststr, &quot;\&quot;&quot;, &quot;\&quot;&quot;);</span>
+
+<span class="nc bnc" id="L1982" title="All 6 branches missed.">        if (actualExpression == null || actualExpression.length != 1 || StringUtils.isBlank(actualExpression[0])) {</span>
+<span class="nc" id="L1983">            throw new BadFormDesignException(&quot;Can't extract the test expression from &quot; + teststr);//throw bad design exception here</span>
+        }
+
+<span class="nc" id="L1986">        return actualExpression[0];</span>
+    }
+
+	/**
+	 * Read the global property htmlformentry.archiveDir and return the correct path
+	 * @return String representation of archive directory path
+	 * &lt;strong&gt;Should&lt;/strong&gt; return null if htmlformentry.archiveDir is not defined
+	 * &lt;strong&gt;Should&lt;/strong&gt; replace %Y with a four digit year value
+	 * &lt;strong&gt;Should&lt;/strong&gt; replace %M with a 2 digit month value
+	 * &lt;strong&gt;Should&lt;/strong&gt; prepend the application data if specified value is not absolute.
+	 */
+	public static String getArchiveDirPath() {
+<span class="nc" id="L1998">		String value = Context.getAdministrationService().getGlobalProperty(&quot;htmlformentry.archiveDir&quot;);</span>
+<span class="nc bnc" id="L1999" title="All 4 branches missed.">		if(value != null &amp;&amp; org.springframework.util.StringUtils.hasLength(value)) {</span>
+
+			//Replace %Y and %M if any
+<span class="nc" id="L2002">			Date today = new Date();</span>
+<span class="nc" id="L2003">			GregorianCalendar gCal = new GregorianCalendar();</span>
+<span class="nc" id="L2004">			value = value.replace(&quot;%Y&quot;, String.valueOf(gCal.get(Calendar.YEAR)));</span>
+<span class="nc" id="L2005">			value = value.replace(&quot;%y&quot;,String.valueOf(gCal.get(Calendar.YEAR)));</span>
+
+
+<span class="nc" id="L2008">			int month = gCal.get(Calendar.MONTH);</span>
+<span class="nc" id="L2009">			month++;</span>
+<span class="nc bnc" id="L2010" title="All 2 branches missed.">			if(month&lt;10) {</span>
+<span class="nc" id="L2011">				value = value.replace(&quot;%M&quot;,&quot;0&quot;+month);</span>
+<span class="nc" id="L2012">				value = value.replace(&quot;%m&quot;,&quot;0&quot;+month);</span>
+			}
+			else {
+<span class="nc" id="L2015">				value = value.replace(&quot;%M&quot;,String.valueOf(month));</span>
+<span class="nc" id="L2016">				value = value.replace(&quot;%m&quot;,String.valueOf(month));</span>
+			}
+
+			//Check if not absolute concatenate with application directory
+<span class="nc" id="L2020">			File path = new File(value);</span>
+<span class="nc bnc" id="L2021" title="All 2 branches missed.">			if(!path.isAbsolute()) {</span>
+<span class="nc" id="L2022">				 return OpenmrsUtil.getApplicationDataDirectory() + File.separator + value;</span>
+			}
+<span class="nc" id="L2024">			return value;</span>
+		}
+<span class="nc" id="L2026">		return null;</span>
+	}
+
+	/**
+	 * Attempts to parse the passed string as an Integer and fetch the provider role with that id
+	 * If no match, or the string is unparseable as an Integer, try to fetch by uuid
+	 *
+	 * @param id
+	 * @return
+	 */
+	public static Object getProviderRole(String id)  {
+
+<span class="nc" id="L2038">		Object providerRole = null;</span>
+
+<span class="nc bnc" id="L2040" title="All 2 branches missed.">		if (StringUtils.isNotBlank(id)) {</span>
+
+			// see if this is parseable int; if so, try looking up by id
+<span class="nc" id="L2043">			Integer providerRoleId = null;</span>
+
+			try {
+<span class="nc" id="L2046">				providerRoleId = Integer.parseInt(id);</span>
+<span class="nc" id="L2047">				providerRole = getProviderRoleById(providerRoleId);</span>
+
+<span class="nc bnc" id="L2049" title="All 2 branches missed.">				if (providerRole != null) {</span>
+<span class="nc" id="L2050">					return providerRole;</span>
+				}
+
+			}
+<span class="nc" id="L2054">			catch (Exception e) {</span>
+				// ignore this, move to try by uuid
+<span class="nc" id="L2056">			}</span>
+
+			// if no match by id, look up by uuid
+<span class="nc" id="L2059">			providerRole = getProviderRoleByUuid(id);</span>
+
+		}
+
+<span class="nc" id="L2063">		return providerRole;</span>
+	}
+
+	public static List&lt;Provider&gt; getProviders(List&lt;String&gt; providerRoleIds, boolean returnAllIfNoRolesSpecified) {
+<span class="pc bpc" id="L2067" title="2 of 4 branches missed.">		if (providerRoleIds == null || providerRoleIds.isEmpty()) {</span>
+<span class="pc bpc" id="L2068" title="1 of 2 branches missed.">			if (returnAllIfNoRolesSpecified) {</span>
+<span class="fc" id="L2069">				return getAllProviders();</span>
+			}
+<span class="nc" id="L2071">			return new ArrayList&lt;Provider&gt;();</span>
+		}
+		else {
+<span class="nc" id="L2074">			List providerRoles = new ArrayList();</span>
+<span class="nc bnc" id="L2075" title="All 2 branches missed.">			for (String providerRoleId : providerRoleIds) {</span>
+<span class="nc" id="L2076">				Object providerRole = getProviderRole(providerRoleId);</span>
+<span class="nc bnc" id="L2077" title="All 2 branches missed.">				if (providerRole == null) {</span>
+<span class="nc" id="L2078">					throw new IllegalArgumentException(&quot;Unable to find provider role: &quot; + providerRoleId);</span>
+				}
+<span class="nc" id="L2080">				providerRoles.add(providerRole);</span>
+<span class="nc" id="L2081">			}</span>
+<span class="nc" id="L2082">			return getProviders(providerRoles);</span>
+		}
+	}
+
+	public static List&lt;Provider&gt; getAllProviders() {
+<span class="fc" id="L2087">		return Context.getProviderService().getAllProviders(false);</span>
+	}
+
+	private static Object getProviderRoleById(Integer providerRoleId) {
+
+		// we have to fetch the provider role by reflection, since the provider management module is not a required dependency
+
+		try {
+<span class="nc" id="L2095">			Class&lt;?&gt; providerManagementServiceClass = Context.loadClass(&quot;org.openmrs.module.providermanagement.api.ProviderManagementService&quot;);</span>
+<span class="nc" id="L2096">			Object providerManagementService = Context.getService(providerManagementServiceClass);</span>
+<span class="nc" id="L2097">			Method getProviderRole = providerManagementServiceClass.getMethod(&quot;getProviderRole&quot;, Integer.class);</span>
+<span class="nc" id="L2098">			return getProviderRole.invoke(providerManagementService, providerRoleId);</span>
+		}
+<span class="nc" id="L2100">		catch(Exception e) {</span>
+<span class="nc" id="L2101">			throw new RuntimeException(&quot;Unable to get provider role by id; the Provider Management module needs to be installed if using the providerRoles attribute&quot;, e);</span>
+		}
+
+	}
+
+	private static Object getProviderRoleByUuid(String providerRoleUuid) {
+
+		// we have to fetch the provider roles by reflection, since the provider management module is not a required dependency
+
+		try {
+<span class="nc" id="L2111">			Class&lt;?&gt; providerManagementServiceClass = Context.loadClass(&quot;org.openmrs.module.providermanagement.api.ProviderManagementService&quot;);</span>
+<span class="nc" id="L2112">			Object providerManagementService = Context.getService(providerManagementServiceClass);</span>
+<span class="nc" id="L2113">			Method getProviderRoleByUuid = providerManagementServiceClass.getMethod(&quot;getProviderRoleByUuid&quot;, String.class);</span>
+<span class="nc" id="L2114">			return getProviderRoleByUuid.invoke(providerManagementService, providerRoleUuid);</span>
+		}
+<span class="nc" id="L2116">		catch(Exception e) {</span>
+<span class="nc" id="L2117">			throw new RuntimeException(&quot;Unable to get provider role by uuid; the Provider Management module needs to be installed if using the providerRoles attribute&quot;, e);</span>
+		}
+
+	}
+
+	public static List&lt;Provider&gt; getProviders(List&lt;ProviderRole&gt; providerRoles) {
+
+<span class="nc bnc" id="L2124" title="All 4 branches missed.">		if (providerRoles == null || providerRoles.size() == 0) {</span>
+<span class="nc" id="L2125">			return new ArrayList&lt;Provider&gt;();</span>
+		}
+
+<span class="nc" id="L2128">		ProviderManagementService providerManagementService = Context.getService(ProviderManagementService.class);</span>
+		//Service returns list of org.openmrs.module.providermanagement.Provider, not org.openmrs.Provider
+<span class="nc" id="L2130">		return new ArrayList&lt;Provider&gt;(providerManagementService.getProvidersByRoles(providerRoles));</span>
+	}
+
+	/**
+	 * @return the provider with the given id, where the id can be either the primary key id or uuid of the provider
+	 * If id passed in is &quot;currentuser&quot;, then return the first provider record associated with the currently
+	 * authenticated user
+	 */
+	public static Provider getProvider(String id) {
+<span class="fc" id="L2139">		Provider provider = null;</span>
+<span class="pc bpc" id="L2140" title="1 of 2 branches missed.">		if (&quot;currentUser&quot;.equals(id)) {</span>
+<span class="nc" id="L2141">			User currentUser = Context.getAuthenticatedUser();</span>
+<span class="nc bnc" id="L2142" title="All 2 branches missed.">			if (currentUser != null) {</span>
+<span class="nc" id="L2143">				Collection&lt;Provider&gt; candidates = Context.getProviderService().getProvidersByPerson(currentUser.getPerson());</span>
+<span class="nc bnc" id="L2144" title="All 2 branches missed.">				if (candidates.size() &gt; 0) {</span>
+<span class="nc" id="L2145">					provider = candidates.iterator().next();</span>
+				}
+			}
+<span class="nc" id="L2148">		}</span>
+		else {
+			try {
+<span class="fc" id="L2151">				provider = Context.getProviderService().getProvider(Integer.valueOf(id));</span>
+			}
+<span class="nc" id="L2153">			catch (Exception ex) {</span>
+<span class="nc" id="L2154">				provider = Context.getProviderService().getProviderByUuid(id);</span>
+<span class="fc" id="L2155">			}</span>
+		}
+<span class="fc" id="L2157">		return provider;</span>
+	}
+
+	/**
+	 * Convenience method to get all the names of this PersonName and concatonating them together
+	 * with family name compoenents first, separated by a comma from given and middle names.
+	 * If any part of {@link PersonName#getPrefix()}, {@link PersonName#getGivenName()},
+	 * {@link PersonName#getMiddleName()}, etc are null, they are not included in the returned name
+	 *
+	 * @return all of the parts of this {@link PersonName} joined with spaces
+	 * &lt;strong&gt;Should&lt;/strong&gt; not put spaces around an empty middle name
+	 */
+	public static String getFullNameWithFamilyNameFirst(PersonName personName) {
+
+<span class="fc bfc" id="L2171" title="All 2 branches covered.">		if (personName == null) {</span>
+<span class="fc" id="L2172">			return &quot;[&quot; + Context.getMessageSourceService().getMessage(&quot;htmlformentry.unknownProviderName&quot;) + &quot;]&quot;;</span>
+		}
+
+<span class="fc" id="L2175">		StringBuffer nameString = new StringBuffer();</span>
+
+<span class="fc bfc" id="L2177" title="All 2 branches covered.">		if (StringUtils.isNotBlank(personName.getFamilyNamePrefix())) {</span>
+<span class="fc" id="L2178">			nameString.append(personName.getFamilyNamePrefix() + &quot; &quot;);</span>
+		}
+<span class="fc bfc" id="L2180" title="All 2 branches covered.">		if (StringUtils.isNotBlank(personName.getFamilyName())) {</span>
+<span class="fc" id="L2181">			nameString.append(personName.getFamilyName() + &quot; &quot;);</span>
+		}
+<span class="fc bfc" id="L2183" title="All 2 branches covered.">		if (StringUtils.isNotBlank(personName.getFamilyName2())) {</span>
+<span class="fc" id="L2184">			nameString.append(personName.getFamilyName2() + &quot; &quot;);</span>
+		}
+<span class="fc bfc" id="L2186" title="All 2 branches covered.">		if (StringUtils.isNotBlank(personName.getFamilyNameSuffix())) {</span>
+<span class="fc" id="L2187">			nameString.append(personName.getFamilyNameSuffix() + &quot; &quot;);</span>
+		}
+
+<span class="fc bfc" id="L2190" title="All 2 branches covered.">		if (nameString.length() &gt; 0) {</span>
+<span class="fc" id="L2191">			nameString.deleteCharAt(nameString.length() - 1); // delete trailing space</span>
+<span class="fc" id="L2192">			nameString.append(&quot;, &quot;);</span>
+		}
+
+<span class="fc bfc" id="L2195" title="All 2 branches covered.">		if (StringUtils.isNotBlank(personName.getPrefix())) {</span>
+<span class="fc" id="L2196">			nameString.append(personName.getPrefix() + &quot; &quot;);</span>
+		}
+<span class="fc bfc" id="L2198" title="All 2 branches covered.">		if (StringUtils.isNotBlank(personName.getGivenName())) {</span>
+<span class="fc" id="L2199">			nameString.append(personName.getGivenName() + &quot; &quot;);</span>
+		}
+<span class="fc bfc" id="L2201" title="All 2 branches covered.">		if (StringUtils.isNotBlank(personName.getMiddleName())) {</span>
+<span class="fc" id="L2202">			nameString.append(personName.getMiddleName() + &quot; &quot;);</span>
+		}
+<span class="fc bfc" id="L2204" title="All 2 branches covered.">		if (StringUtils.isNotBlank(personName.getDegree())) {</span>
+<span class="fc" id="L2205">			nameString.append(personName.getDegree() + &quot; &quot;);</span>
+		}
+
+<span class="fc bfc" id="L2208" title="All 2 branches covered.">		if (nameString.length() &gt; 1) {</span>
+<span class="fc" id="L2209">			nameString.deleteCharAt(nameString.length() - 1); // delete trailing space</span>
+		}
+
+<span class="fc" id="L2212">		return nameString.toString();</span>
+	}
+
+	/**
+	 * Converts a collection of providers domain object into simple stub representation
+	 * @param providers
+	 * @return
+	 */
+	public static List&lt;ProviderStub&gt; getProviderStubs(Collection&lt;Provider&gt; providers) {
+<span class="nc" id="L2221">		List&lt;ProviderStub&gt; providerStubList = new LinkedList&lt;ProviderStub&gt;();</span>
+<span class="nc bnc" id="L2222" title="All 4 branches missed.">		if(providers != null &amp;&amp; !providers.isEmpty()) {</span>
+<span class="nc bnc" id="L2223" title="All 2 branches missed.">			for (Provider p : providers) {</span>
+<span class="nc" id="L2224">				providerStubList.add(new ProviderStub(p));</span>
+<span class="nc" id="L2225">			}</span>
+		}
+<span class="nc" id="L2227">		return providerStubList;</span>
+	}
+
+	public static List&lt;ProviderStub&gt; getProviderStubs(Collection&lt;Provider&gt; providers, String searchParam, MatchMode mode) {
+<span class="pc bpc" id="L2231" title="2 of 4 branches missed.">		if(mode != null &amp;&amp; StringUtils.isNotBlank(searchParam)) {</span>
+<span class="fc" id="L2232">			ProviderTransformer transformer = new ProviderTransformer();</span>
+<span class="pc bpc" id="L2233" title="1 of 3 branches missed.">			switch (mode) {</span>
+				case START:
+<span class="fc" id="L2235">					return (List&lt;ProviderStub&gt;) transformer.transform(providers, startsWith(searchParam));</span>
+				case END:
+<span class="fc" id="L2237">					return (List&lt;ProviderStub&gt;) transformer.transform(providers, endsWith(searchParam));</span>
+				default:
+<span class="nc" id="L2239">					return (List&lt;ProviderStub&gt;) transformer.transform(providers, contains(searchParam));</span>
+			}
+		}
+<span class="nc" id="L2242">		return getProviderStubs(providers);</span>
+	}
+
+	private static Predicate&lt;Provider&gt; startsWith(final String param) {
+<span class="fc" id="L2246">		return new Predicate&lt;Provider&gt;() {</span>
+			@Override
+			public boolean test(Provider provider) {
+<span class="fc" id="L2249">				String searchParam = param.toLowerCase();</span>
+<span class="pc bpc" id="L2250" title="1 of 2 branches missed.">				for (String f : getProviderFieldsToSearch(provider)) {</span>
+<span class="fc bfc" id="L2251" title="All 2 branches covered.">					if (f.startsWith(searchParam)) {</span>
+<span class="fc" id="L2252">						return true;</span>
+					}
+<span class="fc" id="L2254">				}</span>
+<span class="nc" id="L2255">				return false;</span>
+			}
+		};
+	}
+
+	private static Predicate&lt;Provider&gt; endsWith(final String param) {
+<span class="fc" id="L2261">		return new Predicate&lt;Provider&gt;() {</span>
+			@Override
+			public boolean test(Provider provider) {
+<span class="fc" id="L2264">				String searchParam = param.toLowerCase();</span>
+<span class="pc bpc" id="L2265" title="1 of 2 branches missed.">				for (String f : getProviderFieldsToSearch(provider)) {</span>
+<span class="fc bfc" id="L2266" title="All 2 branches covered.">					if (f.endsWith(searchParam)) {</span>
+<span class="fc" id="L2267">						return true;</span>
+					}
+<span class="fc" id="L2269">				}</span>
+<span class="nc" id="L2270">				return false;</span>
+			}
+		};
+	}
+
+	private static Predicate&lt;Provider&gt; contains(final String param) {
+<span class="nc" id="L2276">		return new Predicate&lt;Provider&gt;() {</span>
+			@Override
+			public boolean test(Provider provider) {
+<span class="nc" id="L2279">				String searchParam = param.toLowerCase();</span>
+<span class="nc bnc" id="L2280" title="All 2 branches missed.">				for (String f : getProviderFieldsToSearch(provider)) {</span>
+<span class="nc bnc" id="L2281" title="All 2 branches missed.">					if (f.contains(searchParam)) {</span>
+<span class="nc" id="L2282">						return true;</span>
+					}
+<span class="nc" id="L2284">				}</span>
+<span class="nc" id="L2285">				return false;</span>
+			}
+		};
+	}
+
+	private static List&lt;String&gt; getProviderFieldsToSearch(Provider provider) {
+<span class="fc" id="L2291">		List&lt;String&gt; ret = new ArrayList&lt;String&gt;();</span>
+<span class="fc" id="L2292">		String identifier = provider.getIdentifier();</span>
+<span class="pc bpc" id="L2293" title="1 of 2 branches missed.">		if (StringUtils.isNotBlank(identifier)) {</span>
+<span class="fc" id="L2294">			ret.add(provider.getIdentifier().toLowerCase().trim());</span>
+		}
+<span class="fc" id="L2296">		Person person = provider.getPerson();</span>
+<span class="fc bfc" id="L2297" title="All 2 branches covered.">		if (person != null) {</span>
+<span class="fc" id="L2298">			PersonName pn = person.getPersonName();</span>
+<span class="pc bpc" id="L2299" title="1 of 2 branches missed.">			if (pn != null) {</span>
+<span class="pc bpc" id="L2300" title="1 of 2 branches missed.">				if (StringUtils.isNotBlank(pn.getGivenName())) {</span>
+<span class="fc" id="L2301">					ret.add(pn.getGivenName().toLowerCase().trim());</span>
+				}
+<span class="pc bpc" id="L2303" title="1 of 2 branches missed.">				if (StringUtils.isNotBlank(pn.getMiddleName())) {</span>
+<span class="nc" id="L2304">					ret.add(pn.getMiddleName().toLowerCase().trim());</span>
+				}
+<span class="pc bpc" id="L2306" title="1 of 2 branches missed.">				if (StringUtils.isNotBlank(pn.getFamilyName())) {</span>
+<span class="fc" id="L2307">					ret.add(pn.getFamilyName().toLowerCase().trim());</span>
+				}
+			}
+		}
+<span class="pc bpc" id="L2311" title="1 of 2 branches missed.">		if (StringUtils.isNotBlank(provider.getName())) {</span>
+<span class="fc bfc" id="L2312" title="All 2 branches covered.">			for (String n : provider.getName().split(&quot; &quot;)) {</span>
+<span class="fc" id="L2313">				ret.add(n.toLowerCase().trim());</span>
+			}
+		}
+<span class="fc" id="L2316">		return ret;</span>
+	}
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.8.202204050719</span></div></body></html>

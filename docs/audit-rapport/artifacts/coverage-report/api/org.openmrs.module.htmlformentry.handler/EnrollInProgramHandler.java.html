@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>EnrollInProgramHandler.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">HTML Form Entry API</a> &gt; <a href="index.source.html" class="el_package">org.openmrs.module.htmlformentry.handler</a> &gt; <span class="el_source">EnrollInProgramHandler.java</span></div><h1>EnrollInProgramHandler.java</h1><pre class="source lang-java linenums">package org.openmrs.module.htmlformentry.handler;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+
+import org.openmrs.Program;
+import org.openmrs.ProgramWorkflowState;
+import org.openmrs.module.htmlformentry.FormEntrySession;
+import org.openmrs.module.htmlformentry.FormSubmissionController;
+import org.openmrs.module.htmlformentry.element.EnrollInProgramElement;
+
+/**
+ * Handles the {@code &lt;enrollInProgram&gt;} tag
+ */
+<span class="fc" id="L17">public class EnrollInProgramHandler extends SubstitutionTagHandler implements TagHandler {</span>
+	
+	@Override
+	protected List&lt;AttributeDescriptor&gt; createAttributeDescriptors() {
+<span class="fc" id="L21">		List&lt;AttributeDescriptor&gt; attributeDescriptors = new ArrayList&lt;AttributeDescriptor&gt;();</span>
+<span class="fc" id="L22">		attributeDescriptors.add(new AttributeDescriptor(&quot;programId&quot;, Program.class));</span>
+<span class="fc" id="L23">		attributeDescriptors.add(new AttributeDescriptor(&quot;stateIds&quot;, ProgramWorkflowState.class));</span>
+<span class="fc" id="L24">		return Collections.unmodifiableList(attributeDescriptors);</span>
+	}
+	
+	@Override
+	protected String getSubstitution(FormEntrySession session, FormSubmissionController controllerActions,
+	                                 Map&lt;String, String&gt; parameters) {
+<span class="nc" id="L30">		EnrollInProgramElement element = new EnrollInProgramElement(session.getContext(), parameters);</span>
+<span class="nc" id="L31">		session.getSubmissionController().addAction(element);</span>
+		
+<span class="nc" id="L33">		return element.generateHtml(session.getContext());</span>
+	}
+	
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.8.202204050719</span></div></body></html>
