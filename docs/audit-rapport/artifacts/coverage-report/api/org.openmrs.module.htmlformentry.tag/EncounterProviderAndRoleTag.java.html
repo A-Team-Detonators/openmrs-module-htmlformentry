@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>EncounterProviderAndRoleTag.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">HTML Form Entry API</a> &gt; <a href="index.source.html" class="el_package">org.openmrs.module.htmlformentry.tag</a> &gt; <span class="el_source">EncounterProviderAndRoleTag.java</span></div><h1>EncounterProviderAndRoleTag.java</h1><pre class="source lang-java linenums">/**
+ * The contents of this file are subject to the OpenMRS Public License
+ * Version 1.0 (the &quot;License&quot;); you may not use this file except in
+ * compliance with the License. You may obtain a copy of the License at
+ * http://license.openmrs.org
+ *
+ * Software distributed under the License is distributed on an &quot;AS IS&quot;
+ * basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
+ * License for the specific language governing rights and limitations
+ * under the License.
+ *
+ * Copyright (C) OpenMRS, LLC.  All Rights Reserved.
+ */
+package org.openmrs.module.htmlformentry.tag;
+
+import java.util.List;
+import java.util.Map;
+
+import org.openmrs.EncounterRole;
+import org.openmrs.Provider;
+import org.openmrs.module.htmlformentry.HtmlFormEntryUtil;
+import org.openmrs.module.htmlformentry.util.MatchMode;
+import org.openmrs.module.htmlformentry.widget.ProviderAjaxAutoCompleteWidget;
+import org.openmrs.module.htmlformentry.widget.ProviderWidget;
+import org.openmrs.module.htmlformentry.widget.Widget;
+
+/**
+ * Defines the configuration attributes available in the encounterProviderAndRole tag, and
+ * provides parsing and validation
+ */
+public class EncounterProviderAndRoleTag {
+
+	private boolean required; // Whether or not this is required or not
+	private int count; // The number of provider widgets to render
+	private String providerWidgetSeparator; // If count &gt; 1, the html that should separate the widgets
+	private EncounterRole encounterRole; // Whether this should be used specifically to set a specific Encounter Role
+	private boolean autocompleteProvider; // Whether autocomplete or dropdown (default is dropdown)
+	private List&lt;String&gt; providerRoles; // Comma-separated list of roles to limit providers to
+	private MatchMode providerMatchMode; // For autocomplete, what match mode to use for searching
+	private Provider defaultValue; // Can set to &quot;currentuser&quot; or a specific provider id/uuid
+	private List&lt;Provider&gt; providers; // Enables population with list of allowed providers
+
+	/**
+	 * @param parameters
+	 */
+<span class="fc" id="L46">	public EncounterProviderAndRoleTag(Map&lt;String, String&gt; parameters) {</span>
+<span class="fc" id="L47">		required = TagUtil.parseParameter(parameters, &quot;required&quot;, Boolean.class, false);</span>
+<span class="fc" id="L48">		count = TagUtil.parseParameter(parameters, &quot;count&quot;, Integer.class, 1);</span>
+<span class="fc" id="L49">		providerWidgetSeparator = TagUtil.parseParameter(parameters, &quot;providerWidgetSeparator&quot;, String.class, &quot;, &quot;);</span>
+<span class="fc" id="L50">		encounterRole = TagUtil.parseParameter(parameters, &quot;encounterRole&quot;, EncounterRole.class);</span>
+<span class="fc" id="L51">		autocompleteProvider = TagUtil.parseParameter(parameters, &quot;autocompleteProvider&quot;, Boolean.class, false);</span>
+<span class="fc" id="L52">		providerMatchMode = TagUtil.parseParameter(parameters, &quot;providerMatchMode&quot;, MatchMode.class, MatchMode.ANYWHERE);</span>
+<span class="fc" id="L53">		defaultValue = TagUtil.parseParameter(parameters, &quot;default&quot;, Provider.class);</span>
+<span class="fc" id="L54">		providerRoles = TagUtil.parseListParameter(parameters, &quot;providerRoles&quot;, String.class);</span>
+<span class="pc bpc" id="L55" title="1 of 2 branches missed.">		if (!autocompleteProvider) {</span>
+<span class="fc" id="L56">			providers = HtmlFormEntryUtil.getProviders(providerRoles, true);</span>
+		}
+<span class="fc" id="L58">	}</span>
+
+	public Widget instantiateProviderWidget() {
+<span class="pc bpc" id="L61" title="1 of 2 branches missed.">		if (isAutocompleteProvider()) {</span>
+<span class="nc" id="L62">			return new ProviderAjaxAutoCompleteWidget(getProviderMatchMode(), providerRoles);</span>
+		}
+		else {
+<span class="fc" id="L65">			return new ProviderWidget(providers);</span>
+		}
+	}
+
+	public boolean isRequired() {
+<span class="fc" id="L70">		return required;</span>
+	}
+
+	public int getCount() {
+<span class="fc" id="L74">		return count;</span>
+	}
+
+	public String getProviderWidgetSeparator() {
+<span class="fc" id="L78">		return providerWidgetSeparator;</span>
+	}
+
+	public EncounterRole getEncounterRole() {
+<span class="fc" id="L82">		return encounterRole;</span>
+	}
+
+	public boolean isAutocompleteProvider() {
+<span class="fc" id="L86">		return autocompleteProvider;</span>
+	}
+
+	public MatchMode getProviderMatchMode() {
+<span class="nc" id="L90">		return providerMatchMode;</span>
+	}
+
+	public Provider getDefaultValue() {
+<span class="fc" id="L94">		return defaultValue;</span>
+	}
+
+	public List&lt;String&gt; getProviderRoles() {
+<span class="nc" id="L98">		return providerRoles;</span>
+	}
+
+	public List&lt;Provider&gt; getProviders() {
+<span class="nc" id="L102">		return providers;</span>
+	}
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.8.202204050719</span></div></body></html>

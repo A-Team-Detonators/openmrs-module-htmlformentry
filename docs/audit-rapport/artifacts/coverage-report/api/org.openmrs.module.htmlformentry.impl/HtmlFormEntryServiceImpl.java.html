@@ -1,0 +1,378 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>HtmlFormEntryServiceImpl.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">HTML Form Entry API</a> &gt; <a href="index.source.html" class="el_package">org.openmrs.module.htmlformentry.impl</a> &gt; <span class="el_source">HtmlFormEntryServiceImpl.java</span></div><h1>HtmlFormEntryServiceImpl.java</h1><pre class="source lang-java linenums">package org.openmrs.module.htmlformentry.impl;
+
+import java.io.StringWriter;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+import org.apache.velocity.VelocityContext;
+import org.apache.velocity.app.VelocityEngine;
+import org.apache.velocity.runtime.RuntimeConstants;
+import org.apache.velocity.runtime.log.CommonsLogLogChute;
+import org.openmrs.Cohort;
+import org.openmrs.Concept;
+import org.openmrs.Form;
+import org.openmrs.OpenmrsMetadata;
+import org.openmrs.OpenmrsObject;
+import org.openmrs.Person;
+import org.openmrs.Program;
+import org.openmrs.api.APIException;
+import org.openmrs.api.context.Context;
+import org.openmrs.api.impl.BaseOpenmrsService;
+import org.openmrs.module.htmlformentry.BadFormDesignException;
+import org.openmrs.module.htmlformentry.FormEntrySession;
+import org.openmrs.module.htmlformentry.HtmlForm;
+import org.openmrs.module.htmlformentry.HtmlFormEntryService;
+import org.openmrs.module.htmlformentry.HtmlFormEntryUtil;
+import org.openmrs.module.htmlformentry.SerializableFormObject;
+import org.openmrs.module.htmlformentry.db.HtmlFormEntryDAO;
+import org.openmrs.module.htmlformentry.element.PersonStub;
+import org.openmrs.module.htmlformentry.handler.TagHandler;
+
+/**
+ * Standard implementation of the HtmlFormEntryService
+ */
+<span class="fc" id="L42">public class HtmlFormEntryServiceImpl extends BaseOpenmrsService implements HtmlFormEntryService {</span>
+	
+<span class="fc" id="L44">    protected final Log log = LogFactory.getLog(getClass());</span>
+    
+    private HtmlFormEntryDAO dao;
+<span class="fc" id="L47">    private static Map&lt;String, TagHandler&gt; handlers = new LinkedHashMap&lt;String, TagHandler&gt;();</span>
+    private String basicFormXmlTemplate;
+<span class="fc" id="L49">    private Map&lt;String, Integer&gt; conceptMappingCache = new HashMap&lt;String, Integer&gt;();</span>
+
+	/*
+	 * Optimization to minimize database hits for the needs-name-and-description-migration check.
+	 * Once all forms have been migrated, we no longer need to hit the database on further checks
+	 * because there is no way to add more un-migrated forms. (In theory someone could add some 
+	 * directly to the database, so we use an instance variable here that will be reset whenever
+	 * the system is restarted or the module is reloaded.
+	 */
+<span class="fc" id="L58">    private boolean nameAndDescriptionMigrationDone = false;</span>
+    
+    @Override
+    public void addHandler(String tagName, TagHandler handler) {
+<span class="nc" id="L62">        handlers.put(tagName, handler);</span>
+<span class="nc" id="L63">    }</span>
+    
+    @Override
+    public TagHandler getHandlerByTagName(String tagName){
+<span class="fc" id="L67">        return handlers.get(tagName);</span>
+    }
+    
+    @Override
+    public Map&lt;String, TagHandler&gt; getHandlers(){
+<span class="fc" id="L72">        return handlers;</span>
+    }
+    
+    /**
+     * Sets the tag handlers 
+     * 
+     * @param handlersToSet
+     */
+    public void setHandlers(Map&lt;String, TagHandler&gt; handlersToSet) {
+<span class="fc" id="L81">        handlers.putAll(handlersToSet);</span>
+<span class="fc" id="L82">    }</span>
+    
+    /**
+     * Sets the DAO
+     * 
+     * @param dao
+     */
+    public void setDao(HtmlFormEntryDAO dao) {
+<span class="fc" id="L90">        this.dao = dao;</span>
+<span class="fc" id="L91">    }</span>
+    
+    /**
+     * @return the basicFormXmlTemplate
+     */
+    public String getBasicFormXmlTemplate() {
+<span class="nc" id="L97">    	return basicFormXmlTemplate;</span>
+    }
+	
+    /**
+     * @param basicFormXmlTemplate the basicFormXmlTemplate to set
+     */
+    public void setBasicFormXmlTemplate(String basicFormXmlTemplate) {
+<span class="fc" id="L104">    	this.basicFormXmlTemplate = basicFormXmlTemplate;</span>
+<span class="fc" id="L105">    }</span>
+    
+	@Override
+    public HtmlForm getHtmlForm(Integer id) {
+<span class="nc" id="L109">        return dao.getHtmlForm(id);</span>
+    }
+	
+	@Override
+    public HtmlForm getHtmlFormByUuid(String uuid)  {
+<span class="nc" id="L114">        return dao.getHtmlFormByUuid(uuid);</span>
+	}
+    
+    @Override
+    public HtmlForm saveHtmlForm(HtmlForm htmlForm) {
+<span class="nc bnc" id="L119" title="All 2 branches missed.">        if (htmlForm.getCreator() == null)</span>
+<span class="nc" id="L120">            htmlForm.setCreator(Context.getAuthenticatedUser());</span>
+<span class="nc bnc" id="L121" title="All 2 branches missed.">        if (htmlForm.getDateCreated() == null)</span>
+<span class="nc" id="L122">            htmlForm.setDateCreated(new Date());</span>
+<span class="nc bnc" id="L123" title="All 2 branches missed.">        if (htmlForm.getId() != null) {</span>
+<span class="nc" id="L124">            htmlForm.setChangedBy(Context.getAuthenticatedUser());</span>
+<span class="nc" id="L125">            htmlForm.setDateChanged(new Date());</span>
+        }
+<span class="nc" id="L127">        Context.getFormService().saveForm(htmlForm.getForm());</span>
+<span class="nc" id="L128">        return dao.saveHtmlForm(htmlForm);</span>
+    }
+    
+    @Override
+    public void purgeHtmlForm(HtmlForm htmlForm) {
+<span class="nc" id="L133">        dao.deleteHtmlForm(htmlForm);</span>
+<span class="nc" id="L134">    }</span>
+
+    @Override
+    public List&lt;HtmlForm&gt; getAllHtmlForms() {
+<span class="nc" id="L138">        return dao.getAllHtmlForms();</span>
+    }
+
+    @Override
+    public HtmlForm getHtmlFormByForm(Form form) {
+<span class="nc" id="L143">        return dao.getHtmlFormByForm(form);</span>
+    }
+    
+	@Override
+    public boolean needsNameAndDescriptionMigration() {
+<span class="nc bnc" id="L148" title="All 2 branches missed.">		if (nameAndDescriptionMigrationDone) {</span>
+<span class="nc" id="L149">			return false;</span>
+		} else {
+<span class="nc" id="L151">			boolean needsMigration = dao.needsNameAndDescriptionMigration();</span>
+<span class="nc bnc" id="L152" title="All 2 branches missed.">			if (!needsMigration)</span>
+<span class="nc" id="L153">				nameAndDescriptionMigrationDone = true;</span>
+<span class="nc" id="L154">			return needsMigration;</span>
+		}
+    }
+
+	/**
+	 * @see HtmlFormEntryService#getStartingFormXml(HtmlForm)
+	 */
+	@Override
+    public String getStartingFormXml(HtmlForm form) {
+<span class="nc" id="L163">		VelocityEngine velocityEngine = new VelocityEngine();</span>
+<span class="nc" id="L164">        velocityEngine.setProperty(RuntimeConstants.RUNTIME_LOG_LOGSYSTEM_CLASS, </span>
+        		&quot;org.apache.velocity.runtime.log.CommonsLogLogChute&quot;);
+<span class="nc" id="L166">        velocityEngine.setProperty(CommonsLogLogChute.LOGCHUTE_COMMONS_LOG_NAME,</span>
+        		&quot;htmlformentry_velocity&quot;);
+        try {
+<span class="nc" id="L169">            velocityEngine.init();</span>
+        }
+<span class="nc" id="L171">        catch (Exception e) {</span>
+<span class="nc" id="L172">            log.error(&quot;Error initializing Velocity engine&quot;, e);</span>
+<span class="nc" id="L173">        }</span>
+
+<span class="nc" id="L175">        VelocityContext velocityContext = new VelocityContext();</span>
+<span class="nc" id="L176">        velocityContext.put(&quot;htmlForm&quot;, form);</span>
+<span class="nc" id="L177">        velocityContext.put(&quot;identifierTypes&quot;, Context.getPatientService().getAllPatientIdentifierTypes(false));</span>
+<span class="nc" id="L178">        velocityContext.put(&quot;personAttributeTypes&quot;, Context.getPersonService().getAllPersonAttributeTypes(false));</span>
+        
+<span class="nc" id="L180">        StringWriter writer = new StringWriter();</span>
+        try {
+<span class="nc" id="L182">            velocityEngine.evaluate(velocityContext, writer, &quot;Basic HTML Form&quot;, getBasicFormXmlTemplate());</span>
+<span class="nc" id="L183">            String result = writer.toString();</span>
+<span class="nc" id="L184">            return result;</span>
+<span class="nc" id="L185">        } catch (Exception ex) {</span>
+<span class="nc" id="L186">            log.error(&quot;Exception evaluating velocity expression&quot;, ex);</span>
+<span class="nc" id="L187">            return &quot;&lt;htmlform&gt;Velocity Error! &quot; + ex.getMessage() + &quot;&lt;/htmlform&gt;&quot;; </span>
+        }
+    }
+	
+    @Override
+	public List&lt;PersonStub&gt; getUsersAsPersonStubs(String roleName){
+<span class="nc" id="L193">	    return  dao.getUsersAsPersonStubs(roleName);</span>
+	}
+
+    @Override
+    public OpenmrsObject getItemByUuid(Class&lt;? extends OpenmrsObject&gt; type, String uuid) {
+<span class="fc" id="L198">    	return dao.getItemByUuid(type, uuid);</span>
+    }
+	
+    @Override
+    public OpenmrsObject getItemById(Class&lt;? extends OpenmrsObject&gt; type, Integer id) {
+<span class="fc" id="L203">	    return dao.getItemById(type, id);</span>
+    }
+
+    @Override
+    public OpenmrsObject getItemByName(Class&lt;? extends OpenmrsMetadata&gt; type, String name) {
+<span class="nc" id="L208">	    return dao.getItemByName(type, name);</span>
+    }
+    
+    @Override
+    public List&lt;Integer&gt; getPersonIdsHavingAttributes(String attribute, String attributeValue) {
+    		    
+<span class="nc" id="L214">    	return dao.getPersonIdHavingAttributes(attribute, attributeValue);</span>
+    }
+	 	
+	@Override
+    public List&lt;PersonStub&gt; getPeopleAsPersonStubs(List&lt;String&gt; attributes, List&lt;String&gt; attributeValues, List&lt;String&gt; programIds, List&lt;Person&gt; personsToExclude){
+<span class="nc" id="L219">		List&lt;PersonStub&gt; stubs = new ArrayList&lt;PersonStub&gt;();</span>
+		
+<span class="nc" id="L221">		Set&lt;Integer&gt; attributeMatches = null;</span>
+<span class="nc" id="L222">		Set&lt;Integer&gt; programMatches = null;</span>
+		
+<span class="nc bnc" id="L224" title="All 2 branches missed.">		if(attributes != null)</span>
+		{
+<span class="nc bnc" id="L226" title="All 2 branches missed.">			for(int i = 0; i &lt; attributes.size(); i++)</span>
+			{
+<span class="nc" id="L228">				String attr = attributes.get(i);</span>
+<span class="nc" id="L229">				String val = null;</span>
+<span class="nc bnc" id="L230" title="All 4 branches missed.">				if(attributeValues != null &amp;&amp; attributeValues.size() &gt; i)</span>
+				{
+<span class="nc" id="L232">					val = attributeValues.get(i);</span>
+				}
+				
+<span class="nc" id="L235">				Set&lt;Integer&gt; setOfIds = new HashSet&lt;Integer&gt;();</span>
+<span class="nc" id="L236">				setOfIds.addAll(getPersonIdsHavingAttributes(attr, val));</span>
+					
+<span class="nc bnc" id="L238" title="All 2 branches missed.">				if(attributeMatches != null)</span>
+				{
+<span class="nc" id="L240">					attributeMatches.retainAll(setOfIds);</span>
+				}
+				else
+				{
+<span class="nc" id="L244">					attributeMatches = setOfIds;</span>
+				}
+			}
+		}
+		
+<span class="nc bnc" id="L249" title="All 2 branches missed.">		if(programIds != null)</span>
+		{
+<span class="nc bnc" id="L251" title="All 2 branches missed.">			for(String prog: programIds)</span>
+		{
+<span class="nc bnc" id="L253" title="All 4 branches missed.">				if(prog != null &amp;&amp; prog.trim().length() &gt; 0)</span>
+				{
+<span class="nc" id="L255">					Program personProgram = HtmlFormEntryUtil.getProgram(prog);</span>
+					
+<span class="nc bnc" id="L257" title="All 2 branches missed.">					if(personProgram != null)</span>
+					{
+<span class="nc" id="L259">						Cohort pp = Context.getPatientSetService().getPatientsInProgram(personProgram, null, null);</span>
+<span class="nc bnc" id="L260" title="All 2 branches missed.">						if(programMatches != null)</span>
+						{
+<span class="nc" id="L262">							programMatches.retainAll(pp.getMemberIds());</span>
+						}
+						else 
+						{
+<span class="nc" id="L266">							programMatches = pp.getMemberIds();</span>
+						}
+					}
+				}
+<span class="nc" id="L270">			}</span>
+		}
+		
+		Set&lt;Integer&gt; results;
+		
+		// if no attributes specified, just use to the program matches
+<span class="nc bnc" id="L276" title="All 4 branches missed.">		if (attributes == null || attributes.isEmpty()) {</span>
+<span class="nc" id="L277">			results = programMatches;</span>
+		}
+		// if no programs specified, just use the attribute matches
+<span class="nc bnc" id="L280" title="All 4 branches missed.">		else if (programIds == null || programIds.isEmpty()) {</span>
+<span class="nc" id="L281">			results = attributeMatches;</span>
+		}
+		// otherwise, intersect the results
+		else {
+<span class="nc" id="L285">			results = programMatches;</span>
+<span class="nc bnc" id="L286" title="All 2 branches missed.">			if (results != null) {</span>
+<span class="nc" id="L287">				results.retainAll(attributeMatches);</span>
+			}
+		}
+		
+		
+<span class="nc bnc" id="L292" title="All 2 branches missed.">		if(results != null)</span>
+		{
+			//now iterate through the results, returning person stubs
+<span class="nc bnc" id="L295" title="All 2 branches missed.">			for(Integer id : results)</span>
+			{
+<span class="nc" id="L297">				Person person = Context.getPersonService().getPerson(id);</span>
+<span class="nc bnc" id="L298" title="All 4 branches missed.">				if(person != null &amp;&amp; !personsToExclude.contains(person))</span>
+				{
+<span class="nc" id="L300">					PersonStub pStub = new PersonStub();</span>
+<span class="nc" id="L301">					pStub.setGivenName(person.getGivenName());</span>
+<span class="nc" id="L302">					pStub.setFamilyName(person.getFamilyName());</span>
+<span class="nc" id="L303">					pStub.setMiddleName(person.getMiddleName());</span>
+<span class="nc" id="L304">				pStub.setId(id);</span>
+<span class="nc" id="L305">					stubs.add(pStub);</span>
+				}
+<span class="nc" id="L307">			}</span>
+		}
+<span class="nc" id="L309">		return stubs;</span>
+	}
+	
+	@Override
+	public void applyActions(FormEntrySession session) throws BadFormDesignException {
+		//Wrapped in a transactional service method such that actions in it 
+		//either pass or fail together. See TRUNK-3572
+<span class="fc" id="L316">		session.applyActions();</span>
+<span class="fc" id="L317">	}</span>
+
+	@Override
+	public void reprocessArchivedForm(String argument,boolean isPath) throws Exception {
+        SerializableFormObject formObject;
+<span class="nc bnc" id="L322" title="All 2 branches missed.">		if(isPath) {</span>
+<span class="nc" id="L323">             formObject = SerializableFormObject.deserializeXml(argument);</span>
+        } else {
+<span class="nc" id="L325">             formObject = SerializableFormObject.deserializeXml(argument,false);</span>
+        }
+<span class="nc" id="L327">		formObject.handleSubmission();</span>
+
+		//Save data to database
+<span class="nc" id="L330">		HtmlFormEntryUtil.getService().applyActions(formObject.getSession());</span>
+<span class="nc" id="L331">	}</span>
+
+    @Override
+    public void reprocessArchivedForm(String path) throws Exception {
+<span class="nc" id="L335">        reprocessArchivedForm(path,true);</span>
+<span class="nc" id="L336">    }</span>
+
+	@Override
+	public Concept getConceptByMapping(String sourceNameOrHl7CodeAndTerm) {
+<span class="nc" id="L340">		Concept ret = null;</span>
+<span class="nc bnc" id="L341" title="All 2 branches missed.">		if (sourceNameOrHl7CodeAndTerm != null) {</span>
+<span class="nc" id="L342">			Integer cId = conceptMappingCache.get(sourceNameOrHl7CodeAndTerm);</span>
+<span class="nc bnc" id="L343" title="All 2 branches missed.">			if (cId != null) {</span>
+<span class="nc" id="L344">				ret = Context.getConceptService().getConcept(cId);</span>
+			}
+			else {
+<span class="nc" id="L347">				String[] sourceCodeSplit = sourceNameOrHl7CodeAndTerm.split(&quot;:&quot;, 2);</span>
+<span class="nc bnc" id="L348" title="All 2 branches missed.">				if (sourceCodeSplit.length != 2) {</span>
+<span class="nc" id="L349">					log.debug(&quot;Invalid concept mapping specified: &quot; + sourceNameOrHl7CodeAndTerm);</span>
+				}
+				else {
+<span class="nc" id="L352">					String source = sourceCodeSplit[0].trim();</span>
+<span class="nc" id="L353">					String term = sourceCodeSplit[1].trim();</span>
+<span class="nc" id="L354">					List&lt;Concept&gt; concepts = Context.getConceptService().getConceptsByMapping(term, source, true);</span>
+<span class="nc bnc" id="L355" title="All 4 branches missed.">					if (concepts != null &amp;&amp; concepts.size() &gt; 0) {</span>
+<span class="nc" id="L356">						Concept firstMatch = concepts.get(0);</span>
+<span class="nc bnc" id="L357" title="All 2 branches missed.">						if (concepts.size() &gt; 1) {</span>
+<span class="nc" id="L358">							Concept secondMatch = concepts.get(1);</span>
+<span class="nc bnc" id="L359" title="All 4 branches missed.">							if (secondMatch.getRetired() == null || secondMatch.getRetired() == Boolean.FALSE) {</span>
+<span class="nc" id="L360">								throw new APIException(</span>
+										&quot;Multiple concepts found with mapping: &quot; + sourceNameOrHl7CodeAndTerm);
+							}
+						}
+<span class="nc" id="L364">						conceptMappingCache.put(sourceNameOrHl7CodeAndTerm, firstMatch.getConceptId());</span>
+<span class="nc" id="L365">						ret = firstMatch;</span>
+					}
+				}
+			}
+		}
+<span class="nc" id="L370">		return ret;</span>
+	}
+
+	@Override
+	public void clearConceptMappingCache() {
+<span class="nc" id="L375">		conceptMappingCache = new HashMap&lt;String, Integer&gt;();</span>
+<span class="nc" id="L376">	}</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.8.202204050719</span></div></body></html>

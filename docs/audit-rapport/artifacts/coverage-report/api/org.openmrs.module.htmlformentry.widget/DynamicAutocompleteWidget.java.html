@@ -1,0 +1,146 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>DynamicAutocompleteWidget.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">HTML Form Entry API</a> &gt; <a href="index.source.html" class="el_package">org.openmrs.module.htmlformentry.widget</a> &gt; <span class="el_source">DynamicAutocompleteWidget.java</span></div><h1>DynamicAutocompleteWidget.java</h1><pre class="source lang-java linenums">package org.openmrs.module.htmlformentry.widget;
+
+import org.apache.commons.lang.StringUtils;
+import org.openmrs.Concept;
+import org.openmrs.ConceptClass;
+import org.openmrs.module.htmlformentry.FormEntryContext;
+import org.openmrs.module.htmlformentry.FormEntryContext.Mode;
+
+import javax.servlet.http.HttpServletRequest;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Vector;
+
+/**
+ * A dynamic autocomplete widget, a new dynamic version of ConceptSearchAutocompleteWidget
+ */
+
+public class DynamicAutocompleteWidget implements Widget {
+
+	private List&lt;Concept&gt; initialValues;
+
+	private String allowedConceptIds;
+
+	private String allowedConceptClassNames;
+
+	private String allowedConceptSetIds;
+
+	private String src;
+
+<span class="nc" id="L31">	private static String defaultSrc = &quot;conceptSearch.form&quot;;</span>
+
+<span class="nc" id="L33">	public DynamicAutocompleteWidget(List&lt;Concept&gt; conceptList, List&lt;ConceptClass&gt; allowedconceptclasses, String src) {</span>
+<span class="nc" id="L34">		this.src = src;</span>
+<span class="nc" id="L35">		initialValues = new Vector&lt;Concept&gt;();</span>
+		//only 1 of them is used to specify the filter
+<span class="nc bnc" id="L37" title="All 4 branches missed.">		if (allowedconceptclasses == null || allowedconceptclasses.size() == 0) {</span>
+<span class="nc" id="L38">			StringBuilder sb = new StringBuilder();</span>
+<span class="nc bnc" id="L39" title="All 2 branches missed.">			if (conceptList != null) {</span>
+<span class="nc bnc" id="L40" title="All 2 branches missed.">				for (Iterator&lt;Concept&gt; it = conceptList.iterator(); it.hasNext(); ) {</span>
+<span class="nc" id="L41">					sb.append(it.next().getConceptId());</span>
+<span class="nc bnc" id="L42" title="All 2 branches missed.">					if (it.hasNext())</span>
+<span class="nc" id="L43">						sb.append(&quot;,&quot;);</span>
+				}
+<span class="nc" id="L45">				this.allowedConceptIds = sb.toString();</span>
+			}
+<span class="nc" id="L47">		}</span>
+		else {
+<span class="nc" id="L49">			StringBuilder sb = new StringBuilder();</span>
+<span class="nc bnc" id="L50" title="All 2 branches missed.">			for (Iterator&lt;ConceptClass&gt; it = allowedconceptclasses.iterator(); it.hasNext();) {</span>
+<span class="nc" id="L51">				sb.append(it.next().getName());</span>
+<span class="nc bnc" id="L52" title="All 2 branches missed.">				if (it.hasNext())</span>
+<span class="nc" id="L53">					sb.append(&quot;,&quot;);</span>
+			}
+<span class="nc" id="L55">			this.allowedConceptClassNames = sb.toString();</span>
+		}
+<span class="nc" id="L57">	}</span>
+
+	public DynamicAutocompleteWidget(List&lt;Concept&gt; conceptList, List&lt;ConceptClass&gt; allowedconceptclasses) {
+<span class="nc" id="L60">		this(conceptList, allowedconceptclasses, defaultSrc);</span>
+<span class="nc" id="L61">	}</span>
+
+	@Override
+	public String generateHtml(FormEntryContext context) {
+		// hardcoded for concept search
+
+<span class="nc" id="L67">		StringBuilder sb = new StringBuilder();</span>
+<span class="nc bnc" id="L68" title="All 2 branches missed.">		if (context.getMode().equals(Mode.VIEW)) {</span>
+<span class="nc" id="L69">			String toPrint = &quot;&quot;;</span>
+<span class="nc bnc" id="L70" title="All 2 branches missed.">			if (!initialValues.isEmpty()) {</span>
+<span class="nc bnc" id="L71" title="All 2 branches missed.">				for (int i = 0; i &lt; initialValues.size(); i++) {</span>
+<span class="nc" id="L72">					toPrint = toPrint + initialValues.get(i).getDisplayString() + &quot;;&quot;;</span>
+				}
+<span class="nc" id="L74">				return WidgetFactory.displayValue(toPrint);</span>
+			} else {
+<span class="nc" id="L76">				return WidgetFactory.displayDefaultEmptyValue();</span>
+			}
+		} else {
+<span class="nc" id="L79">			sb.append(&quot;&lt;input name=\&quot;&quot; + context.getFieldName(this) + &quot;_hid&quot; + &quot;\&quot; id=\&quot;&quot; + context.getFieldName(this)</span>
+			        + &quot;_hid&quot; + &quot;\&quot;&quot; + &quot; type=\&quot;hidden\&quot; class=\&quot;autoCompleteHidden\&quot; &quot;);
+<span class="nc bnc" id="L81" title="All 2 branches missed.">			if (!initialValues.isEmpty()) {</span>
+<span class="nc" id="L82">				sb.append(&quot; value=\&quot;&quot; + initialValues.size() + &quot;\&quot;&quot;);</span>
+			}
+<span class="nc" id="L84">			sb.append(&quot;/&gt;&quot;);</span>
+
+<span class="nc" id="L86">			sb.append(&quot;&lt;input type=\&quot;text\&quot;  id=\&quot;&quot; + context.getFieldName(this) + &quot;\&quot;&quot; + &quot; name=\&quot;&quot;</span>
+<span class="nc" id="L87">			        + context.getFieldName(this) + &quot;\&quot; &quot; + &quot; onfocus=\&quot;setupAutocomplete(this, '&quot; + this.src + &quot;','&quot;</span>
+			        + this.allowedConceptIds + &quot;','&quot; + this.allowedConceptClassNames + &quot;','&quot; + this.allowedConceptSetIds + &quot;');\&quot;&quot;
+			        + &quot;class=\&quot;autoCompleteText\&quot;&quot; + &quot; onBlur=\&quot;onBlurAutocomplete(this)\&quot;&quot;);
+
+<span class="nc" id="L91">			sb.append(&quot;/&gt;&quot;);</span>
+<span class="nc" id="L92">			sb.append(&quot;&lt;input id=\&quot;&quot; + context.getFieldName(this) + &quot;_button&quot;</span>
+			        + &quot;\&quot; type=\&quot;button\&quot; class=\&quot;addConceptButton\&quot; value=\&quot;Add\&quot; /&gt;&quot;);
+<span class="nc" id="L94">			sb.insert(0, &quot;&lt;div id=\&quot;&quot; + context.getFieldName(this) + &quot;_div&quot; + &quot;\&quot; class=\&quot;dynamicAutocomplete\&quot;&gt;&quot;);</span>
+<span class="nc bnc" id="L95" title="All 2 branches missed.">			if (!initialValues.isEmpty()) {</span>
+<span class="nc bnc" id="L96" title="All 2 branches missed.">				for (int i = 0; i &lt; initialValues.size(); i++) {</span>
+<span class="nc" id="L97">					String spanid = &quot;&quot; + context.getFieldName(this) + &quot;span_&quot; + i;</span>
+<span class="nc" id="L98">					sb.append(&quot;&lt;span id=\&quot;&quot; + spanid + &quot;\&quot;&gt;&lt;/br&gt;&quot; + initialValues.get(i).getDisplayString() + &quot;&lt;input id=\&quot;&quot;</span>
+					        + spanid + &quot;_hid&quot; + &quot;\&quot;  class=\&quot;autoCompleteHidden\&quot; type=\&quot;hidden\&quot; name=\&quot;&quot; + spanid + &quot;_hid&quot;
+<span class="nc" id="L100">					        + &quot;\&quot; value=\&quot;&quot; + initialValues.get(i).getConceptId() + &quot;\&quot;&gt; &lt;input id=\&quot;&quot; + spanid + &quot;_button&quot;</span>
+					        + &quot;\&quot; type=\&quot;button\&quot; value=\&quot;Remove\&quot; onClick=\&quot;$j('#&quot; + spanid
+					        + &quot;').remove();openmrs.htmlformentry.refresh(this.id)\&quot;&gt;&lt;/span&gt;&quot;);
+				}
+			}
+<span class="nc" id="L105">			sb.append(&quot;&lt;/div&gt;&quot;);</span>
+		}
+<span class="nc" id="L107">		return sb.toString();</span>
+	}
+
+	@Override
+	public Object getValue(FormEntryContext context, HttpServletRequest request) {
+
+<span class="nc" id="L113">        List values = new ArrayList&lt;Object&gt;();</span>
+<span class="nc" id="L114">        String widgetName = context.getFieldName(this);</span>
+<span class="nc" id="L115">        String entryCount = request.getParameter(widgetName + &quot;_hid&quot;);</span>
+
+<span class="nc bnc" id="L117" title="All 2 branches missed.">        if (StringUtils.isNotBlank(entryCount)) {</span>
+<span class="nc" id="L118">            int count = Integer.parseInt(entryCount);</span>
+
+<span class="nc bnc" id="L120" title="All 2 branches missed.">            for (int i = 0; i &lt; count; i++) {</span>
+<span class="nc" id="L121">                values.add(request.getParameter(widgetName + &quot;span_&quot; + i + &quot;_hid&quot;));</span>
+            }
+        }
+
+<span class="nc" id="L125">        return values;</span>
+	}
+
+	@Override
+    public void setInitialValue(Object initialValue) {
+<span class="nc" id="L130">        this.initialValues = new Vector&lt;Concept&gt;();</span>
+<span class="nc" id="L131">        initialValues.add((Concept) initialValue);</span>
+<span class="nc" id="L132">	}</span>
+
+	public void addInitialValue(Object initialValue) {
+<span class="nc" id="L135">		this.initialValues.add((Concept) initialValue);</span>
+<span class="nc" id="L136">	}</span>
+
+	public List&lt;Concept&gt; getInitialValueList() {
+<span class="nc" id="L139">		return initialValues;</span>
+	}
+
+	public void setAllowedConceptSetIds(String allowedConceptSetIds) {
+<span class="nc" id="L143">		this.allowedConceptSetIds = allowedConceptSetIds;</span>
+<span class="nc" id="L144">	}</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.8.202204050719</span></div></body></html>

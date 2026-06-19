@@ -1,0 +1,327 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ObsGroupComponent.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">HTML Form Entry API</a> &gt; <a href="index.source.html" class="el_package">org.openmrs.module.htmlformentry</a> &gt; <span class="el_source">ObsGroupComponent.java</span></div><h1>ObsGroupComponent.java</h1><pre class="source lang-java linenums">package org.openmrs.module.htmlformentry;
+
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+import org.openmrs.Concept;
+import org.openmrs.Drug;
+import org.openmrs.Obs;
+import org.w3c.dom.NamedNodeMap;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.StringTokenizer;
+
+/** 
+ * Data object that represents a single component of an ObsGroup
+ */
+public class ObsGroupComponent {
+
+	private Concept question;
+	private Concept answer;
+	private Drug answerDrug;
+<span class="nc" id="L28">	private int remainingInSet = 0;</span>
+
+	/** Logger for this class and subclasses */
+<span class="nc" id="L31">	protected final static Log log = LogFactory.getLog(ObsGroupComponent.class);</span>
+
+<span class="nc" id="L33">	public ObsGroupComponent() {</span>
+<span class="nc" id="L34">	}</span>
+
+<span class="nc" id="L36">	public ObsGroupComponent(Concept question, Concept answer) {</span>
+<span class="nc" id="L37">		this.question = question;</span>
+<span class="nc" id="L38">		this.answer = answer;</span>
+<span class="nc" id="L39">	}</span>
+
+<span class="nc" id="L41">	public ObsGroupComponent(Concept question, Concept answer, Drug answerDrug) {</span>
+<span class="nc" id="L42">		this.question = question;</span>
+<span class="nc" id="L43">		this.answer = answer;</span>
+<span class="nc" id="L44">		this.answerDrug = answerDrug;</span>
+<span class="nc" id="L45">	}</span>
+
+<span class="nc" id="L47">	public ObsGroupComponent(Concept question, Concept answer, int remainingInSet) {</span>
+<span class="nc" id="L48">		this.question = question;</span>
+<span class="nc" id="L49">		this.answer = answer;</span>
+<span class="nc" id="L50">		this.remainingInSet = remainingInSet;</span>
+<span class="nc" id="L51">	}</span>
+
+
+	/** Gets the concept that represents the component's question */
+	public Concept getQuestion() {
+<span class="nc" id="L56">		return question;</span>
+	}
+
+	/** Sets the concept that represents the component's question */
+	public void setQuestion(Concept question) {
+<span class="nc" id="L61">		this.question = question;</span>
+<span class="nc" id="L62">	}</span>
+
+	/** Gets the concept that represents the component's answer */
+	public Concept getAnswer() {
+<span class="nc" id="L66">		return answer;</span>
+	}
+
+	/** Sets the concept that represents the component's answer */
+	public void setAnswer(Concept answer) {
+<span class="nc" id="L71">		this.answer = answer;</span>
+<span class="nc" id="L72">	}</span>
+
+	public Drug getAnswerDrug() {
+<span class="nc" id="L75">		return answerDrug;</span>
+	}
+
+	public void setAnswerDrug(Drug answerDrug) {
+<span class="nc" id="L79">		this.answerDrug = answerDrug;</span>
+<span class="nc" id="L80">	}</span>
+
+	@Deprecated
+	public static boolean supports(List&lt;ObsGroupComponent&gt; questionsAndAnswers, Obs parentObs, Set&lt;Obs&gt; group) {
+<span class="nc bnc" id="L84" title="All 2 branches missed.">		for (Obs obs : group) {</span>
+<span class="nc" id="L85">			boolean match = false;</span>
+<span class="nc bnc" id="L86" title="All 2 branches missed.">			for (ObsGroupComponent test : questionsAndAnswers) {</span>
+<span class="nc" id="L87">				boolean questionMatches = test.getQuestion().getConceptId().equals(obs.getConcept().getConceptId());</span>
+<span class="nc bnc" id="L88" title="All 6 branches missed.">				boolean answerMatches = test.getAnswer() == null ||(obs.getValueCoded() != null &amp;&amp; test.getAnswer().getConceptId().equals(obs.getValueCoded().getConceptId()));</span>
+
+<span class="nc bnc" id="L90" title="All 4 branches missed.">				if (questionMatches &amp;&amp; !answerMatches) {</span>
+<span class="nc" id="L91">					match = false;</span>
+<span class="nc" id="L92">					break;</span>
+				}
+
+<span class="nc bnc" id="L95" title="All 4 branches missed.">				if (questionMatches &amp;&amp; answerMatches) {</span>
+<span class="nc" id="L96">					match = true;</span>
+				}
+<span class="nc" id="L98">			}</span>
+<span class="nc bnc" id="L99" title="All 2 branches missed.">			if (!match){</span>
+<span class="nc" id="L100">				return false;</span>
+			}    
+<span class="nc" id="L102">		}</span>
+<span class="nc" id="L103">		return true;</span>
+	}
+
+	public static int supportingRank(List&lt;ObsGroupComponent&gt; obsGroupComponents, Obs parentObs, Set&lt;Obs&gt; obsSet) {
+<span class="nc" id="L107">		int rank = 0;</span>
+
+<span class="nc bnc" id="L109" title="All 2 branches missed.">		for (Obs obs : obsSet) {</span>
+<span class="nc" id="L110">			Set&lt;Integer&gt; obsGroupComponentMatchLog = new HashSet&lt;Integer&gt;();</span>
+
+<span class="nc bnc" id="L112" title="All 2 branches missed.">			for (ObsGroupComponent obsGroupComponent : obsGroupComponents) {</span>
+<span class="nc" id="L113">				boolean questionMatches = obsGroupComponent.getQuestion().getConceptId().equals(obs.getConcept().getConceptId());</span>
+<span class="nc" id="L114">				boolean answerMatches = false;</span>
+
+<span class="nc bnc" id="L116" title="All 2 branches missed.">				if (obsGroupComponent.getAnswerDrug() == null ) {</span>
+<span class="nc bnc" id="L117" title="All 2 branches missed.">					answerMatches = (obsGroupComponent.getAnswer() == null ||  // TODO: why do we consider a match if answer is null?</span>
+<span class="nc bnc" id="L118" title="All 4 branches missed.">							(obs.getValueCoded() != null &amp;&amp; obsGroupComponent.getAnswer().getConceptId().equals(obs.getValueCoded().getConceptId())));</span>
+				} else {
+<span class="nc bnc" id="L120" title="All 4 branches missed.">					answerMatches = (obs.getValueDrug() !=null &amp;&amp; obsGroupComponent.getAnswerDrug().getDrugId().equals(obs.getValueDrug().getDrugId()));</span>
+				}
+
+
+				// TODO: what does this logic actually do????
+<span class="nc bnc" id="L125" title="All 4 branches missed.">				if (questionMatches &amp;&amp; !answerMatches) {					</span>
+<span class="nc bnc" id="L126" title="All 2 branches missed.">					if (!obsGroupComponentMatchLog.contains(obsGroupComponent.getQuestion().getConceptId())) {</span>
+<span class="nc bnc" id="L127" title="All 2 branches missed.">						if ( ((obsGroupComponent.getAnswer() != null) &amp;&amp;</span>
+<span class="nc bnc" id="L128" title="All 4 branches missed.">								(obs.getValueCoded() == null || obs.getValueCoded().getConceptId() == null)) ||</span>
+<span class="nc bnc" id="L129" title="All 2 branches missed.">								((obsGroupComponent.getAnswerDrug() != null) &amp;&amp;</span>
+<span class="nc bnc" id="L130" title="All 4 branches missed.">										(obs.getValueDrug() == null || obs.getValueDrug().getDrugId() == null)) ) {</span>
+<span class="nc" id="L131">							return 0;</span>
+						}
+						else {
+<span class="nc bnc" id="L134" title="All 2 branches missed.">							if (obsGroupComponent.isPartOfSet()) {</span>
+<span class="nc bnc" id="L135" title="All 2 branches missed.">								if (obsGroupComponent.getRemainingInSet() == 1) {</span>
+<span class="nc" id="L136">									return -1000;</span>
+								}
+							} else {
+								// If this ever happens, this is NOT a match and we can stop checking and return an insurmountable ranking
+<span class="nc" id="L140">								return -1000;</span>
+							}
+						}
+					}
+<span class="nc bnc" id="L144" title="All 4 branches missed.">				} else if (questionMatches &amp;&amp; answerMatches) {</span>
+<span class="nc bnc" id="L145" title="All 4 branches missed.">					if (( obsGroupComponent.getAnswer() != null ) || (obsGroupComponent.getAnswerDrug() != null)) {</span>
+						// add extra weight to this matching...
+<span class="nc" id="L147">						rank++;</span>
+					}
+<span class="nc" id="L149">					obsGroupComponentMatchLog.add(obsGroupComponent.getQuestion().getConceptId());</span>
+<span class="nc" id="L150">					rank++;</span>
+				}
+<span class="nc" id="L152">			}</span>
+<span class="nc" id="L153">		}</span>
+<span class="nc" id="L154">		return rank;</span>
+	}
+
+	public static List&lt;ObsGroupComponent&gt; findQuestionsAndAnswersForGroup(String parentGroupingConceptId, Node node) {
+<span class="nc" id="L158">		List&lt;ObsGroupComponent&gt; ret = new ArrayList&lt;ObsGroupComponent&gt;();</span>
+<span class="nc" id="L159">		findQuestionsAndAnswersForGroupHelper(parentGroupingConceptId,node, ret);</span>
+<span class="nc" id="L160">		return ret;</span>
+	}
+
+
+	private static void findQuestionsAndAnswersForGroupHelper(String parentGroupingConceptId, Node node, List&lt;ObsGroupComponent&gt; obsGroupComponents) {
+
+<span class="nc bnc" id="L166" title="All 2 branches missed.">		if (&quot;obs&quot;.equals(node.getNodeName())) {</span>
+<span class="nc" id="L167">			Concept question = null;</span>
+<span class="nc" id="L168">			List&lt;Concept&gt; questions = null;</span>
+<span class="nc" id="L169">			Concept answer = null;</span>
+<span class="nc" id="L170">			Drug answerDrug = null;</span>
+<span class="nc" id="L171">			List&lt;Concept&gt; answersList = null;</span>
+<span class="nc" id="L172">			NamedNodeMap attrs = node.getAttributes();</span>
+			try {
+<span class="nc" id="L174">				String questionsStr = attrs.getNamedItem(&quot;conceptIds&quot;).getNodeValue();</span>
+<span class="nc bnc" id="L175" title="All 4 branches missed.">				if (questionsStr != null &amp;&amp; !&quot;&quot;.equals(questionsStr)){</span>
+<span class="nc bnc" id="L176" title="All 2 branches missed.">					for (StringTokenizer st = new StringTokenizer(questionsStr, &quot;,&quot;); st.hasMoreTokens(); ) {</span>
+<span class="nc" id="L177">						String s = st.nextToken().trim();</span>
+<span class="nc bnc" id="L178" title="All 2 branches missed.">						if (questions == null)</span>
+<span class="nc" id="L179">							questions = new ArrayList&lt;Concept&gt;();</span>
+<span class="nc" id="L180">						questions.add(HtmlFormEntryUtil.getConcept(s));</span>
+<span class="nc" id="L181">					}</span>
+				}
+<span class="nc" id="L183">			} catch (Exception ex){</span>
+				//pass
+<span class="nc" id="L185">			}</span>
+			try {
+<span class="nc" id="L187">				question = HtmlFormEntryUtil.getConcept(attrs.getNamedItem(&quot;conceptId&quot;).getNodeValue());</span>
+<span class="nc" id="L188">			} catch (Exception ex) {</span>
+				//pass
+<span class="nc" id="L190">			}</span>
+			try {
+<span class="nc" id="L192">				answer = HtmlFormEntryUtil.getConcept(attrs.getNamedItem(&quot;answerConceptId&quot;).getNodeValue());</span>
+<span class="nc" id="L193">			} catch (Exception ex) {</span>
+				// this is fine
+<span class="nc" id="L195">			}</span>
+			try {
+<span class="nc" id="L197">				Node answerDrugId = attrs.getNamedItem(&quot;answerDrugId&quot;);</span>
+<span class="nc bnc" id="L198" title="All 2 branches missed.">				if ( answerDrugId != null ) {</span>
+<span class="nc" id="L199">					answerDrug = HtmlFormEntryUtil.getDrug(answerDrugId.getNodeValue());</span>
+				}
+<span class="nc" id="L201">			} catch (Exception ex) {</span>
+				// this is fine
+<span class="nc" id="L203">			}</span>
+			//check for answerConceptIds (plural)
+<span class="nc bnc" id="L205" title="All 2 branches missed.">			if (answer == null){</span>
+<span class="nc" id="L206">				Node n = attrs.getNamedItem(&quot;answerConceptIds&quot;);</span>
+<span class="nc bnc" id="L207" title="All 2 branches missed.">				if (n != null){</span>
+<span class="nc" id="L208">					String answersIds = n.getNodeValue();</span>
+<span class="nc bnc" id="L209" title="All 4 branches missed.">					if (answersIds != null &amp;&amp; !answersIds.equals(&quot;&quot;)){</span>
+						//initialize list
+<span class="nc" id="L211">						answersList = new ArrayList&lt;Concept&gt;();</span>
+<span class="nc bnc" id="L212" title="All 2 branches missed.">						for (StringTokenizer st = new StringTokenizer(answersIds, &quot;,&quot;); st.hasMoreTokens(); ) {</span>
+							try {
+<span class="nc" id="L214">								answersList.add(HtmlFormEntryUtil.getConcept(st.nextToken().trim()));</span>
+<span class="nc" id="L215">							} catch (Exception ex){</span>
+								//just ignore invalid conceptId if encountered in answersList
+<span class="nc" id="L217">							}</span>
+						} 
+					}
+				}
+			}
+
+			//determine whether or not the obs group parent of this obs is the obsGroup obs that we're looking at.
+<span class="nc" id="L224">			boolean thisObsInThisGroup = false;</span>
+<span class="nc" id="L225">			Node pTmp = node.getParentNode();</span>
+
+<span class="nc bnc" id="L227" title="All 2 branches missed.">			while(pTmp.getParentNode() != null) {</span>
+<span class="nc" id="L228">				Map&lt;String, String&gt; attributes = new HashMap&lt;String, String&gt;();        </span>
+<span class="nc" id="L229">				NamedNodeMap map = pTmp.getAttributes();</span>
+<span class="nc bnc" id="L230" title="All 2 branches missed.">				if (map != null)</span>
+<span class="nc bnc" id="L231" title="All 2 branches missed.">					for (int i = 0; i &lt; map.getLength(); ++i) {</span>
+<span class="nc" id="L232">						Node attribute = map.item(i);</span>
+<span class="nc" id="L233">						attributes.put(attribute.getNodeName(), attribute.getNodeValue());</span>
+					}
+<span class="nc bnc" id="L235" title="All 2 branches missed.">				if (attributes.containsKey(&quot;groupingConceptId&quot;)){</span>
+<span class="nc bnc" id="L236" title="All 2 branches missed.">					if (attributes.get(&quot;groupingConceptId&quot;).equals(parentGroupingConceptId))</span>
+<span class="nc" id="L237">						thisObsInThisGroup = true;</span>
+					break;
+
+				} 
+<span class="nc" id="L241">				pTmp = pTmp.getParentNode();</span>
+<span class="nc" id="L242">			}</span>
+
+<span class="nc bnc" id="L244" title="All 2 branches missed.">			if (thisObsInThisGroup){</span>
+<span class="nc bnc" id="L245" title="All 4 branches missed.">				if (answersList != null &amp;&amp; answersList.size() &gt; 0) {</span>
+<span class="nc" id="L246">					int setCounter = 0;</span>
+<span class="nc bnc" id="L247" title="All 2 branches missed.">					for (Concept c : answersList) {</span>
+<span class="nc" id="L248">						obsGroupComponents.add(new ObsGroupComponent(question, c, answersList.size() - (setCounter++)));</span>
+<span class="nc" id="L249">					}</span>
+<span class="nc bnc" id="L250" title="All 4 branches missed.">				} else if (questions != null &amp;&amp; questions.size() &gt; 0) {</span>
+<span class="nc" id="L251">					int setCounter = 0;</span>
+<span class="nc bnc" id="L252" title="All 2 branches missed.">					for (Concept c: questions) {</span>
+<span class="nc" id="L253">						obsGroupComponents.add(new ObsGroupComponent(c, answer, questions.size() - (setCounter++)));</span>
+<span class="nc" id="L254">					}</span>
+<span class="nc" id="L255">				} else {</span>
+<span class="nc" id="L256">					obsGroupComponents.add(new ObsGroupComponent(question, answer, answerDrug));</span>
+				}	     
+			} 
+<span class="nc bnc" id="L259" title="All 2 branches missed.">		} else if (&quot;obsgroup&quot;.equals(node.getNodeName())){</span>
+			try {
+<span class="nc" id="L261">				NamedNodeMap attrs = node.getAttributes();</span>
+<span class="nc" id="L262">				attrs.getNamedItem(&quot;groupingConceptId&quot;).getNodeValue();</span>
+<span class="nc" id="L263">				obsGroupComponents.add(new ObsGroupComponent(HtmlFormEntryUtil.getConcept(attrs.getNamedItem(&quot;groupingConceptId&quot;).getNodeValue()), null));</span>
+<span class="nc" id="L264">			} catch (Exception ex){</span>
+<span class="nc" id="L265">				throw new RuntimeException(&quot;Unable to get groupingConcept out of obsgroup tag.&quot;);</span>
+<span class="nc" id="L266">			}    </span>
+		}
+<span class="nc" id="L268">		NodeList nl = node.getChildNodes();</span>
+<span class="nc bnc" id="L269" title="All 2 branches missed.">		for (int i = 0; i &lt; nl.getLength(); ++i) {</span>
+<span class="nc" id="L270">			findQuestionsAndAnswersForGroupHelper(parentGroupingConceptId, nl.item(i), obsGroupComponents);</span>
+		}
+<span class="nc" id="L272">	}</span>
+
+	/**
+	 * 
+	 * returns the obsgroup hierarchy path of an obsgroup Obs, including itself
+	 * 
+	 * @param o
+	 * @return
+	 */
+	public static String getObsGroupPath(Obs o){
+<span class="nc" id="L282">		StringBuilder st = new StringBuilder(&quot;/&quot; + o.getConcept().getConceptId());</span>
+<span class="nc bnc" id="L283" title="All 2 branches missed.">		while (o.getObsGroup() != null){</span>
+<span class="nc" id="L284">			o = o.getObsGroup();</span>
+<span class="nc" id="L285">			st.insert(0, &quot;/&quot; + o.getConcept().getConceptId());</span>
+		}
+<span class="nc" id="L287">		return st.toString();</span>
+	}
+
+	/**
+	 * 
+	 * returns the obsgroup hierarchy path of an obsgroup node in the xml, including itself
+	 * 
+	 * @param node
+	 * @return
+	 */
+	public static String getObsGroupPath(Node node){
+<span class="nc" id="L298">		StringBuilder st = new StringBuilder();</span>
+<span class="nc bnc" id="L299" title="All 2 branches missed.">		while (!node.getNodeName().equals(&quot;htmlform&quot;)){</span>
+<span class="nc bnc" id="L300" title="All 2 branches missed.">			if (node.getNodeName().equals(&quot;obsgroup&quot;)){</span>
+				try {
+<span class="nc" id="L302">					String conceptIdString = node.getAttributes().getNamedItem(&quot;groupingConceptId&quot;).getNodeValue();</span>
+<span class="nc" id="L303">					Concept c = HtmlFormEntryUtil.getConcept(conceptIdString);</span>
+<span class="nc" id="L304">					st.insert(0, &quot;/&quot; + c.getConceptId());</span>
+<span class="nc" id="L305">				} catch (Exception ex){</span>
+<span class="nc" id="L306">					throw new RuntimeException(&quot;obsgroup tag encountered without groupingConceptId attribute&quot;);</span>
+<span class="nc" id="L307">				}</span>
+			}
+<span class="nc" id="L309">			node = node.getParentNode();        </span>
+		}
+<span class="nc" id="L311">		return st.toString();</span>
+	}
+
+	public boolean isPartOfSet() {
+<span class="nc bnc" id="L315" title="All 2 branches missed.">		return remainingInSet &gt; 0;</span>
+	}
+
+	public int getRemainingInSet() {
+<span class="nc" id="L319">		return remainingInSet;</span>
+	}
+
+	public void setRemainingInSet(int remainingInSet) {
+<span class="nc" id="L323">		this.remainingInSet = remainingInSet;</span>
+<span class="nc" id="L324">	}</span>
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.8.202204050719</span></div></body></html>

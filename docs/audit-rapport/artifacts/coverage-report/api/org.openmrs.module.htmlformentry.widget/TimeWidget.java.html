@@ -1,0 +1,192 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>TimeWidget.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">HTML Form Entry API</a> &gt; <a href="index.source.html" class="el_package">org.openmrs.module.htmlformentry.widget</a> &gt; <span class="el_source">TimeWidget.java</span></div><h1>TimeWidget.java</h1><pre class="source lang-java linenums">package org.openmrs.module.htmlformentry.widget;
+
+import org.openmrs.api.context.Context;
+import org.openmrs.module.htmlformentry.FormEntryContext;
+import org.openmrs.module.htmlformentry.FormEntryContext.Mode;
+import org.openmrs.module.htmlformentry.HtmlFormEntryConstants;
+import org.openmrs.module.htmlformentry.HtmlFormEntryUtil;
+import org.springframework.util.StringUtils;
+
+import javax.servlet.http.HttpServletRequest;
+import java.text.SimpleDateFormat;
+import java.util.Calendar;
+import java.util.Date;
+
+/**
+ * A widget that allows the selection of a certain time-of-day.  To handle both
+ * a date and time, see {@see DateTimeWidget}.
+ */
+public class TimeWidget implements Widget {
+
+    public static final String DEFAULT_TIME_FORMAT = &quot;HH:mm&quot;;
+
+	private Date initialValue;
+    private boolean hidden;
+<span class="fc" id="L25">	private boolean hideSeconds = false;</span>
+    private String timeFormat;
+
+<span class="fc" id="L28">	public TimeWidget() {</span>
+
+<span class="fc" id="L30">	}</span>
+
+    private SimpleDateFormat timeFormat() {
+<span class="fc bfc" id="L33" title="All 2 branches covered.">        String df = timeFormat != null ? timeFormat : Context.getAdministrationService().getGlobalProperty(HtmlFormEntryConstants.GP_TIME_FORMAT);</span>
+<span class="fc bfc" id="L34" title="All 2 branches covered.">        if (!StringUtils.hasText(df)) {</span>
+<span class="fc" id="L35">            df = DEFAULT_TIME_FORMAT;</span>
+        }
+<span class="fc" id="L37">        return new SimpleDateFormat(df, Context.getLocale());</span>
+    }
+
+	/**
+	 * @see org.openmrs.module.htmlformentry.widget.Widget#generateHtml(org.openmrs.module.htmlformentry.FormEntryContext)
+	 */
+	@Override
+    public String generateHtml(FormEntryContext context) {
+<span class="fc bfc" id="L45" title="All 2 branches covered.">		if (context.getMode() == Mode.VIEW) {</span>
+<span class="fc" id="L46">			String toPrint = &quot;&quot;;</span>
+<span class="pc bpc" id="L47" title="1 of 2 branches missed.">			if (initialValue != null) {</span>
+<span class="fc" id="L48">				toPrint = timeFormat().format(initialValue);</span>
+<span class="fc" id="L49">				return WidgetFactory.displayValue(toPrint);</span>
+			} else {
+<span class="nc bnc" id="L51" title="All 2 branches missed.">				if(hideSeconds){</span>
+<span class="nc" id="L52">					toPrint = &quot;___:___&quot;;</span>
+				}
+				else{
+<span class="nc" id="L55">					toPrint = &quot;___:___:___&quot;;</span>
+					
+				}
+<span class="nc" id="L58">				return WidgetFactory.displayEmptyValue(toPrint);</span>
+			}
+		} else {
+<span class="fc" id="L61">			Calendar valAsCal = null;</span>
+<span class="pc bpc" id="L62" title="1 of 2 branches missed.">			if (initialValue != null) {</span>
+<span class="fc" id="L63">				valAsCal = Calendar.getInstance();</span>
+<span class="fc" id="L64">				valAsCal.setTime(initialValue);</span>
+			}
+<span class="fc" id="L66">			StringBuilder sb = new StringBuilder();</span>
+
+<span class="pc bpc" id="L68" title="1 of 2 branches missed.">            if (hidden) {</span>
+<span class="fc" id="L69">                sb.append(&quot;&lt;input type=\&quot;hidden\&quot; class=\&quot;hfe-hours\&quot; name=\&quot;&quot;).append(context.getFieldName(this))</span>
+<span class="fc" id="L70">                        .append(&quot;hours&quot;).append(&quot;\&quot; value=\&quot;&quot; + new SimpleDateFormat(&quot;HH&quot;).format(initialValue) + &quot;\&quot;/&gt;&quot;);</span>
+<span class="fc" id="L71">                sb.append(&quot;&lt;input type=\&quot;hidden\&quot; class=\&quot;hfe-minutes\&quot; name=\&quot;&quot;).append(context.getFieldName(this))</span>
+<span class="fc" id="L72">                        .append(&quot;minutes&quot;).append(&quot;\&quot; value=\&quot;&quot; + new SimpleDateFormat(&quot;mm&quot;).format(initialValue) + &quot;\&quot;/&gt;&quot;);</span>
+<span class="pc bpc" id="L73" title="1 of 2 branches missed.">                if(!hideSeconds){</span>
+<span class="fc" id="L74">	                sb.append(&quot;&lt;input type=\&quot;hidden\&quot; class=\&quot;hfe-seconds\&quot; name=\&quot;&quot;).append(context.getFieldName(this))</span>
+<span class="fc" id="L75">			                .append(&quot;seconds&quot;).append(&quot;\&quot; value=\&quot;&quot; + new SimpleDateFormat(&quot;ss&quot;).format(initialValue) + &quot;\&quot;/&gt;&quot;);</span>
+                }
+            }
+            else {
+<span class="nc" id="L79">                sb.append(&quot;&lt;select class=\&quot;hfe-hours\&quot; name=\&quot;&quot;).append(context.getFieldName(this))</span>
+<span class="nc" id="L80">                        .append(&quot;hours&quot;).append(&quot;\&quot;&gt;&quot;);</span>
+<span class="nc bnc" id="L81" title="All 2 branches missed.">                for (int i = 0; i &lt;= 23; ++i) {</span>
+<span class="nc" id="L82">                    String label = &quot;&quot; + i;</span>
+<span class="nc bnc" id="L83" title="All 2 branches missed.">                    if (label.length() == 1)</span>
+<span class="nc" id="L84">                        label = &quot;0&quot; + label;</span>
+<span class="nc" id="L85">                    sb.append(&quot;&lt;option value=\&quot;&quot; + i + &quot;\&quot;&quot;);</span>
+<span class="nc bnc" id="L86" title="All 2 branches missed.">                    if (valAsCal != null) {</span>
+<span class="nc bnc" id="L87" title="All 2 branches missed.">                        if (valAsCal.get(Calendar.HOUR_OF_DAY) == i)</span>
+<span class="nc" id="L88">                            sb.append(&quot; selected=\&quot;true\&quot;&quot;);</span>
+                    }
+<span class="nc" id="L90">                    sb.append(&quot;&gt;&quot; + label + &quot;&lt;/option&gt;&quot;);</span>
+                }
+<span class="nc" id="L92">                sb.append(&quot;&lt;/select&gt;&quot;);</span>
+<span class="nc" id="L93">                sb.append(&quot;:&quot;);</span>
+<span class="nc" id="L94">                sb.append(&quot;&lt;select class=\&quot;hfe-minutes\&quot; name=\&quot;&quot;).append(context.getFieldName(this))</span>
+<span class="nc" id="L95">                        .append(&quot;minutes&quot;).append(&quot;\&quot;&gt;&quot;);</span>
+<span class="nc bnc" id="L96" title="All 2 branches missed.">                for (int i = 0; i &lt;= 59; ++i) {</span>
+<span class="nc" id="L97">                    String label = &quot;&quot; + i;</span>
+<span class="nc bnc" id="L98" title="All 2 branches missed.">                    if (label.length() == 1)</span>
+<span class="nc" id="L99">                        label = &quot;0&quot; + label;</span>
+<span class="nc" id="L100">                    sb.append(&quot;&lt;option value=\&quot;&quot; + i + &quot;\&quot;&quot;);</span>
+<span class="nc bnc" id="L101" title="All 2 branches missed.">                    if (valAsCal != null) {</span>
+<span class="nc bnc" id="L102" title="All 2 branches missed.">                        if (valAsCal.get(Calendar.MINUTE) == i)</span>
+<span class="nc" id="L103">                            sb.append(&quot; selected=\&quot;true\&quot;&quot;);</span>
+                    }
+<span class="nc" id="L105">                    sb.append(&quot;&gt;&quot; + label + &quot;&lt;/option&gt;&quot;);</span>
+                }
+<span class="nc" id="L107">                sb.append(&quot;&lt;/select&gt;&quot;);</span>
+<span class="nc bnc" id="L108" title="All 2 branches missed.">                if(!hideSeconds){</span>
+<span class="nc" id="L109">	                sb.append(&quot;&lt;select class=\&quot;hfe-seconds\&quot; name=\&quot;&quot;).append(context.getFieldName(this))</span>
+<span class="nc" id="L110">			                .append(&quot;seconds&quot;).append(&quot;\&quot;&gt;&quot;);</span>
+<span class="nc bnc" id="L111" title="All 2 branches missed.">	                for (int i = 0; i &lt;= 59; ++i) {</span>
+<span class="nc" id="L112">		                String label = &quot;&quot; + i;</span>
+<span class="nc bnc" id="L113" title="All 2 branches missed.">		                if (label.length() == 1)</span>
+<span class="nc" id="L114">			                label = &quot;0&quot; + label;</span>
+<span class="nc" id="L115">		                sb.append(&quot;&lt;option value=\&quot;&quot; + i + &quot;\&quot;&quot;);</span>
+<span class="nc bnc" id="L116" title="All 2 branches missed.">		                if (valAsCal != null) {</span>
+<span class="nc bnc" id="L117" title="All 2 branches missed.">			                if (valAsCal.get(Calendar.SECOND) == i)</span>
+<span class="nc" id="L118">				                sb.append(&quot; selected=\&quot;true\&quot;&quot;);</span>
+		                }
+<span class="nc" id="L120">		                sb.append(&quot;&gt;&quot; + label + &quot;&lt;/option&gt;&quot;);</span>
+	                }
+<span class="nc" id="L122">	                sb.append(&quot;&lt;/select&gt;&quot;);</span>
+                }
+            }
+
+<span class="fc" id="L126">			return sb.toString();</span>
+		}
+	}
+
+	/**
+	 * @see org.openmrs.module.htmlformentry.widget.Widget#getValue(org.openmrs.module.htmlformentry.FormEntryContext,
+	 *      javax.servlet.http.HttpServletRequest)
+	 */
+	@Override
+    public Object getValue(FormEntryContext context, HttpServletRequest request) {
+		try {
+<span class="nc" id="L137">			Integer h = (Integer) HtmlFormEntryUtil.getParameterAsType(request,</span>
+<span class="nc" id="L138">					context.getFieldName(this) + &quot;hours&quot;, Integer.class);</span>
+<span class="nc" id="L139">			Integer m = (Integer) HtmlFormEntryUtil.getParameterAsType(request,</span>
+<span class="nc" id="L140">					context.getFieldName(this) + &quot;minutes&quot;, Integer.class);</span>
+<span class="nc" id="L141">            Integer s = (Integer) HtmlFormEntryUtil.getParameterAsType(request,</span>
+<span class="nc" id="L142">                    context.getFieldName(this) + &quot;seconds&quot;, Integer.class);</span>
+<span class="nc bnc" id="L143" title="All 4 branches missed.">			if (h == null &amp;&amp; m == null)</span>
+<span class="nc" id="L144">				return null;</span>
+<span class="nc bnc" id="L145" title="All 2 branches missed.">			if (h == null)</span>
+<span class="nc" id="L146">				h = 0;</span>
+<span class="nc bnc" id="L147" title="All 2 branches missed.">			if (m == null)</span>
+<span class="nc" id="L148">				m = 0;</span>
+<span class="nc bnc" id="L149" title="All 2 branches missed.">            if (s == null)</span>
+<span class="nc" id="L150">                s = 0;</span>
+            
+<span class="nc bnc" id="L152" title="All 6 branches missed.">            if (h == 0 &amp;&amp; m == 0 &amp;&amp; s == 0) {</span>
+<span class="nc" id="L153">            	return null;</span>
+            }
+            
+<span class="nc" id="L156">			Calendar cal = Calendar.getInstance();</span>
+<span class="nc" id="L157">			cal.set(1900, 1, 1);</span>
+<span class="nc" id="L158">			cal.set(Calendar.HOUR_OF_DAY, h);</span>
+<span class="nc" id="L159">			cal.set(Calendar.MINUTE, m);</span>
+<span class="nc" id="L160">			cal.set(Calendar.SECOND, s);</span>
+<span class="nc" id="L161">			cal.set(Calendar.MILLISECOND, 0);</span>
+<span class="nc" id="L162">			return cal.getTime();</span>
+<span class="nc" id="L163">		} catch (Exception ex) {</span>
+<span class="nc" id="L164">			throw new IllegalArgumentException(&quot;Illegal value&quot;);</span>
+		}
+	}
+
+	/**
+	 * @see org.openmrs.module.htmlformentry.widget.Widget#setInitialValue(java.lang.Object)
+	 */
+	@Override
+    public void setInitialValue(Object value) {
+<span class="fc" id="L173">		initialValue = (Date) value;</span>
+<span class="fc" id="L174">	}</span>
+
+    public void setHidden(boolean hidden) {
+<span class="fc" id="L177">        this.hidden = hidden;</span>
+<span class="fc" id="L178">    }</span>
+	
+	public void setHideSeconds(boolean hideSeconds) {
+<span class="nc" id="L181">		this.hideSeconds = hideSeconds;</span>
+<span class="nc" id="L182">	}</span>
+
+    public boolean isHidden() {
+<span class="nc" id="L185">        return hidden;</span>
+    }
+
+    public void setTimeFormat(String timeFormat) {
+<span class="fc" id="L189">        this.timeFormat = timeFormat;</span>
+<span class="fc" id="L190">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.8.202204050719</span></div></body></html>

@@ -1,0 +1,309 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>HtmlFormExporter.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">HTML Form Entry API</a> &gt; <a href="index.source.html" class="el_package">org.openmrs.module.htmlformentry</a> &gt; <span class="el_source">HtmlFormExporter.java</span></div><h1>HtmlFormExporter.java</h1><pre class="source lang-java linenums">package org.openmrs.module.htmlformentry;
+
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
+import java.util.StringTokenizer;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+import org.apache.commons.lang.StringUtils;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+import org.openmrs.Concept;
+import org.openmrs.Form;
+import org.openmrs.Location;
+import org.openmrs.OpenmrsMetadata;
+import org.openmrs.OpenmrsObject;
+import org.openmrs.PatientIdentifierType;
+import org.openmrs.Person;
+import org.openmrs.Program;
+import org.openmrs.ProgramWorkflow;
+import org.openmrs.RelationshipType;
+import org.openmrs.Role;
+import org.openmrs.api.APIException;
+import org.openmrs.api.context.Context;
+import org.openmrs.module.htmlformentry.compatibility.RegimenSuggestionCompatibility;
+import org.openmrs.module.htmlformentry.handler.AttributeDescriptor;
+import org.openmrs.module.htmlformentry.handler.TagHandler;
+import org.openmrs.module.htmlformentry.substitution.HtmlFormSubstitutionUtils;
+
+/**
+ * HtmlFormExporter intended to be used by the Metadata sharing module. The clone includes a
+ * list of OpenmrsObjects references in the form xml so that the Metadata sharing module knows which
+ * other Openmrs objects it needs to package up with the form.
+ */
+public class HtmlFormExporter {
+	
+<span class="fc" id="L38">	private static Log log = LogFactory.getLog(HtmlFormExporter.class);</span>
+	
+	private final HtmlForm form;
+	
+	private Boolean includeLocations;
+	
+	private Boolean includePersons;
+	
+	private Boolean includeRoles;
+	
+	private Boolean includePatientIdentifierTypes;
+	
+	private HtmlForm formToExport;
+	
+<span class="fc" id="L52">	public HtmlFormExporter(HtmlForm form) {</span>
+<span class="fc" id="L53">		this.form = form;</span>
+<span class="fc" id="L54">	}</span>
+	
+	private HtmlForm copyOf(HtmlForm form) {
+<span class="fc" id="L57">		HtmlForm copy = new HtmlForm();</span>
+<span class="fc" id="L58">		copy.setChangedBy(form.getChangedBy());</span>
+<span class="fc" id="L59">		copy.setCreator(form.getCreator());</span>
+<span class="fc" id="L60">		copy.setDateChanged(form.getDateChanged());</span>
+<span class="fc" id="L61">		copy.setDateCreated(form.getDateCreated());</span>
+<span class="fc" id="L62">		copy.setDateRetired(form.getDateRetired());</span>
+<span class="fc" id="L63">		copy.setForm(form.getForm());</span>
+<span class="fc" id="L64">		copy.setId(form.getId());</span>
+<span class="fc" id="L65">		copy.setRetired(form.getRetired());</span>
+<span class="fc" id="L66">		copy.setRetiredBy(form.getRetiredBy());</span>
+<span class="fc" id="L67">		copy.setRetireReason(form.getRetireReason());</span>
+<span class="fc" id="L68">		copy.setUuid(form.getUuid());</span>
+<span class="fc" id="L69">		copy.setXmlData(form.getXmlData());</span>
+<span class="fc" id="L70">		return copy;</span>
+	}
+
+	private MetadataMappingResolver getMetadataMappingResolver(){
+<span class="fc" id="L74">		return Context.getRegisteredComponent(&quot;metadataMappingResolver&quot;, MetadataMappingResolver.class);</span>
+	}
+	
+	@SuppressWarnings(&quot;unchecked&quot;)
+	private void calculateDependencies() {
+<span class="fc" id="L79">		Set&lt;OpenmrsObject&gt; dependencies = new HashSet&lt;OpenmrsObject&gt;();</span>
+		
+<span class="fc" id="L81">		Set&lt;Class&lt;?&gt;&gt; classesNotToExport = getClassesNotToExport();</span>
+
+<span class="fc" id="L83">		MetadataMappingResolver metadataMappingResolver = getMetadataMappingResolver();</span>
+
+		// we to resolve any macros or repeat/renders first, but we *don't* want these changes to
+		// be applied to the form we are exporting so we copy the xml into a new string first
+		// (calculate Uuid dependencies should operate properly even with out this, but will be do this just to be safe)
+		
+<span class="fc" id="L89">		String xml = new String(formToExport.getXmlData());</span>
+<span class="fc" id="L90">		HtmlFormEntryGenerator generator = new HtmlFormEntryGenerator();</span>
+		
+		try {
+<span class="fc" id="L93">			xml = generator.applyMacros(xml);</span>
+<span class="fc" id="L94">			xml = generator.applyRepeats(xml);</span>
+		}
+<span class="nc" id="L96">		catch (Exception e) {</span>
+<span class="nc" id="L97">			throw new APIException(&quot;Unable to process macros and templates when processing form to make it shareable&quot;, e);</span>
+<span class="fc" id="L98">		}</span>
+		
+		// now we need to loop through the attributes to find what dependencies we need to look for
+		// fetch the tag handlers so we can gain access to the attribute descriptors
+<span class="fc" id="L102">		Map&lt;String, TagHandler&gt; tagHandlers = Context.getService(HtmlFormEntryService.class).getHandlers();</span>
+		
+		// loop through all the attribute descriptors for the registered handlers
+<span class="fc bfc" id="L105" title="All 2 branches covered.">		for (String tagName : tagHandlers.keySet()) {</span>
+<span class="fc" id="L106">			log.debug(&quot;Handling dependencies for tag &quot; + tagName);</span>
+
+<span class="fc bfc" id="L108" title="All 2 branches covered.">			if (tagHandlers.get(tagName).getAttributeDescriptors() != null) {</span>
+<span class="fc bfc" id="L109" title="All 2 branches covered.">				for (AttributeDescriptor attributeDescriptor : tagHandlers.get(tagName).getAttributeDescriptors()) {</span>
+<span class="pc bpc" id="L110" title="2 of 4 branches missed.">					if (attributeDescriptor.getClazz() != null &amp;&amp; !classesNotToExport.contains(attributeDescriptor.getClazz())) {</span>
+
+						// build the attribute string we are searching for
+						// pattern matches &lt;tagName .* attribute=&quot;[anything]&quot;; group(1) is set to [anything]
+						// to break down the regex in detail, ?: simply means that we don't want include this grouping in the groups that we backreference;
+						// the grouping itself is an &quot;or&quot;, that matches either &quot;\\s&quot; (a single whitespace character) or
+						// &quot;\\s[^&gt;]*\\s&quot; (a single whitespace character plus 0 to n characters of any type but a &gt;, followed by another single whitespace character)
+<span class="fc" id="L117">						String pattern = &quot;&lt;&quot; + tagName + &quot;(?:\\s|\\s[^&gt;]*\\s)&quot; + attributeDescriptor.getName() + &quot;=\&quot;(.*?)\&quot;&quot;;</span>
+<span class="fc" id="L118">						log.debug(&quot;dependency substitution pattern: &quot; + pattern);</span>
+						
+						// now search through and find all matches
+<span class="fc" id="L121">						Matcher matcher = Pattern.compile(pattern, Pattern.CASE_INSENSITIVE).matcher(xml);</span>
+<span class="fc bfc" id="L122" title="All 2 branches covered.">						while (matcher.find()) {</span>
+							// split the matched result group into the various ids
+<span class="fc" id="L124">							String[] ids = matcher.group(1).split(&quot;,&quot;);</span>
+							
+<span class="fc bfc" id="L126" title="All 2 branches covered.">							for (String id : ids) {</span>
+								// if this id matches a uuid pattern, try to fetch the object by uuid
+<span class="pc bpc" id="L128" title="2 of 4 branches missed.">								if (HtmlFormEntryUtil.isValidUuidFormat(id) &amp;&amp; OpenmrsObject.class.isAssignableFrom(attributeDescriptor.getClazz())) {</span>
+<span class="fc" id="L129">									OpenmrsObject object = Context.getService(HtmlFormEntryService.class).getItemByUuid(</span>
+<span class="fc" id="L130">									    (Class&lt;? extends OpenmrsObject&gt;) attributeDescriptor.getClazz(), id);</span>
+<span class="pc bpc" id="L131" title="1 of 2 branches missed.">									if (object != null) {</span>
+										//special handling of Form -- if passed a Form, see if it can be passed along as  HtmlForm
+<span class="pc bpc" id="L133" title="1 of 2 branches missed.">										if (Form.class.equals(attributeDescriptor.getClazz())) {</span>
+<span class="nc" id="L134">											Form form = (Form) object;</span>
+<span class="nc" id="L135">											HtmlForm htmlForm = Context.getService(HtmlFormEntryService.class).getHtmlFormByForm(form);</span>
+<span class="nc bnc" id="L136" title="All 2 branches missed.">											if (htmlForm != null){</span>
+<span class="nc" id="L137">												dependencies.add(htmlForm);</span>
+<span class="nc" id="L138">												continue;</span>
+											}
+										}
+<span class="fc" id="L141">										dependencies.add(object);</span>
+<span class="fc" id="L142">										continue;</span>
+									}
+								}
+
+								//if openmrs metadata, try to get it by metadataMapping service
+<span class="nc bnc" id="L147" title="All 2 branches missed.">								if(OpenmrsMetadata.class.isAssignableFrom(attributeDescriptor.getClazz())){</span>
+<span class="nc" id="L148">									OpenmrsObject object = metadataMappingResolver.getMetadataItem((Class&lt;? extends OpenmrsMetadata&gt;) attributeDescriptor.getClazz(), id);</span>
+<span class="nc bnc" id="L149" title="All 2 branches missed.">									if(object != null){</span>
+<span class="nc" id="L150">										dependencies.add(object);</span>
+<span class="nc" id="L151">										continue;</span>
+									}
+								}
+
+								// if we haven't found anything by uuid, try by name
+<span class="nc bnc" id="L156" title="All 2 branches missed.">								if (OpenmrsMetadata.class.isAssignableFrom(attributeDescriptor.getClazz())) {</span>
+<span class="nc" id="L157">									OpenmrsObject object = Context.getService(HtmlFormEntryService.class).getItemByName(</span>
+<span class="nc" id="L158">									    (Class&lt;? extends OpenmrsMetadata&gt;) attributeDescriptor.getClazz(), id);</span>
+<span class="nc bnc" id="L159" title="All 2 branches missed.">									if (object != null) {</span>
+<span class="nc" id="L160">										dependencies.add(object);</span>
+<span class="nc" id="L161">										continue;</span>
+									}
+								}
+								// finally, handle any special cases
+								// if it's a concept, we also need to handle concepts referenced by map
+<span class="nc bnc" id="L166" title="All 2 branches missed.">								if (Concept.class.equals(attributeDescriptor.getClazz())) {</span>
+<span class="nc" id="L167">									Concept concept = HtmlFormEntryUtil.getConcept(id);</span>
+<span class="nc bnc" id="L168" title="All 2 branches missed.">									if (concept != null) {</span>
+<span class="nc" id="L169">										dependencies.add(concept);</span>
+<span class="nc" id="L170">										continue;</span>
+									}
+								}
+								// need to handle the special case where a program &quot;name&quot; is considered the &quot;name&quot; of the underlying concept
+<span class="nc bnc" id="L174" title="All 2 branches missed.">								if (Program.class.equals(attributeDescriptor.getClazz())) {</span>
+<span class="nc" id="L175">									Program program = HtmlFormEntryUtil.getProgram(id);</span>
+<span class="nc bnc" id="L176" title="All 2 branches missed.">									if (program != null) {</span>
+<span class="nc" id="L177">										dependencies.add(program);</span>
+<span class="nc" id="L178">										continue;</span>
+									}
+								}
+								// need to handle the special case where a program workflow is specified by a concept map pointing to it's underlying concept
+								// note that we shouldn't have to handle program workflow states because they should always be picked up when sharing the overriding program and/or program workflow
+<span class="nc bnc" id="L183" title="All 2 branches missed.">								if (ProgramWorkflow.class.equals(attributeDescriptor.getClazz())) {</span>
+<span class="nc" id="L184">									ProgramWorkflow workflow = HtmlFormEntryUtil.getWorkflow(id);</span>
+<span class="nc bnc" id="L185" title="All 2 branches missed.">									if (workflow != null) {</span>
+<span class="nc" id="L186">										dependencies.add(workflow);</span>
+									}
+								}
+								// need to special case of the name of a role
+<span class="nc bnc" id="L190" title="All 2 branches missed.">								if (Role.class.equals(attributeDescriptor.getClazz())) {</span>
+<span class="nc" id="L191">									Role role = Context.getUserService().getRole(id);</span>
+<span class="nc bnc" id="L192" title="All 2 branches missed.">									if (role != null) {</span>
+<span class="nc" id="L193">										dependencies.add(role);</span>
+<span class="nc" id="L194">										continue;</span>
+									}
+								}
+								//RelationshipType from the relationship tag, in case of lookup by name (which may or may not be implemented yet...)
+<span class="nc bnc" id="L198" title="All 2 branches missed.">								if (RelationshipType.class.equals(attributeDescriptor.getClazz())) {</span>
+<span class="nc" id="L199">									RelationshipType relationshipType = Context.getPersonService().getRelationshipTypeByName(id);</span>
+<span class="nc bnc" id="L200" title="All 2 branches missed.">									if (relationshipType != null) {</span>
+<span class="nc" id="L201">										dependencies.add(relationshipType);</span>
+<span class="nc" id="L202">										continue;</span>
+									}
+								}
+								
+<span class="nc" id="L206">								RegimenSuggestionCompatibility regimen = Context.getRegisteredComponent(&quot;htmlformentry.RegimenSuggestionCompatibility&quot;, RegimenSuggestionCompatibility.class);</span>
+<span class="nc" id="L207">								regimen.AddDrugDependencies(id, attributeDescriptor, dependencies);</span>
+							}
+<span class="fc" id="L209">						}</span>
+					}
+<span class="fc" id="L211">				}</span>
+			}
+<span class="fc" id="L213">		}</span>
+<span class="fc" id="L214">		formToExport.setDependencies(dependencies);</span>
+<span class="fc" id="L215">	}</span>
+	
+	/**
+     * @return results of parsing the {@link HtmlFormEntryConstants#GP_CLASSES_NOT_TO_EXPORT_WITH_MDS} global property
+     */
+    private Set&lt;Class&lt;?&gt;&gt; getClassesNotToExport() {
+<span class="fc" id="L221">    	Set&lt;Class&lt;?&gt;&gt; ret = new HashSet&lt;Class&lt;?&gt;&gt;();</span>
+<span class="fc" id="L222">    	String gp = Context.getAdministrationService().getGlobalProperty(HtmlFormEntryConstants.GP_CLASSES_NOT_TO_EXPORT_WITH_MDS);</span>
+<span class="pc bpc" id="L223" title="1 of 2 branches missed.">    	if (StringUtils.isNotBlank(gp)) {</span>
+<span class="nc bnc" id="L224" title="All 2 branches missed.">    		for (StringTokenizer st = new StringTokenizer(gp, &quot;, &quot;); st.hasMoreTokens(); ) {</span>
+<span class="nc" id="L225">    			String className = st.nextToken();</span>
+    			try {
+<span class="nc" id="L227">    				ret.add(Context.loadClass(className));</span>
+<span class="nc" id="L228">    			} catch (ClassNotFoundException ex) {</span>
+    				// pass
+<span class="nc" id="L230">    			}</span>
+<span class="nc" id="L231">    		}</span>
+    	}
+<span class="fc" id="L233">    	return ret;</span>
+    }
+
+	private void stripLocalAttributesFromXml() {
+		// get the tag handlers so we can gain access to the attribute descriptors
+<span class="fc" id="L238">		Map&lt;String, TagHandler&gt; tagHandlers = Context.getService(HtmlFormEntryService.class).getHandlers();</span>
+		
+		// loop through all the attribute descriptors for this
+<span class="fc bfc" id="L241" title="All 2 branches covered.">		for (String tagName : tagHandlers.keySet()) {</span>
+<span class="fc" id="L242">			log.debug(&quot;Handling dependencies for tag &quot; + tagName);</span>
+			
+<span class="fc bfc" id="L244" title="All 2 branches covered.">			if (tagHandlers.get(tagName).getAttributeDescriptors() != null) {</span>
+<span class="fc bfc" id="L245" title="All 2 branches covered.">				for (AttributeDescriptor attributeDescriptor : tagHandlers.get(tagName).getAttributeDescriptors()) {</span>
+<span class="pc bpc" id="L246" title="1 of 2 branches missed.">					if (attributeDescriptor.getClazz() != null) {</span>
+						// build the attribute string we are searching for
+						// pattern matches &lt;tagName .* attribute=&quot;[anything]&quot;; group(1) is set to attribute=&quot;[anything]&quot;
+						// see above method for more detail
+<span class="fc" id="L250">						String stripPattern = &quot;&lt;&quot; + tagName + &quot;(?:\\s|\\s[^&gt;]*\\s)(&quot; + attributeDescriptor.getName() + &quot;=\&quot;.*?\&quot;)&quot;;</span>
+<span class="fc" id="L251">						log.debug(&quot;stripping substitution pattern: &quot; + stripPattern);</span>
+						
+<span class="pc bpc" id="L253" title="3 of 4 branches missed.">						if (!this.includeLocations &amp;&amp; attributeDescriptor.getClazz().equals(Location.class)) {</span>
+<span class="nc" id="L254">							stripLocalAttributesFromXmlHelper(Pattern.compile(stripPattern, Pattern.CASE_INSENSITIVE));</span>
+<span class="pc bpc" id="L255" title="3 of 4 branches missed.">						} else if (!this.includePersons &amp;&amp; attributeDescriptor.getClazz().equals(Person.class)) {</span>
+<span class="nc" id="L256">							stripLocalAttributesFromXmlHelper(Pattern.compile(stripPattern, Pattern.CASE_INSENSITIVE));</span>
+<span class="pc bpc" id="L257" title="3 of 4 branches missed.">						} else if (!this.includeRoles &amp;&amp; attributeDescriptor.getClazz().equals(Role.class)) {</span>
+<span class="nc" id="L258">							stripLocalAttributesFromXmlHelper(Pattern.compile(stripPattern, Pattern.CASE_INSENSITIVE));</span>
+<span class="pc bpc" id="L259" title="1 of 2 branches missed.">						} else if (!this.includePatientIdentifierTypes</span>
+<span class="nc bnc" id="L260" title="All 2 branches missed.">						        &amp;&amp; attributeDescriptor.getClazz().equals(PatientIdentifierType.class)) {</span>
+<span class="nc" id="L261">							stripLocalAttributesFromXmlHelper(Pattern.compile(stripPattern, Pattern.CASE_INSENSITIVE));</span>
+						}
+					}
+<span class="fc" id="L264">				}</span>
+			}
+<span class="fc" id="L266">		}</span>
+<span class="fc" id="L267">	}</span>
+	
+	private void stripLocalAttributesFromXmlHelper(Pattern pattern) {
+		
+<span class="nc" id="L271">		Matcher matcher = pattern.matcher(formToExport.getXmlData());</span>
+<span class="nc" id="L272">		StringBuffer buffer = new StringBuffer();</span>
+		
+		// search through the xml data for the Pattern specified in the pattern parameter, and remove group(1)
+<span class="nc bnc" id="L275" title="All 2 branches missed.">		while (matcher.find()) {</span>
+<span class="nc" id="L276">			matcher.appendReplacement(buffer, matcher.group().substring(0, matcher.start(1) - matcher.start()));</span>
+		}
+		
+<span class="nc" id="L279">		matcher.appendTail(buffer);</span>
+		
+<span class="nc" id="L281">		formToExport.setXmlData(buffer.toString());</span>
+<span class="nc" id="L282">	}</span>
+	
+	public HtmlForm export(Boolean includeLocations, Boolean includePersons, Boolean includeRoles,
+	                       Boolean includePatientIdentifierTypes) {
+<span class="fc" id="L286">		this.includeLocations = includeLocations;</span>
+<span class="fc" id="L287">		this.includePersons = includePersons;</span>
+<span class="fc" id="L288">		this.includeRoles = includeRoles;</span>
+<span class="fc" id="L289">		this.includePatientIdentifierTypes = includePatientIdentifierTypes;</span>
+		
+<span class="fc" id="L291">		formToExport = copyOf(form);</span>
+		
+		// first, strip out any local attributes we don't want to pass on
+		// default (set in HtmlForm.java) is to include locations, roles, and patient identifier types, but not persons
+<span class="fc" id="L295">		stripLocalAttributesFromXml();</span>
+		
+		// within the form, replace any Ids with Uuids
+<span class="fc" id="L298">		HtmlFormSubstitutionUtils.replaceIdsWithUuids(formToExport);</span>
+		// replace any programs referenced by name with uuids (since programs referenced by name are really referenced by the underlying concept which can cause issues during metadata sharing)
+<span class="fc" id="L300">		HtmlFormSubstitutionUtils.replaceProgramNamesWithUuids(formToExport);</span>
+		
+		// make sure all dependent OpenmrsObjects are loaded and explicitly referenced
+<span class="fc" id="L303">		calculateDependencies();</span>
+		// TODO: update the calculate dependencies method to handle persons specified by name...
+		
+<span class="fc" id="L306">		return formToExport;</span>
+	}
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.8.202204050719</span></div></body></html>

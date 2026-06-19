@@ -1,0 +1,485 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ExitFromCareSubmissionElement.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">HTML Form Entry API</a> &gt; <a href="index.source.html" class="el_package">org.openmrs.module.htmlformentry.element</a> &gt; <span class="el_source">ExitFromCareSubmissionElement.java</span></div><h1>ExitFromCareSubmissionElement.java</h1><pre class="source lang-java linenums">package org.openmrs.module.htmlformentry.element;
+
+
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Date;
+import java.util.List;
+import java.util.Map;
+
+import javax.servlet.http.HttpServletRequest;
+
+import org.openmrs.Concept;
+import org.openmrs.ConceptAnswer;
+import org.openmrs.Obs;
+import org.openmrs.Patient;
+import org.openmrs.api.context.Context;
+import org.openmrs.module.htmlformentry.FormEntryContext;
+import org.openmrs.module.htmlformentry.FormEntrySession;
+import org.openmrs.module.htmlformentry.FormSubmissionError;
+import org.openmrs.module.htmlformentry.HtmlFormEntryUtil;
+import org.openmrs.module.htmlformentry.action.FormSubmissionControllerAction;
+import org.openmrs.module.htmlformentry.widget.DateWidget;
+import org.openmrs.module.htmlformentry.widget.DropdownWidget;
+import org.openmrs.module.htmlformentry.widget.ErrorWidget;
+import org.openmrs.module.htmlformentry.widget.Option;
+import org.openmrs.module.htmlformentry.widget.TextFieldWidget;
+import org.openmrs.util.OpenmrsUtil;
+
+/**
+ * Holds the widgets used to record details of exiting a person from care center, and serves as both the
+ * HtmlGeneratorElement and the FormSubmissionControllerAction for exit from care functionality
+ */
+public class ExitFromCareSubmissionElement implements HtmlGeneratorElement, FormSubmissionControllerAction {
+
+    private DateWidget dateWidget;
+    private ErrorWidget dateErrorWidget;
+    private DropdownWidget reasonForExitWidget;
+    private ErrorWidget reasonForExitErrorWidget;
+    private DropdownWidget causeOfDeathWidget;
+    private ErrorWidget causeOfDeathErrorWidget;
+    private TextFieldWidget otherReasonWidget;
+    private ErrorWidget otherReasonErrorWidget;
+
+<span class="nc" id="L44">    public ExitFromCareSubmissionElement(FormEntryContext context, Map&lt;String, String&gt; parameters) {</span>
+<span class="nc" id="L45">        createElement(context, parameters);</span>
+<span class="nc" id="L46">    }</span>
+
+    private void createElement(FormEntryContext context, Map&lt;String, String&gt; parameters) {
+
+<span class="nc" id="L50">        Patient patient = context.getExistingPatient();</span>
+
+<span class="nc" id="L52">        dateWidget = new DateWidget();</span>
+<span class="nc" id="L53">        dateErrorWidget = new ErrorWidget();</span>
+
+<span class="nc" id="L55">        reasonForExitWidget = new DropdownWidget();</span>
+<span class="nc" id="L56">        reasonForExitErrorWidget = new ErrorWidget();</span>
+
+<span class="nc" id="L58">        causeOfDeathWidget = new DropdownWidget();</span>
+<span class="nc" id="L59">        causeOfDeathErrorWidget = new ErrorWidget();</span>
+
+<span class="nc" id="L61">        otherReasonWidget = new TextFieldWidget();</span>
+<span class="nc" id="L62">        otherReasonErrorWidget = new ErrorWidget();</span>
+
+        // setting the initial values
+<span class="nc" id="L65">        String conceptId = Context.getAdministrationService().getGlobalProperty(&quot;concept.reasonExitedCare&quot;);</span>
+<span class="nc" id="L66">        Concept reasonExitConcept = Context.getConceptService().getConcept(conceptId);</span>
+<span class="nc" id="L67">        Concept initialAnswer = null;</span>
+<span class="nc" id="L68">        List&lt;Obs&gt; obsList = Context.getObsService().getObservationsByPersonAndConcept(patient, reasonExitConcept);</span>
+<span class="nc bnc" id="L69" title="All 4 branches missed.">        if (obsList != null &amp;&amp; obsList.size() == 1) {</span>
+<span class="nc" id="L70">            dateWidget.setInitialValue(obsList.get(0).getObsDatetime());</span>
+<span class="nc" id="L71">            initialAnswer = obsList.get(0).getValueCoded();</span>
+<span class="nc" id="L72">            reasonForExitWidget.setInitialValue(initialAnswer.getDisplayString());</span>
+        }
+
+        // populating with exit reason answer options
+<span class="nc bnc" id="L76" title="All 2 branches missed.">        boolean initialValueIsSet = !(reasonForExitWidget.getInitialValue() == null);</span>
+<span class="nc bnc" id="L77" title="All 2 branches missed.">        reasonForExitWidget.addOption(new Option(Context.getMessageSourceService().getMessage(&quot;htmlformentry.chooseAReasonForExit&quot;), &quot;&quot;, !initialValueIsSet));</span>
+
+<span class="nc bnc" id="L79" title="All 2 branches missed.">        if (reasonExitConcept != null) {</span>
+<span class="nc bnc" id="L80" title="All 2 branches missed.">            for (ConceptAnswer conceptAnswer : reasonExitConcept.getAnswers()) {</span>
+<span class="nc" id="L81">                Concept answerConcept = conceptAnswer.getAnswerConcept();</span>
+<span class="nc" id="L82">                Option answerOption = new Option(answerConcept.getDisplayString(), answerConcept.getId().toString(), answerConcept.equals(initialAnswer));</span>
+<span class="nc" id="L83">                reasonForExitWidget.addOption(answerOption);</span>
+<span class="nc" id="L84">            }</span>
+        }
+
+        // set the cause for the death and reason for death fields if the reason for the patient's exit is, that the
+        // patient has died
+<span class="nc" id="L89">        String causeOfDeathConId = Context.getAdministrationService().getGlobalProperty(&quot;concept.causeOfDeath&quot;);</span>
+<span class="nc" id="L90">        Concept causeOfDeathConcept = Context.getConceptService().getConcept(causeOfDeathConId);</span>
+<span class="nc" id="L91">        List&lt;Obs&gt; obsDeath = Context.getObsService().getObservationsByPersonAndConcept(patient, causeOfDeathConcept);</span>
+<span class="nc" id="L92">        Concept initialCauseOfDeath = null;</span>
+
+<span class="nc bnc" id="L94" title="All 4 branches missed.">        if (obsDeath != null &amp;&amp; obsDeath.size() == 1) {</span>
+<span class="nc" id="L95">            initialCauseOfDeath = obsDeath.get(0).getValueCoded();</span>
+<span class="nc" id="L96">            causeOfDeathWidget.setInitialValue(initialCauseOfDeath.getDisplayString());</span>
+<span class="nc bnc" id="L97" title="All 2 branches missed.">            if (obsDeath.get(0).getValueText() != null) {</span>
+<span class="nc" id="L98">                otherReasonWidget.setInitialValue(obsDeath.get(0).getValueText());</span>
+            }
+        }
+
+        // populating with cause of death answer options
+<span class="nc bnc" id="L103" title="All 2 branches missed.">        boolean causeOfDeathIsSet = !(causeOfDeathWidget.getInitialValue() == null);</span>
+<span class="nc bnc" id="L104" title="All 2 branches missed.">        causeOfDeathWidget.addOption(new Option(Context.getMessageSourceService().getMessage(&quot;htmlformentry.chooseACauseToDeath&quot;), &quot;&quot;, !causeOfDeathIsSet));</span>
+
+<span class="nc bnc" id="L106" title="All 2 branches missed.">        if (causeOfDeathConcept != null) {</span>
+<span class="nc bnc" id="L107" title="All 2 branches missed.">            for (ConceptAnswer conceptAnswer : causeOfDeathConcept.getAnswers()) {</span>
+<span class="nc" id="L108">                Concept answerConcept = conceptAnswer.getAnswerConcept();</span>
+<span class="nc" id="L109">                Option answerOption = new Option(answerConcept.getDisplayString(), answerConcept.getId().toString(), answerConcept.equals(initialCauseOfDeath));</span>
+<span class="nc" id="L110">                causeOfDeathWidget.addOption(answerOption);</span>
+<span class="nc" id="L111">            }</span>
+        }
+
+<span class="nc" id="L114">        context.registerWidget(dateWidget);</span>
+<span class="nc" id="L115">        context.registerErrorWidget(dateWidget, dateErrorWidget);</span>
+<span class="nc" id="L116">        context.registerWidget(reasonForExitWidget);</span>
+<span class="nc" id="L117">        context.registerErrorWidget(reasonForExitWidget, reasonForExitErrorWidget);</span>
+<span class="nc" id="L118">        context.registerWidget(causeOfDeathWidget);</span>
+<span class="nc" id="L119">        context.registerErrorWidget(causeOfDeathWidget, causeOfDeathErrorWidget);</span>
+<span class="nc" id="L120">        context.registerWidget(otherReasonWidget);</span>
+<span class="nc" id="L121">        context.registerErrorWidget(otherReasonWidget, otherReasonErrorWidget);</span>
+
+
+<span class="nc" id="L124">    }</span>
+
+    @Override
+    /**
+     * &lt;strong&gt;Should&lt;/strong&gt; not allow to edit and submit if either date or reason is null
+     * &lt;strong&gt;Should&lt;/strong&gt; allow to submit a form if exit from care section is initially not filled
+     */
+    public Collection&lt;FormSubmissionError&gt; validateSubmission(FormEntryContext context, HttpServletRequest submission) {
+<span class="nc" id="L132">        List&lt;FormSubmissionError&gt; ret = new ArrayList&lt;FormSubmissionError&gt;();</span>
+<span class="nc" id="L133">        Date exitDate = null;</span>
+<span class="nc" id="L134">        Concept exitReasonAnswerConcept = null;</span>
+<span class="nc" id="L135">        Concept causeOfDeathAnswerConcept = null;</span>
+
+<span class="nc" id="L137">        Patient patient = context.getExistingPatient();</span>
+<span class="nc" id="L138">        String reasonConId = Context.getAdministrationService().getGlobalProperty(&quot;concept.reasonExitedCare&quot;);</span>
+<span class="nc" id="L139">        Concept reasonExitConcept = Context.getConceptService().getConcept(reasonConId);</span>
+<span class="nc" id="L140">        List&lt;Obs&gt; obsList = Context.getObsService().getObservationsByPersonAndConcept(patient, reasonExitConcept);</span>
+
+<span class="nc" id="L142">        String causeOfDeathConId = Context.getAdministrationService().getGlobalProperty(&quot;concept.causeOfDeath&quot;);</span>
+<span class="nc" id="L143">        Concept causeOfDeathConcept = Context.getConceptService().getConcept(causeOfDeathConId);</span>
+<span class="nc" id="L144">        List&lt;Obs&gt; obsDeath = Context.getObsService().getObservationsByPersonAndConcept(patient, causeOfDeathConcept);</span>
+
+<span class="nc" id="L146">        String patientDiedConId = Context.getAdministrationService().getGlobalProperty(&quot;concept.patientDied&quot;);</span>
+<span class="nc" id="L147">        Concept patientDiedConcept = Context.getConceptService().getConcept(patientDiedConId);</span>
+<span class="nc" id="L148">        String otherNonCodedConId = Context.getAdministrationService().getGlobalProperty(&quot;concept.otherNonCoded&quot;);</span>
+<span class="nc" id="L149">        Concept otherNonCodedConcept = Context.getConceptService().getConcept(otherNonCodedConId);</span>
+
+<span class="nc bnc" id="L151" title="All 2 branches missed.">        if (dateWidget != null) {</span>
+<span class="nc" id="L152">            exitDate = dateWidget.getValue(context, submission);</span>
+<span class="nc bnc" id="L153" title="All 2 branches missed.">            if (exitDate != null) {</span>
+<span class="nc bnc" id="L154" title="All 2 branches missed.">                if (OpenmrsUtil.compare(exitDate, new Date()) &gt; 0) {</span>
+<span class="nc" id="L155">                    ret.add(new FormSubmissionError(context.getFieldName(dateErrorWidget), Context.getMessageSourceService()</span>
+<span class="nc" id="L156">                            .getMessage(&quot;htmlformentry.error.cannotBeInFuture&quot;)));</span>
+
+                }
+            }
+
+<span class="nc bnc" id="L161" title="All 4 branches missed.">            if (obsList != null &amp;&amp; obsList.size() == 0) {</span>
+<span class="nc bnc" id="L162" title="All 2 branches missed.">                if (exitDate == null) {</span>
+<span class="nc bnc" id="L163" title="All 2 branches missed.">                    if (reasonForExitWidget != null &amp;&amp;</span>
+<span class="nc bnc" id="L164" title="All 2 branches missed.">                            HtmlFormEntryUtil.convertToType(reasonForExitWidget.getValue(context, submission).toString().trim(), Concept.class) != null) {</span>
+<span class="nc" id="L165">                        ret.add(new FormSubmissionError(context.getFieldName(dateErrorWidget), Context.getMessageSourceService()</span>
+<span class="nc" id="L166">                                .getMessage(&quot;htmlformentry.error.required&quot;)));</span>
+                    }
+                }
+            }
+        }
+
+<span class="nc bnc" id="L172" title="All 2 branches missed.">        if (reasonForExitWidget != null) {</span>
+<span class="nc" id="L173">            Object value = reasonForExitWidget.getValue(context, submission);</span>
+<span class="nc" id="L174">            exitReasonAnswerConcept = (Concept) HtmlFormEntryUtil.convertToType(value.toString().trim(), Concept.class);</span>
+<span class="nc bnc" id="L175" title="All 4 branches missed.">            if (obsList != null &amp;&amp; obsList.size() == 0) {</span>
+<span class="nc bnc" id="L176" title="All 2 branches missed.">                if (exitReasonAnswerConcept == null) {</span>
+<span class="nc bnc" id="L177" title="All 4 branches missed.">                    if (dateWidget != null &amp;&amp; dateWidget.getValue(context, submission) != null) {</span>
+<span class="nc" id="L178">                        ret.add(new FormSubmissionError(context.getFieldName(reasonForExitErrorWidget), Context.getMessageSourceService()</span>
+<span class="nc" id="L179">                                .getMessage(&quot;htmlformentry.error.required&quot;)));</span>
+                    }
+<span class="nc bnc" id="L181" title="All 4 branches missed.">                } else if (exitReasonAnswerConcept != null &amp;&amp; exitReasonAnswerConcept.getConceptId().equals(patientDiedConcept.getConceptId())) {</span>
+<span class="nc bnc" id="L182" title="All 2 branches missed.">                    if (causeOfDeathWidget == null ||</span>
+<span class="nc bnc" id="L183" title="All 2 branches missed.">                            HtmlFormEntryUtil.convertToType(causeOfDeathWidget.getValue(context, submission).toString().trim(), Concept.class) == null) {</span>
+<span class="nc" id="L184">                        ret.add(new FormSubmissionError(context.getFieldName(causeOfDeathErrorWidget), Context.getMessageSourceService()</span>
+<span class="nc" id="L185">                                .getMessage(&quot;htmlformentry.error.required&quot;)));</span>
+                    }
+<span class="nc bnc" id="L187" title="All 4 branches missed.">                } else if (exitReasonAnswerConcept != null &amp;&amp; !exitReasonAnswerConcept.getConceptId().equals(patientDiedConcept.getConceptId())) {</span>
+<span class="nc bnc" id="L188" title="All 2 branches missed.">                    if (causeOfDeathWidget != null &amp;&amp;</span>
+<span class="nc bnc" id="L189" title="All 2 branches missed.">                            HtmlFormEntryUtil.convertToType(causeOfDeathWidget.getValue(context, submission).toString().trim(), Concept.class) != null) {</span>
+<span class="nc" id="L190">                        ret.add(new FormSubmissionError(context.getFieldName(causeOfDeathErrorWidget), Context.getMessageSourceService()</span>
+<span class="nc" id="L191">                                .getMessage(&quot;htmlformentry.error.cannotEnterAValue&quot;)));</span>
+                    }
+                }
+            }
+        }
+
+<span class="nc bnc" id="L197" title="All 2 branches missed.">        if (causeOfDeathWidget != null) {</span>
+<span class="nc" id="L198">            Object value = causeOfDeathWidget.getValue(context, submission);</span>
+<span class="nc" id="L199">            causeOfDeathAnswerConcept = (Concept) HtmlFormEntryUtil.convertToType(value.toString().trim(), Concept.class);</span>
+<span class="nc" id="L200">            String valueString = otherReasonWidget.getValue(context, submission);</span>
+
+<span class="nc bnc" id="L202" title="All 4 branches missed.">            if (obsDeath != null &amp;&amp; obsDeath.size() == 0) {</span>
+<span class="nc bnc" id="L203" title="All 2 branches missed.">                if (causeOfDeathAnswerConcept == null) {</span>
+<span class="nc bnc" id="L204" title="All 4 branches missed.">                    if (otherReasonWidget != null &amp;&amp; !valueString.equals(&quot;&quot;)) {</span>
+<span class="nc" id="L205">                        ret.add(new FormSubmissionError(context.getFieldName(otherReasonErrorWidget), Context.getMessageSourceService()</span>
+<span class="nc" id="L206">                                .getMessage(&quot;htmlformentry.error.cannotEnterAValue&quot;)));</span>
+                    }
+<span class="nc bnc" id="L208" title="All 4 branches missed.">                } else if (causeOfDeathAnswerConcept != null &amp;&amp; causeOfDeathAnswerConcept.getConceptId().equals(otherNonCodedConcept.getConceptId())) {</span>
+<span class="nc bnc" id="L209" title="All 4 branches missed.">                    if (otherReasonWidget == null || valueString.equals(&quot;&quot;)) {</span>
+<span class="nc" id="L210">                        ret.add(new FormSubmissionError(context.getFieldName(otherReasonErrorWidget), Context.getMessageSourceService()</span>
+<span class="nc" id="L211">                                .getMessage(&quot;htmlformentry.error.required&quot;)));</span>
+                    }
+<span class="nc bnc" id="L213" title="All 4 branches missed.">                } else if (causeOfDeathAnswerConcept != null &amp;&amp; !causeOfDeathAnswerConcept.getConceptId().equals(otherNonCodedConcept.getConceptId())) {</span>
+<span class="nc bnc" id="L214" title="All 4 branches missed.">                    if (otherReasonWidget != null &amp;&amp; !valueString.equals(&quot;&quot;)) {</span>
+<span class="nc" id="L215">                        ret.add(new FormSubmissionError(context.getFieldName(otherReasonErrorWidget), Context.getMessageSourceService()</span>
+<span class="nc" id="L216">                                .getMessage(&quot;htmlformentry.error.cannotEnterAValue&quot;)));</span>
+                    }
+                }
+            }
+        }
+
+        // this validation is added to avoid user resetting the 'exit from care'
+<span class="nc bnc" id="L223" title="All 4 branches missed.">        if (obsList != null &amp;&amp; obsList.size() == 1) {</span>
+<span class="nc bnc" id="L224" title="All 2 branches missed.">            if (exitDate == null) {</span>
+<span class="nc" id="L225">                ret.add(new FormSubmissionError(context.getFieldName(dateErrorWidget), Context.getMessageSourceService()</span>
+<span class="nc" id="L226">                        .getMessage(&quot;htmlformentry.error.required&quot;)));</span>
+<span class="nc bnc" id="L227" title="All 2 branches missed.">            } else if (exitReasonAnswerConcept == null) {</span>
+<span class="nc" id="L228">                ret.add(new FormSubmissionError(context.getFieldName(reasonForExitErrorWidget), Context.getMessageSourceService()</span>
+<span class="nc" id="L229">                        .getMessage(&quot;htmlformentry.error.required&quot;)));</span>
+<span class="nc bnc" id="L230" title="All 4 branches missed.">            } else if (exitReasonAnswerConcept != null &amp;&amp; exitReasonAnswerConcept.getConceptId().equals(patientDiedConcept.getConceptId())) {</span>
+<span class="nc bnc" id="L231" title="All 2 branches missed.">                if (causeOfDeathWidget == null ||</span>
+<span class="nc bnc" id="L232" title="All 2 branches missed.">                        HtmlFormEntryUtil.convertToType(causeOfDeathWidget.getValue(context, submission).toString().trim(), Concept.class) == null) {</span>
+<span class="nc" id="L233">                    ret.add(new FormSubmissionError(context.getFieldName(causeOfDeathErrorWidget), Context.getMessageSourceService()</span>
+<span class="nc" id="L234">                            .getMessage(&quot;htmlformentry.error.required&quot;)));</span>
+                }
+<span class="nc bnc" id="L236" title="All 4 branches missed.">            } else if (exitReasonAnswerConcept != null &amp;&amp; !exitReasonAnswerConcept.getConceptId().equals(patientDiedConcept.getConceptId())) {</span>
+<span class="nc bnc" id="L237" title="All 2 branches missed.">                if (causeOfDeathWidget != null &amp;&amp;</span>
+<span class="nc bnc" id="L238" title="All 2 branches missed.">                        HtmlFormEntryUtil.convertToType(causeOfDeathWidget.getValue(context, submission).toString().trim(), Concept.class) != null) {</span>
+<span class="nc" id="L239">                    ret.add(new FormSubmissionError(context.getFieldName(causeOfDeathErrorWidget), Context.getMessageSourceService()</span>
+<span class="nc" id="L240">                            .getMessage(&quot;htmlformentry.error.cannotEnterAValue&quot;)));</span>
+                }
+            }
+        }
+
+        // this validation is added to avoid user resetting the 'patient died' incident
+<span class="nc" id="L246">        String valueString = otherReasonWidget.getValue(context, submission);</span>
+
+<span class="nc bnc" id="L248" title="All 4 branches missed.">        if (obsDeath != null &amp;&amp; obsDeath.size() == 1) {</span>
+<span class="nc bnc" id="L249" title="All 4 branches missed.">            if (causeOfDeathAnswerConcept != null &amp;&amp; causeOfDeathAnswerConcept.getConceptId().equals(otherNonCodedConcept.getConceptId())) {</span>
+<span class="nc bnc" id="L250" title="All 4 branches missed.">                if (otherReasonWidget == null || valueString.equals(&quot;&quot;)) {</span>
+<span class="nc" id="L251">                    ret.add(new FormSubmissionError(context.getFieldName(otherReasonErrorWidget), Context.getMessageSourceService()</span>
+<span class="nc" id="L252">                            .getMessage(&quot;htmlformentry.error.required&quot;)));</span>
+                }
+<span class="nc bnc" id="L254" title="All 4 branches missed.">            } else if (causeOfDeathAnswerConcept != null &amp;&amp; !causeOfDeathAnswerConcept.getConceptId().equals(otherNonCodedConcept.getConceptId())) {</span>
+<span class="nc bnc" id="L255" title="All 4 branches missed.">                if (otherReasonWidget != null &amp;&amp; !valueString.equals(&quot;&quot;)) {</span>
+<span class="nc" id="L256">                    ret.add(new FormSubmissionError(context.getFieldName(otherReasonErrorWidget), Context.getMessageSourceService()</span>
+<span class="nc" id="L257">                            .getMessage(&quot;htmlformentry.error.cannotEnterAValue&quot;)));</span>
+                }
+            }
+        }
+
+<span class="nc" id="L262">        return ret;</span>
+    }
+
+    @Override
+    public void handleSubmission(FormEntrySession session, HttpServletRequest submission) {
+
+<span class="nc" id="L268">        Date date = null;</span>
+<span class="nc" id="L269">        Concept exitReasonConcept = null;</span>
+<span class="nc" id="L270">        Concept causeOfDeathConcept = null;</span>
+<span class="nc" id="L271">        String otherReason = null;</span>
+
+<span class="nc bnc" id="L273" title="All 2 branches missed.">        if (dateWidget != null) {</span>
+<span class="nc" id="L274">            date = dateWidget.getValue(session.getContext(), submission);</span>
+        }
+<span class="nc bnc" id="L276" title="All 2 branches missed.">        if (reasonForExitWidget != null) {</span>
+<span class="nc" id="L277">            Object value = reasonForExitWidget.getValue(session.getContext(), submission);</span>
+<span class="nc" id="L278">            exitReasonConcept = (Concept) HtmlFormEntryUtil.convertToType(value.toString().trim(), Concept.class);</span>
+        }
+<span class="nc bnc" id="L280" title="All 2 branches missed.">        if (causeOfDeathWidget != null) {</span>
+<span class="nc" id="L281">            Object value = causeOfDeathWidget.getValue(session.getContext(), submission);</span>
+<span class="nc" id="L282">            causeOfDeathConcept = (Concept) HtmlFormEntryUtil.convertToType(value.toString().trim(), Concept.class);</span>
+        }
+<span class="nc bnc" id="L284" title="All 2 branches missed.">        if (otherReasonWidget != null) {</span>
+<span class="nc" id="L285">            otherReason = otherReasonWidget.getValue(session.getContext(), submission);</span>
+        }
+
+        // only if user submits both date and reason we allow to exit from care, and this is done
+        // to make sure a  user is able to submit a form with &lt;exitfromcare&gt; tag, without filling that
+        // section, however if it is filled initially, user can't resubmit after changing the date and
+        // reason fields to null back
+<span class="nc bnc" id="L292" title="All 4 branches missed.">        if (date != null &amp;&amp; exitReasonConcept != null) {</span>
+<span class="nc" id="L293">            session.getSubmissionActions().exitFromCare(date, exitReasonConcept, causeOfDeathConcept, otherReason);</span>
+        }
+
+<span class="nc" id="L296">    }</span>
+
+    @Override
+    public String generateHtml(FormEntryContext context) {
+
+<span class="nc" id="L301">        StringBuilder sb = new StringBuilder();</span>
+
+<span class="nc" id="L303">        Patient patient = context.getExistingPatient();</span>
+
+<span class="nc" id="L305">        String patientDiedConId = Context.getAdministrationService().getGlobalProperty(&quot;concept.patientDied&quot;);</span>
+<span class="nc" id="L306">        Concept patientDiedConcept = Context.getConceptService().getConcept(patientDiedConId);</span>
+<span class="nc" id="L307">        String otherNonCodedConId = Context.getAdministrationService().getGlobalProperty(&quot;concept.otherNonCoded&quot;);</span>
+<span class="nc" id="L308">        Concept otherNonCodedConcept = Context.getConceptService().getConcept(otherNonCodedConId);</span>
+
+<span class="nc" id="L310">        String reasonWidgetId = context.getFieldName(reasonForExitWidget);</span>
+<span class="nc" id="L311">        String causeWidgetId = context.getFieldName(causeOfDeathWidget);</span>
+<span class="nc" id="L312">        String otherTextWidgetId = context.getFieldName(otherReasonWidget);</span>
+
+<span class="nc" id="L314">        String reasonConId = Context.getAdministrationService().getGlobalProperty(&quot;concept.reasonExitedCare&quot;);</span>
+<span class="nc" id="L315">        Concept reasonExitConcept = Context.getConceptService().getConcept(reasonConId);</span>
+<span class="nc" id="L316">        List&lt;Obs&gt; obsList = Context.getObsService().getObservationsByPersonAndConcept(patient, reasonExitConcept);</span>
+
+<span class="nc" id="L318">        String causeOfDeathConId = Context.getAdministrationService().getGlobalProperty(&quot;concept.causeOfDeath&quot;);</span>
+<span class="nc" id="L319">        Concept causeOfDeathConcept = Context.getConceptService().getConcept(causeOfDeathConId);</span>
+<span class="nc" id="L320">        List&lt;Obs&gt; obsDeath = Context.getObsService().getObservationsByPersonAndConcept(patient, causeOfDeathConcept);</span>
+
+
+<span class="nc bnc" id="L323" title="All 2 branches missed.">        if (reasonForExitWidget != null) {</span>
+<span class="nc bnc" id="L324" title="All 2 branches missed.">            if (context.getMode() == FormEntryContext.Mode.VIEW) {</span>
+<span class="nc bnc" id="L325" title="All 4 branches missed.">                if (obsList != null &amp;&amp; obsList.size() == 1) {</span>
+<span class="nc" id="L326">                    sb.append(reasonForExitWidget.generateHtml(context));</span>
+                }
+            } else {
+<span class="nc" id="L329">                sb.append(reasonForExitWidget.generateHtml(context));</span>
+            }
+
+<span class="nc bnc" id="L332" title="All 2 branches missed.">            if (context.getMode() != FormEntryContext.Mode.VIEW) {</span>
+<span class="nc" id="L333">                sb.append(reasonForExitErrorWidget.generateHtml(context));</span>
+            }
+
+<span class="nc bnc" id="L336" title="All 2 branches missed.">            if (context.getMode() == FormEntryContext.Mode.EDIT) {</span>
+<span class="nc" id="L337">                sb.append(&quot;&lt;script&gt;&quot;);</span>
+<span class="nc" id="L338">                sb.append(&quot;jq(document).ready(function(){&quot;);</span>
+<span class="nc" id="L339">                sb.append(&quot;var rVal = jq(\&quot;#&quot; + reasonWidgetId + &quot;\&quot;).val();&quot;);</span>
+<span class="nc" id="L340">                sb.append(&quot;if (rVal == \&quot;&quot; + patientDiedConId + &quot;\&quot;)\n&quot;</span>
+                        + &quot; { jq(\&quot;#&quot; + causeWidgetId + &quot;\&quot;).show();}\n&quot;
+                        + &quot;if (rVal != \&quot;&quot; + patientDiedConId + &quot;\&quot;)\n&quot;
+                        + &quot; { jq(\&quot;#&quot; + causeWidgetId + &quot;\&quot;).val(\&quot;\&quot;); jq(\&quot;#&quot; + causeWidgetId + &quot;\&quot;).hide();&quot;
+                        + &quot; jq(\&quot;#&quot; + otherTextWidgetId + &quot;\&quot;).val(\&quot;\&quot;); jq(\&quot;#&quot; + otherTextWidgetId + &quot;\&quot;).hide();}&quot;);
+
+<span class="nc" id="L346">                sb.append(&quot;});&quot;);</span>
+<span class="nc" id="L347">                sb.append(&quot;&lt;/script&gt;&quot;);</span>
+            }
+        }
+
+        // adding a jquery event handler to reasonForExitWidget
+<span class="nc" id="L352">        sb.append(&quot;&lt;script&gt;&quot;);</span>
+<span class="nc" id="L353">        sb.append(&quot;jq(\&quot;#&quot; + reasonWidgetId + &quot;\&quot;).change(function(){&quot;);</span>
+<span class="nc" id="L354">        sb.append(&quot;var reasonVal = jq(\&quot;#&quot; + reasonWidgetId + &quot;\&quot;).val();&quot;);</span>
+<span class="nc" id="L355">        sb.append(&quot;if (reasonVal == \&quot;&quot; + patientDiedConId + &quot;\&quot;)\n&quot;</span>
+                + &quot; { jq(\&quot;#&quot; + causeWidgetId + &quot;\&quot;).show();}\n&quot;
+                + &quot;if (reasonVal != \&quot;&quot; + patientDiedConId + &quot;\&quot;)\n&quot;
+                + &quot; { jq(\&quot;#&quot; + causeWidgetId + &quot;\&quot;).val(\&quot;\&quot;); jq(\&quot;#&quot; + causeWidgetId + &quot;\&quot;).hide();&quot;
+                + &quot; jq(\&quot;#&quot; + otherTextWidgetId + &quot;\&quot;).val(\&quot;\&quot;); jq(\&quot;#&quot; + otherTextWidgetId + &quot;\&quot;).hide();}&quot;);
+<span class="nc" id="L360">        sb.append(&quot;});&quot;);</span>
+<span class="nc" id="L361">        sb.append(&quot;&lt;/script&gt;&quot;);</span>
+
+        // providing a blank space between the widgets
+<span class="nc" id="L364">        sb.append(&quot;&amp;nbsp;&amp;nbsp;&quot;);</span>
+
+<span class="nc bnc" id="L366" title="All 2 branches missed.">        if (dateWidget != null) {</span>
+<span class="nc bnc" id="L367" title="All 2 branches missed.">            if (context.getMode() == FormEntryContext.Mode.VIEW) {</span>
+<span class="nc bnc" id="L368" title="All 4 branches missed.">                if (obsList != null &amp;&amp; obsList.size() == 1) {</span>
+<span class="nc" id="L369">                    sb.append(dateWidget.generateHtml(context));</span>
+                }
+            } else {
+<span class="nc" id="L372">                sb.append(dateWidget.generateHtml(context));</span>
+            }
+
+<span class="nc bnc" id="L375" title="All 2 branches missed.">            if (context.getMode() != FormEntryContext.Mode.VIEW)</span>
+<span class="nc" id="L376">                sb.append(dateErrorWidget.generateHtml(context));</span>
+        }
+
+<span class="nc" id="L379">        sb.append(&quot;&lt;br/&gt;&quot;);</span>
+<span class="nc" id="L380">        sb.append(&quot;&lt;br/&gt;&quot;);</span>
+
+<span class="nc bnc" id="L382" title="All 2 branches missed.">        if (causeOfDeathWidget != null) {</span>
+
+<span class="nc bnc" id="L384" title="All 2 branches missed.">            if (context.getMode() == FormEntryContext.Mode.VIEW) {</span>
+<span class="nc bnc" id="L385" title="All 4 branches missed.">                if (obsList != null &amp;&amp; obsList.size() == 1) {</span>
+<span class="nc" id="L386">                    Obs obs = obsList.get(0);</span>
+<span class="nc bnc" id="L387" title="All 2 branches missed.">                    if (obs.getValueCoded().getConceptId().equals(patientDiedConcept.getConceptId())) {</span>
+<span class="nc" id="L388">                        sb.append(causeOfDeathWidget.generateHtml(context));</span>
+                    }
+<span class="nc bnc" id="L390" title="All 4 branches missed.">                } else if (obsList != null &amp;&amp; obsList.size() == 0) {</span>
+                    // this state may not be happen often, but in case that there is no exit from case
+                    // observation, but however patient is dead, we are displaying cause of death then
+<span class="nc bnc" id="L393" title="All 4 branches missed.">                    if (obsDeath != null &amp;&amp; obsDeath.size() == 1) {</span>
+<span class="nc" id="L394">                        sb.append(causeOfDeathWidget.generateHtml(context));</span>
+                    }
+                }
+            } else {
+<span class="nc" id="L398">                sb.append(causeOfDeathWidget.generateHtml(context));</span>
+            }
+
+<span class="nc bnc" id="L401" title="All 2 branches missed.">            if (context.getMode() != FormEntryContext.Mode.VIEW) {</span>
+<span class="nc" id="L402">                sb.append(causeOfDeathErrorWidget.generateHtml(context));</span>
+            }
+
+            // only show causeOfDeathWidget if there is an initial value, else hide it
+<span class="nc bnc" id="L406" title="All 2 branches missed.">            if (context.getMode() == FormEntryContext.Mode.ENTER) {</span>
+<span class="nc" id="L407">                sb.append(&quot;&lt;script&gt;&quot;);</span>
+<span class="nc" id="L408">                sb.append(&quot;jq(document).ready(function(){&quot;);</span>
+<span class="nc" id="L409">                sb.append(&quot; if(jq(\&quot;#&quot; + causeWidgetId + &quot;\&quot;).val() != \&quot;\&quot; &amp;&amp; &quot;</span>
+                        + &quot;jq(\&quot;#&quot; + reasonWidgetId + &quot;\&quot;).val() == \&quot;&quot; + patientDiedConId + &quot;\&quot;){\n&quot;);
+<span class="nc" id="L411">                sb.append(&quot; jq(\&quot;#&quot; + causeWidgetId + &quot;\&quot;).show();}\n&quot;);</span>
+<span class="nc" id="L412">                sb.append(&quot; if(jq(\&quot;#&quot; + causeWidgetId + &quot;\&quot;).val() == \&quot;\&quot;){\n&quot;);</span>
+<span class="nc" id="L413">                sb.append(&quot; jq(\&quot;#&quot; + causeWidgetId + &quot;\&quot;).hide();}\n&quot;);</span>
+<span class="nc" id="L414">                sb.append(&quot;});&quot;);</span>
+<span class="nc" id="L415">                sb.append(&quot;&lt;/script&gt;&quot;);</span>
+            }
+<span class="nc bnc" id="L417" title="All 2 branches missed.">            if (context.getMode() == FormEntryContext.Mode.EDIT) {</span>
+<span class="nc" id="L418">                sb.append(&quot;&lt;script&gt;&quot;);</span>
+<span class="nc" id="L419">                sb.append(&quot;jq(document).ready(function(){&quot;);</span>
+<span class="nc" id="L420">                sb.append(&quot;var cVal = jq(\&quot;#&quot; + causeWidgetId + &quot;\&quot;).val();&quot;);</span>
+<span class="nc" id="L421">                sb.append(&quot;if (cVal == \&quot;&quot; + otherNonCodedConId + &quot;\&quot;)\n&quot;</span>
+                        + &quot; { jq(\&quot;#&quot; + otherTextWidgetId + &quot;\&quot;).show();}\n&quot;
+                        + &quot;if (cVal != \&quot;&quot; + otherNonCodedConId + &quot;\&quot;)\n&quot;
+                        + &quot; { jq(\&quot;#&quot; + otherTextWidgetId + &quot;\&quot;).val(\&quot;\&quot;); jq(\&quot;#&quot; + otherTextWidgetId + &quot;\&quot;).hide();}&quot;);
+<span class="nc" id="L425">                sb.append(&quot;});&quot;);</span>
+<span class="nc" id="L426">                sb.append(&quot;&lt;/script&gt;&quot;);</span>
+            }
+        }
+
+        // adding a jquery event handler to causeOfDeathWidget
+<span class="nc" id="L431">        sb.append(&quot;&lt;script&gt;&quot;);</span>
+<span class="nc" id="L432">        sb.append(&quot;jq(\&quot;#&quot; + causeWidgetId + &quot;\&quot;).change(function(){&quot;);</span>
+<span class="nc" id="L433">        sb.append(&quot;var causeVal = jq(\&quot;#&quot; + causeWidgetId + &quot;\&quot;).val();&quot;);</span>
+<span class="nc" id="L434">        sb.append(&quot;if (causeVal == \&quot;&quot; + otherNonCodedConId + &quot;\&quot;)\n&quot;</span>
+                + &quot; { jq(\&quot;#&quot; + otherTextWidgetId + &quot;\&quot;).show();}\n&quot;
+                + &quot;if (causeVal != \&quot;&quot; + otherNonCodedConId + &quot;\&quot;)\n&quot;
+                + &quot; { jq(\&quot;#&quot; + otherTextWidgetId + &quot;\&quot;).val(\&quot;\&quot;); jq(\&quot;#&quot; + otherTextWidgetId + &quot;\&quot;).hide();}&quot;);
+<span class="nc" id="L438">        sb.append(&quot;});&quot;);</span>
+<span class="nc" id="L439">        sb.append(&quot;&lt;/script&gt;&quot;);</span>
+
+        // providing a blank space between the widgets
+<span class="nc" id="L442">        sb.append(&quot;&amp;nbsp;&amp;nbsp;&quot;);</span>
+
+<span class="nc bnc" id="L444" title="All 2 branches missed.">        if (otherReasonWidget != null) {</span>
+<span class="nc bnc" id="L445" title="All 2 branches missed.">            if (context.getMode() == FormEntryContext.Mode.VIEW) {</span>
+<span class="nc bnc" id="L446" title="All 4 branches missed.">                if (obsDeath != null &amp;&amp; obsDeath.size() == 1) {</span>
+<span class="nc" id="L447">                    Obs obs = obsDeath.get(0);</span>
+
+<span class="nc bnc" id="L449" title="All 4 branches missed.">                    if (obsList != null &amp;&amp; obsList.size() == 0) {</span>
+<span class="nc bnc" id="L450" title="All 2 branches missed.">                        if (obs.getValueCoded().getConceptId().equals(otherNonCodedConcept.getConceptId())) {</span>
+<span class="nc" id="L451">                            sb.append(otherReasonWidget.generateHtml(context));</span>
+                        }
+<span class="nc bnc" id="L453" title="All 4 branches missed.">                    } else if (obsList != null &amp;&amp; obsList.size() == 1) {</span>
+<span class="nc" id="L454">                        Obs exitObs = obsList.get(0);</span>
+<span class="nc bnc" id="L455" title="All 2 branches missed.">                        if (exitObs.getValueCoded().getConceptId().equals(patientDiedConcept.getConceptId())</span>
+<span class="nc bnc" id="L456" title="All 2 branches missed.">                                &amp;&amp; obs.getValueCoded().getConceptId().equals(otherNonCodedConcept.getConceptId())) {</span>
+<span class="nc" id="L457">                            sb.append(otherReasonWidget.generateHtml(context));</span>
+                        }
+                    }
+<span class="nc" id="L460">                }</span>
+            } else {
+<span class="nc" id="L462">                sb.append(otherReasonWidget.generateHtml(context));</span>
+            }
+
+<span class="nc bnc" id="L465" title="All 2 branches missed.">            if (context.getMode() != FormEntryContext.Mode.VIEW) {</span>
+<span class="nc" id="L466">                sb.append(otherReasonErrorWidget.generateHtml(context));</span>
+            }
+
+            // only show otherReasonWidget if there is an initial value, else hide it
+<span class="nc bnc" id="L470" title="All 2 branches missed.">            if (context.getMode() == FormEntryContext.Mode.ENTER) {</span>
+<span class="nc" id="L471">                sb.append(&quot;&lt;script&gt;&quot;);</span>
+<span class="nc" id="L472">                sb.append(&quot; if(jq(\&quot;#&quot; + otherTextWidgetId + &quot;\&quot;).val() != \&quot;\&quot; &amp;&amp;&quot;</span>
+                        + &quot; jq(\&quot;#&quot; + reasonWidgetId + &quot;\&quot;).val() == \&quot;&quot; + patientDiedConId + &quot;\&quot;){\n&quot;);
+<span class="nc" id="L474">                sb.append(&quot; jq(\&quot;#&quot; + otherTextWidgetId + &quot;\&quot;).show();}\n&quot;);</span>
+<span class="nc" id="L475">                sb.append(&quot; if(jq(\&quot;#&quot; + otherTextWidgetId + &quot;\&quot;).val() == \&quot;\&quot;){\n&quot;);</span>
+<span class="nc" id="L476">                sb.append(&quot; jq(\&quot;#&quot; + otherTextWidgetId + &quot;\&quot;).hide();}\n&quot;);</span>
+<span class="nc" id="L477">                sb.append(&quot;&lt;/script&gt;&quot;);</span>
+            }
+        }
+
+<span class="nc" id="L481">        return sb.toString();</span>
+    }
+}
+
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.8.202204050719</span></div></body></html>

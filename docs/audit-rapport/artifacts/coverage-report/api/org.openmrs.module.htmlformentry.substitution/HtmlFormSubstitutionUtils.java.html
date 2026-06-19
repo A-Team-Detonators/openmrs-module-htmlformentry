@@ -1,0 +1,177 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>HtmlFormSubstitutionUtils.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">HTML Form Entry API</a> &gt; <a href="index.source.html" class="el_package">org.openmrs.module.htmlformentry.substitution</a> &gt; <span class="el_source">HtmlFormSubstitutionUtils.java</span></div><h1>HtmlFormSubstitutionUtils.java</h1><pre class="source lang-java linenums">package org.openmrs.module.htmlformentry.substitution;
+
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+import org.apache.commons.lang.StringUtils;
+import org.openmrs.OpenmrsObject;
+import org.openmrs.api.context.Context;
+import org.openmrs.module.htmlformentry.HtmlForm;
+import org.openmrs.module.htmlformentry.HtmlFormEntryService;
+import org.openmrs.module.htmlformentry.HtmlFormEntryUtil;
+import org.openmrs.module.htmlformentry.handler.AttributeDescriptor;
+import org.openmrs.module.htmlformentry.handler.TagHandler;
+
+<span class="nc" id="L18">public class HtmlFormSubstitutionUtils {</span>
+	
+	/**
+	 * Replaces all the ids in a form with uuids. This method operates using the AttributeDescriptors
+	 * property of TagHandlers; if you have have a new attribute that you want to configure for
+	 * id-to-uuid substitution, add a descriptor for that attribute to the appropriate tag handler
+	 * and set the class property of that descriptor to the appropriate class. Can currently handle
+	 * ids for the following classes: Concept, Program, Person, PatientIdentifierType, Location, and
+	 * Drug
+	 */
+	public static void replaceIdsWithUuids(HtmlForm form) {
+<span class="fc" id="L29">		performSubstitution(form, new IdToUuidSubstituter(), null);</span>
+<span class="fc" id="L30">	}</span>
+	
+	/**
+	 * Replaces all the program name in a form with uuids. This method operates using the AttributeDescriptors
+	 * property of TagHandlers; if you have have a new attribute that you want to configure for
+	 * program-name-to-uuid substitution, add a descriptor for that attribute to the appropriate tag handler. 
+	 */
+	public static void replaceProgramNamesWithUuids(HtmlForm form) {
+<span class="fc" id="L38">		performSubstitution(form, new ProgramNameToUuidSubstituter(), null);</span>
+<span class="fc" id="L39">	}</span>
+	
+	/**
+	 * Given an map of OpenmrsObjects to OpenmrsObjects, searches through the form for any references to 
+	 * OpenmrsObjects in the key set, and replaces those references to the references to the corresponding
+	 * OpenmrsObject in the value set. Used to handle any metadata replacement that may need to take place
+	 * when sharing a form via Metadata Sharing
+	 * @param form
+	 * @param substitutionMap
+	 */
+	public static void replaceIncomingOpenmrsObjectsWithExistingOpenmrsObjects(HtmlForm form, Map&lt;OpenmrsObject, OpenmrsObject&gt; substitutionMap) {
+<span class="nc" id="L50">		performSubstitution(form, new OpenmrsObjectSubstituter(), substitutionMap);</span>
+<span class="nc" id="L51">	}</span>
+	
+	
+	/**
+	 * Reads through the content of a form and finds all values listed in any attributes defined in AttributeDescriptors
+	 * Then used the passed Substituter to determine which values need to be substituted.
+	 */
+	private static void performSubstitution(HtmlForm form, Substituter substituter,  Map&lt;OpenmrsObject, OpenmrsObject&gt; substitutionMap) {
+		
+		// if the form is has no content, nothing to do
+<span class="pc bpc" id="L61" title="1 of 2 branches missed.">		if(StringUtils.isEmpty(form.getXmlData())) {</span>
+<span class="nc" id="L62">			return;</span>
+		}
+		
+		// get the tag handlers so we can gain access to the attribute descriptors
+<span class="fc" id="L66">		Map&lt;String, TagHandler&gt; tagHandlers = Context.getService(HtmlFormEntryService.class).getHandlers();</span>
+		
+		// loop through all the attribute descriptors for all the tags that have been registered
+<span class="fc bfc" id="L69" title="All 2 branches covered.">		for (String tagName : tagHandlers.keySet()) {</span>
+<span class="fc" id="L70">			HtmlFormEntryUtil.log.debug(&quot;Handling substitutions for tag &quot; + tagName);</span>
+			
+<span class="fc bfc" id="L72" title="All 2 branches covered.">			if (tagHandlers.get(tagName).getAttributeDescriptors() != null) {</span>
+<span class="fc bfc" id="L73" title="All 2 branches covered.">				for (AttributeDescriptor attributeDescriptor : tagHandlers.get(tagName).getAttributeDescriptors()) {</span>
+					// we only need to deal with descriptors that have an associated class
+<span class="pc bpc" id="L75" title="1 of 2 branches missed.">					if (attributeDescriptor.getClazz() != null) {</span>
+						// build the attribute string we are searching for
+						// pattern matches &lt;tagName .* attribute
+						// to break down the regex in detail, ?: simply means that we don't want include this grouping in the groups that we backreference
+						// the grouping itself is an &quot;or&quot;, that matches either &quot;\\s&quot; (a single whitespace character) or
+						// &quot;\\s[^&gt;]*\\s&quot; (a single whitespace character plus 0 to n characters of any type but a &gt;, followed by another single whitespace character)
+<span class="fc" id="L81">						String pattern = &quot;&lt;&quot; + tagName + &quot;(?:\\s|\\s[^&gt;]*\\s)&quot; + attributeDescriptor.getName();</span>
+<span class="fc" id="L82">						HtmlFormEntryUtil.log.debug(&quot;substitution pattern: &quot; + pattern);</span>
+<span class="fc" id="L83">						form.setXmlData(HtmlFormSubstitutionUtils.performSubstitutionHelper(form.getXmlData(), pattern,</span>
+<span class="fc" id="L84">						    attributeDescriptor.getClazz(), substituter, substitutionMap, true));</span>
+					}
+<span class="fc" id="L86">				}</span>
+			}
+<span class="fc" id="L88">		}</span>
+<span class="fc" id="L89">	}</span>
+	
+	/**
+	 * Helper method used by performSubstitution
+	 */
+	private static String performSubstitutionHelper(String formXmlData, String tagAndAttribute,
+	                                                Class&lt;?&gt; clazz, Substituter substituter,
+	                                                Map&lt;OpenmrsObject, OpenmrsObject&gt; substitutionMap, Boolean includeQuotes) {
+		Pattern substitutionPattern;
+		
+<span class="pc bpc" id="L99" title="1 of 2 branches missed.">		if (includeQuotes) {</span>
+			// pattern to find the specified attribute and pull out its values; regex matches any characters within quotes after an equals, i.e. =&quot;a2-32&quot; would match a232
+			// we use () to break the match into three groups: 1) the characters up to the including the first quotes; 2) the characters in the quotes; and 3) then the trailing quote
+			// (put a space before the attribute name so we don't get border= instead of order=)
+<span class="fc" id="L103">			substitutionPattern = Pattern.compile(&quot;(&quot; + tagAndAttribute + &quot;=\&quot;)(.*?)(\&quot;)&quot;, Pattern.CASE_INSENSITIVE);</span>
+		} else {
+			// the same pattern as above, but without the quotes (to handle the macro assignments),
+			// and with a blank space at the end (which we need to account for when we do the replace)	
+<span class="nc" id="L107">			substitutionPattern = Pattern.compile(&quot;(&quot; + tagAndAttribute + &quot;=)(.*?)(\\s)&quot;, Pattern.CASE_INSENSITIVE);</span>
+		}
+		
+<span class="fc" id="L110">		Matcher matcher = substitutionPattern.matcher(formXmlData);</span>
+		
+		// lists to keep track of any &quot;repeat&quot; keys and macros we are going to have to substitute out as well
+<span class="fc" id="L113">		Set&lt;String&gt; repeatKeysToReplace = new HashSet&lt;String&gt;();</span>
+<span class="fc" id="L114">		Set&lt;String&gt; macrosToReplace = new HashSet&lt;String&gt;();</span>
+		
+<span class="fc" id="L116">		StringBuffer buffer = new StringBuffer();</span>
+		
+<span class="fc bfc" id="L118" title="All 2 branches covered.">		while (matcher.find()) {</span>
+			// split the group into the various ids
+<span class="fc" id="L120">			String[] ids = matcher.group(2).split(&quot;,&quot;);</span>
+			
+<span class="fc" id="L122">			StringBuffer idBuffer = new StringBuffer();</span>
+			// now loop through each id
+<span class="fc bfc" id="L124" title="All 2 branches covered.">			for (String id : ids) {</span>
+				
+				// make the id substitution by calling the substituter's substitute method
+<span class="fc" id="L127">				idBuffer.append(substituter.substitute(id, clazz, substitutionMap) + &quot;,&quot;);</span>
+				
+				// if this id is a repeat key (i.e., something in curly braces) we need to keep track of it so that we can perform key substitutions
+				// pattern matches one or more characters of any type within curly braces
+<span class="fc" id="L131">				Matcher repeatKeyMatcher = Pattern.compile(&quot;\\{(.+)\\}&quot;).matcher(id);</span>
+<span class="pc bpc" id="L132" title="1 of 2 branches missed.">				if (repeatKeyMatcher.find()) {</span>
+<span class="nc" id="L133">					repeatKeysToReplace.add(repeatKeyMatcher.group(1));</span>
+				}
+				
+				// if this id is a macro reference (i.e, something that starts with a $) we need to keep track of it so that we can perform macro substitution
+<span class="fc" id="L137">				Matcher macroMatcher = Pattern.compile(&quot;\\$(.+)&quot;).matcher(id);</span>
+<span class="pc bpc" id="L138" title="1 of 2 branches missed.">				if (macroMatcher.find()) {</span>
+<span class="nc" id="L139">					macrosToReplace.add(macroMatcher.group(1));</span>
+				}
+			}
+			
+			// trim off the trailing comma
+<span class="fc" id="L144">			idBuffer.deleteCharAt(idBuffer.length() - 1);</span>
+			
+			// now do the replacement
+			
+			// create the replacement string from the matched sequence, substituting out group(2) with the updated ids
+<span class="fc" id="L149">			String replacementString = matcher.group(1) + idBuffer.toString() + matcher.group(3);</span>
+			
+			// we need to escape any $ characters in the buffer or we run into errors with the appendReplacement method since 
+			// the $ has a special meaning to that method
+<span class="fc" id="L153">			replacementString = replacementString.replace(&quot;$&quot;, &quot;\\$&quot;);</span>
+			
+			// now append the replacement string to the buffer
+<span class="fc" id="L156">			matcher.appendReplacement(buffer, replacementString);</span>
+<span class="fc" id="L157">		}</span>
+		
+		// append the rest of htmlform
+<span class="fc" id="L160">		matcher.appendTail(buffer);</span>
+		
+<span class="fc" id="L162">		formXmlData = buffer.toString();</span>
+		
+		// now handle any repeat keys we have discovered during this substitution
+<span class="pc bpc" id="L165" title="1 of 2 branches missed.">		for (String key : repeatKeysToReplace) {</span>
+<span class="nc" id="L166">			formXmlData = performSubstitutionHelper(formXmlData, key, clazz, substituter, substitutionMap, true);</span>
+<span class="nc" id="L167">		}</span>
+		
+		// and now handle any macros we have discovered during this substitution
+<span class="pc bpc" id="L170" title="1 of 2 branches missed.">		for (String key : macrosToReplace) {</span>
+<span class="nc" id="L171">			formXmlData = performSubstitutionHelper(formXmlData, key, clazz, substituter, substitutionMap, false);</span>
+<span class="nc" id="L172">		}</span>
+		
+<span class="fc" id="L174">		return formXmlData;</span>
+	}
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.8.202204050719</span></div></body></html>

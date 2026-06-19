@@ -1,0 +1,549 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>DrugOrderSubmissionElement1_10.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">HTML Form Entry API 1.10</a> &gt; <a href="index.source.html" class="el_package">org.openmrs.module.htmlformentry.element</a> &gt; <span class="el_source">DrugOrderSubmissionElement1_10.java</span></div><h1>DrugOrderSubmissionElement1_10.java</h1><pre class="source lang-java linenums">package org.openmrs.module.htmlformentry.element;
+
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.UUID;
+
+import javax.servlet.http.HttpServletRequest;
+
+import org.apache.commons.lang.StringUtils;
+import org.openmrs.CareSetting;
+import org.openmrs.CareSetting.CareSettingType;
+import org.openmrs.Concept;
+import org.openmrs.DosingInstructions;
+import org.openmrs.Drug;
+import org.openmrs.DrugOrder;
+import org.openmrs.EncounterProvider;
+import org.openmrs.FreeTextDosingInstructions;
+import org.openmrs.Order;
+import org.openmrs.Order.Action;
+import org.openmrs.OrderFrequency;
+import org.openmrs.SimpleDosingInstructions;
+import org.openmrs.api.APIException;
+import org.openmrs.api.context.Context;
+import org.openmrs.messagesource.MessageSourceService;
+import org.openmrs.module.htmlformentry.FormEntryContext;
+import org.openmrs.module.htmlformentry.FormEntryContext.Mode;
+import org.openmrs.module.htmlformentry.FormEntrySession;
+import org.openmrs.module.htmlformentry.HtmlFormEntryUtil;
+import org.openmrs.module.htmlformentry.widget.CheckboxWidget;
+import org.openmrs.module.htmlformentry.widget.DropdownWidget;
+import org.openmrs.module.htmlformentry.widget.ErrorWidget;
+import org.openmrs.module.htmlformentry.widget.NumberFieldWidget;
+import org.openmrs.module.htmlformentry.widget.Option;
+
+public class DrugOrderSubmissionElement1_10 extends DrugOrderSubmissionElement {
+	
+	public static final String DRUG_ORDER_TYPE_UUID = &quot;131168f4-15f5-102d-96e4-000c29c2a5d7&quot;;
+
+	private DropdownWidget routeWidget;
+	
+	private DropdownWidget careSettingWidget;
+	
+	private DropdownWidget dosingTypeWidget;
+	
+	private DropdownWidget doseUnitsWidget;
+	
+	private NumberFieldWidget quantityWidget;
+	
+	private ErrorWidget quantityErrorWidget;
+	
+	private DropdownWidget quantityUnitsWidget;
+	
+	private NumberFieldWidget durationWidget;
+	
+	private ErrorWidget durationErrorWidget;
+	
+	private DropdownWidget durationUnitsWidget;
+
+    private NumberFieldWidget numRefillsWidget;
+
+    private ErrorWidget numRefillsErrorWidget;
+	
+	public DrugOrderSubmissionElement1_10(FormEntryContext context, Map&lt;String, String&gt; parameters) {
+<span class="fc" id="L67">		super(context, parameters);</span>
+<span class="fc" id="L68">	}</span>
+	
+	@Override
+	protected void createAdditionalWidgets(FormEntryContext context) {
+<span class="fc" id="L72">		createDosingTypeWidget(context);</span>
+		
+<span class="fc" id="L74">		createDoseUnitsWidget(context);</span>
+		
+<span class="fc" id="L76">		createQuantityWidget(context);</span>
+		
+<span class="fc" id="L78">		createQuantityUnitsWidget(context);</span>
+		
+<span class="fc" id="L80">		createDurationWidget(context);</span>
+		
+<span class="fc" id="L82">		createDurationUnitsWidget(context);</span>
+		
+<span class="fc" id="L84">		createRouteWidget(context);</span>
+		
+<span class="fc" id="L86">		careSettingWidget = createCareSettingWidget(context, false);</span>
+
+<span class="fc" id="L88">        createNumRefillsWidget(context);</span>
+<span class="fc" id="L89">	}</span>
+	
+	private void createDurationUnitsWidget(FormEntryContext context) {
+<span class="fc" id="L92">		durationUnitsWidget = new DropdownWidget();</span>
+<span class="fc" id="L93">		List&lt;Option&gt; options = new ArrayList&lt;Option&gt;();</span>
+<span class="fc" id="L94">		List&lt;Concept&gt; durationUnits = Context.getOrderService().getDurationUnits();</span>
+<span class="fc bfc" id="L95" title="All 2 branches covered.">		for (Concept concept : durationUnits) {</span>
+<span class="fc" id="L96">			options.add(new Option(concept.getName().getName(), concept.getId().toString(), false));</span>
+<span class="fc" id="L97">		}</span>
+		
+<span class="fc" id="L99">		setupDropdownWidget(context, durationUnitsWidget, options);</span>
+<span class="fc" id="L100">	}</span>
+	
+	private void createDurationWidget(FormEntryContext context) {
+<span class="fc" id="L103">		durationWidget = new NumberFieldWidget(0d, 9999999d, true);</span>
+<span class="fc" id="L104">		context.registerWidget(durationWidget);</span>
+		
+<span class="fc" id="L106">		durationErrorWidget = new ErrorWidget();</span>
+<span class="fc" id="L107">		context.registerErrorWidget(durationWidget, durationErrorWidget);</span>
+<span class="fc" id="L108">	}</span>
+	
+	private void createQuantityUnitsWidget(FormEntryContext context) {
+<span class="fc" id="L111">		quantityUnitsWidget = new DropdownWidget();</span>
+		
+<span class="fc" id="L113">		List&lt;Option&gt; options = new ArrayList&lt;Option&gt;();</span>
+<span class="fc" id="L114">		List&lt;Concept&gt; drugDispensingUnits = Context.getOrderService().getDrugDispensingUnits();</span>
+<span class="fc bfc" id="L115" title="All 2 branches covered.">		for (Concept concept : drugDispensingUnits) {</span>
+<span class="fc" id="L116">			options.add(new Option(concept.getName().getName(), concept.getId().toString(), false));</span>
+<span class="fc" id="L117">		}</span>
+		
+<span class="fc" id="L119">		setupDropdownWidget(context, quantityUnitsWidget, options);</span>
+<span class="fc" id="L120">	}</span>
+	
+	private void createQuantityWidget(FormEntryContext context) {
+<span class="fc" id="L123">		quantityWidget = new NumberFieldWidget(0d, 9999999d, true);</span>
+<span class="fc" id="L124">		context.registerWidget(quantityWidget);</span>
+		
+<span class="fc" id="L126">		quantityErrorWidget = new ErrorWidget();</span>
+<span class="fc" id="L127">		context.registerErrorWidget(quantityWidget, quantityErrorWidget);</span>
+<span class="fc" id="L128">	}</span>
+	
+	private void createDosingTypeWidget(FormEntryContext context) {
+<span class="fc" id="L131">		dosingTypeWidget = new DropdownWidget();</span>
+		
+<span class="fc" id="L133">		List&lt;Option&gt; options = new ArrayList&lt;Option&gt;();</span>
+<span class="fc" id="L134">        MessageSourceService mss = Context.getMessageSourceService();</span>
+<span class="fc" id="L135">        options.add(new Option(mss.getMessage(&quot;htmlformentry.drugOrder.dosingType.simple&quot;), SimpleDosingInstructions.class.getName(), true));</span>
+        //options.add(new Option(mss.getMessage(&quot;htmlformentry.drugOrder.dosingType.freetext&quot;), FreeTextDosingInstructions.class.getName(), false));
+		
+<span class="fc" id="L138">		setupDropdownWidget(context, dosingTypeWidget, options);</span>
+<span class="fc" id="L139">	}</span>
+
+    private void createNumRefillsWidget(FormEntryContext context){
+<span class="fc" id="L142">        numRefillsWidget = new NumberFieldWidget(0d, 9999999d, false);</span>
+<span class="fc" id="L143">        context.registerWidget(numRefillsWidget);</span>
+<span class="fc" id="L144">        numRefillsErrorWidget = new ErrorWidget();</span>
+<span class="fc" id="L145">        context.registerErrorWidget(numRefillsWidget, numRefillsErrorWidget);</span>
+<span class="fc" id="L146">    }</span>
+	
+	@Override
+	protected String generateHtmlForAdditionalWidgets(FormEntryContext context) {
+<span class="fc" id="L150">		MessageSourceService mss = Context.getMessageSourceService();</span>
+		
+<span class="fc" id="L152">		StringBuilder html = new StringBuilder();</span>
+		
+<span class="fc" id="L154">		html.append(generateHtmlForWidget(context, mss.getMessage(&quot;htmlformentry.drugOrder.dosingType&quot;) + &quot; &quot;, dosingTypeWidget, null));</span>
+		
+<span class="fc" id="L156">		html.append(generateHtmlForWidget(context, mss.getMessage(&quot;DrugOrder.dose&quot;) + &quot; &quot;, doseWidget, doseErrorWidget));</span>
+		
+<span class="fc" id="L158">		html.append(generateHtmlForWidget(context, mss.getMessage(&quot;DrugOrder.dose&quot;) + &quot; &quot; + mss.getMessage(&quot;DrugOrder.units&quot;) + &quot; &quot;, doseUnitsWidget, null));</span>
+		
+<span class="fc" id="L160">		html.append(generateHtmlForWidget(context, mss.getMessage(&quot;DrugOrder.quantity&quot;) + &quot; &quot;, quantityWidget, quantityErrorWidget));</span>
+		
+<span class="fc" id="L162">		html.append(generateHtmlForWidget(context, mss.getMessage(&quot;DrugOrder.quantity&quot;) + &quot; &quot; + mss.getMessage(&quot;DrugOrder.units&quot;) + &quot; &quot;, quantityUnitsWidget,</span>
+		    null));
+		
+<span class="fc" id="L165">		html.append(generateHtmlForWidget(context, mss.getMessage(&quot;htmlformentry.drugOrder.duration&quot;) + &quot; &quot;, durationWidget, durationErrorWidget));</span>
+		
+<span class="fc" id="L167">		html.append(generateHtmlForWidget(context, mss.getMessage(&quot;htmlformentry.drugOrder.duration&quot;) + &quot; &quot; + mss.getMessage(&quot;DrugOrder.units&quot;) + &quot; &quot;, durationUnitsWidget,</span>
+		    null));
+		
+<span class="fc" id="L170">		html.append(generateHtmlForWidget(context, mss.getMessage(&quot;htmlformentry.drugOrder.route&quot;) + &quot; &quot;, routeWidget, null));</span>
+		
+<span class="fc" id="L172">		html.append(generateHtmlForWidget(context, mss.getMessage(&quot;htmlformentry.drugOrder.careSetting&quot;) + &quot; &quot;, careSettingWidget, null));</span>
+
+<span class="fc" id="L174">        html.append(generateHtmlForWidget(context, mss.getMessage(&quot;htmlformentry.drugOrder.numRefills&quot;) + &quot; &quot;, numRefillsWidget, numRefillsErrorWidget));</span>
+
+<span class="fc" id="L176">		return html.toString();</span>
+	}
+	
+	static void setupDropdownWidget(FormEntryContext context, DropdownWidget widget, List&lt;Option&gt; options) {
+<span class="fc bfc" id="L180" title="All 2 branches covered.">		if (context.getMode() != Mode.VIEW) {</span>
+<span class="fc" id="L181">			widget.setOptions(options);</span>
+<span class="pc bpc" id="L182" title="1 of 2 branches missed.">			if (!options.isEmpty()) {</span>
+<span class="fc" id="L183">				widget.setInitialValue(options.get(0).getValue());</span>
+			}
+		} else {
+<span class="fc" id="L186">			widget.setOptions(new ArrayList&lt;Option&gt;());</span>
+		}
+<span class="fc" id="L188">		context.registerWidget(widget);</span>
+<span class="fc" id="L189">	}</span>
+	
+	private void createDoseUnitsWidget(FormEntryContext context) {
+<span class="fc" id="L192">		doseUnitsWidget = new DropdownWidget();</span>
+<span class="fc" id="L193">		List&lt;Concept&gt; concepts = Context.getOrderService().getDrugDosingUnits();</span>
+<span class="fc" id="L194">		List&lt;Option&gt; options = new ArrayList&lt;Option&gt;();</span>
+		
+<span class="fc bfc" id="L196" title="All 2 branches covered.">		for (Concept concept : concepts) {</span>
+<span class="fc" id="L197">			options.add(new Option(concept.getName().getName(), concept.getId().toString(), false));</span>
+<span class="fc" id="L198">		}</span>
+		
+<span class="fc" id="L200">		setupDropdownWidget(context, doseUnitsWidget, options);</span>
+<span class="fc" id="L201">	}</span>
+	
+	public static DropdownWidget createCareSettingWidget(FormEntryContext context, boolean inpatientOnly) {
+<span class="fc" id="L204">		DropdownWidget careSettingWidget = new DropdownWidget();</span>
+<span class="fc" id="L205">		List&lt;CareSetting&gt; careSettings = Context.getOrderService().getCareSettings(false);</span>
+<span class="fc" id="L206">		List&lt;Option&gt; options = new ArrayList&lt;Option&gt;();</span>
+<span class="fc bfc" id="L207" title="All 2 branches covered.">		for (CareSetting careSetting : careSettings) {</span>
+<span class="fc bfc" id="L208" title="All 4 branches covered.">			if (!inpatientOnly || careSetting.getCareSettingType().equals(CareSettingType.INPATIENT)) {</span>
+<span class="fc" id="L209">				options.add(new Option(careSetting.getName(), careSetting.getId().toString(), false));</span>
+			}
+<span class="fc" id="L211">		}</span>
+		
+<span class="fc" id="L213">		setupDropdownWidget(context, careSettingWidget, options);</span>
+		
+<span class="fc" id="L215">		return careSettingWidget;</span>
+	}
+	
+	private void createRouteWidget(FormEntryContext context) {
+<span class="fc" id="L219">		routeWidget = new DropdownWidget();</span>
+<span class="fc" id="L220">		List&lt;Concept&gt; drugRoutes = Context.getOrderService().getDrugRoutes();</span>
+		
+<span class="fc" id="L222">		List&lt;Option&gt; options = new ArrayList&lt;Option&gt;();</span>
+<span class="fc bfc" id="L223" title="All 2 branches covered.">		for (Concept route : drugRoutes) {</span>
+<span class="fc" id="L224">			options.add(new Option(route.getName().getName(), route.getId().toString(), false));</span>
+<span class="fc" id="L225">		}</span>
+		
+<span class="fc" id="L227">		setupDropdownWidget(context, routeWidget, options);</span>
+<span class="fc" id="L228">	}</span>
+	
+	@Override
+	protected void createFrequencyWeekWidget(FormEntryContext context, MessageSourceService mss) {
+		//It's not used in 1.10
+<span class="fc" id="L233">	}</span>
+	
+	@Override
+	protected void createFrequencyWidget(FormEntryContext context, MessageSourceService mss) {
+<span class="fc" id="L237">		frequencyWidget = new DropdownWidget();</span>
+<span class="fc" id="L238">		frequencyErrorWidget = new ErrorWidget();</span>
+		// fill frequency drop down lists (ENTER, EDIT)
+<span class="fc" id="L240">		List&lt;OrderFrequency&gt; orderFrequencies = Context.getOrderService().getOrderFrequencies(false);</span>
+		
+<span class="fc" id="L242">		List&lt;Option&gt; freqOptions = new ArrayList&lt;Option&gt;();</span>
+<span class="fc bfc" id="L243" title="All 2 branches covered.">		if (context.getMode() != Mode.VIEW) {</span>
+<span class="fc bfc" id="L244" title="All 2 branches covered.">			for (OrderFrequency orderFrequency : orderFrequencies) {</span>
+<span class="fc" id="L245">				freqOptions.add(new Option(orderFrequency.getConcept().getName().getName(), orderFrequency.getId()</span>
+<span class="fc" id="L246">				        .toString(), false));</span>
+<span class="fc" id="L247">			}</span>
+			
+<span class="pc bpc" id="L249" title="1 of 2 branches missed.">			if (!orderFrequencies.isEmpty()) {</span>
+<span class="fc" id="L250">				frequencyWidget.setInitialValue(orderFrequencies.get(0).getId());</span>
+			}
+		}
+<span class="fc" id="L253">		frequencyWidget.setOptions(freqOptions);</span>
+<span class="fc" id="L254">		context.registerWidget(frequencyWidget);</span>
+<span class="fc" id="L255">		context.registerErrorWidget(frequencyWidget, frequencyErrorWidget);</span>
+<span class="fc" id="L256">	}</span>
+	
+	@Override
+	protected void populateDrugOrderValuesFromDB(FormEntryContext context, Boolean usingDurationField) {
+		// populate values drug order from database (VIEW, EDIT)
+<span class="pc bpc" id="L261" title="2 of 4 branches missed.">		if (context.getMode() != Mode.ENTER &amp;&amp; context.getExistingOrders() != null) {</span>
+<span class="pc bpc" id="L262" title="1 of 2 branches missed.">			for (Drug drug : drugsUsedAsKey) {</span>
+<span class="pc bpc" id="L263" title="1 of 2 branches missed.">				if (context.getExistingOrders().containsKey(drug.getConcept())) {</span>
+					//this will return null if Order is not a DrugOrder even if matched by Concept
+<span class="fc" id="L265">					DrugOrder drugOrder = (DrugOrder) context.removeExistingDrugOrder(drug);</span>
+					
+<span class="pc bpc" id="L267" title="1 of 2 branches missed.">					if (drugOrder != null) {</span>
+						//start from the first order for that drug
+<span class="fc bfc" id="L269" title="All 2 branches covered.">						while (drugOrder.getPreviousOrder() != null) {</span>
+<span class="fc" id="L270">							drugOrder = (DrugOrder) drugOrder.getPreviousOrder();</span>
+						}
+						
+						//get the latest revision or discontinuation order
+<span class="fc" id="L274">						DrugOrder lastRevision = drugOrder;</span>
+						while (true) {
+<span class="fc" id="L276">							DrugOrder revisedOrder = (DrugOrder) Context.getOrderService().getRevisionOrder(drugOrder);</span>
+<span class="fc bfc" id="L277" title="All 2 branches covered.">							if (revisedOrder != null) {</span>
+<span class="fc" id="L278">								drugOrder = revisedOrder;</span>
+<span class="fc" id="L279">								lastRevision = revisedOrder;</span>
+<span class="fc" id="L280">								continue;</span>
+							}
+<span class="fc" id="L282">							DrugOrder discontinuationOrder = (DrugOrder) Context.getOrderService().getDiscontinuationOrder(</span>
+							    drugOrder);
+<span class="fc bfc" id="L284" title="All 2 branches covered.">							if (discontinuationOrder != null) {</span>
+<span class="fc" id="L285">								drugOrder = discontinuationOrder;</span>
+<span class="fc" id="L286">								continue;</span>
+							}
+							
+							break;
+						}
+						
+<span class="fc" id="L292">						existingOrder = drugOrder;</span>
+<span class="pc bpc" id="L293" title="1 of 2 branches missed.">						if (drugWidget instanceof DropdownWidget) {</span>
+<span class="fc" id="L294">							drugWidget.setInitialValue(drugOrder.getDrug().getDrugId());</span>
+						} else {
+<span class="nc bnc" id="L296" title="All 2 branches missed.">							if (((CheckboxWidget) drugWidget).getValue().equals(drugOrder.getDrug().getDrugId().toString()))</span>
+<span class="nc" id="L297">								((CheckboxWidget) drugWidget).setInitialValue(&quot;CHECKED&quot;);</span>
+						}
+						
+<span class="fc bfc" id="L300" title="All 2 branches covered.">						if (!existingOrder.getAction().equals(Action.DISCONTINUE)) {</span>
+<span class="fc" id="L301">							lastRevision = drugOrder;</span>
+						}
+						
+<span class="fc" id="L304">						startDateWidget.setInitialValue(lastRevision.getDateActivated());</span>
+						
+<span class="fc" id="L306">						routeWidget.setInitialValue(lastRevision.getRoute().getId());</span>
+						
+<span class="fc" id="L308">						careSettingWidget.setInitialValue(lastRevision.getCareSetting().getId());</span>
+						
+<span class="fc" id="L310">						dosingTypeWidget.setInitialValue(lastRevision.getDosingType().toString());</span>
+						
+<span class="fc" id="L312">						doseWidget.setInitialValue(lastRevision.getDose());</span>
+
+<span class="fc" id="L314">                        numRefillsWidget.setInitialValue(lastRevision.getNumRefills());</span>
+						
+<span class="pc bpc" id="L316" title="1 of 2 branches missed.">						if (lastRevision.getDoseUnits() != null) {</span>
+<span class="fc" id="L317">							doseUnitsWidget.setInitialValue(lastRevision.getDoseUnits().getId());</span>
+						}
+						
+<span class="fc" id="L320">						quantityWidget.setInitialValue(lastRevision.getQuantity());</span>
+						
+<span class="fc bfc" id="L322" title="All 2 branches covered.">						if (lastRevision.getQuantityUnits() != null) {</span>
+<span class="fc" id="L323">							quantityUnitsWidget.setInitialValue(lastRevision.getQuantityUnits().getId());</span>
+						}
+						
+<span class="fc" id="L326">						durationWidget.setInitialValue(lastRevision.getDuration());</span>
+						
+<span class="fc bfc" id="L328" title="All 2 branches covered.">						if (lastRevision.getDurationUnits() != null) {</span>
+<span class="fc" id="L329">							durationUnitsWidget.setInitialValue(lastRevision.getDurationUnits().getId());</span>
+						}
+						
+<span class="fc" id="L332">						frequencyWidget.setInitialValue(lastRevision.getFrequency().getConcept().getId());</span>
+						
+<span class="pc bpc" id="L334" title="1 of 2 branches missed.">						if (!usingDurationField) {</span>
+<span class="fc" id="L335">							discontinuedDateWidget.setInitialValue(drugOrder.getDateStopped());</span>
+<span class="fc" id="L336">							Order discontinuationOrder = Context.getOrderService().getDiscontinuationOrder(drugOrder);</span>
+<span class="pc bpc" id="L337" title="3 of 4 branches missed.">							if (discontinuedReasonWidget != null &amp;&amp; discontinuationOrder != null)</span>
+<span class="nc" id="L338">								discontinuedReasonWidget.setInitialValue(discontinuationOrder.getOrderReason()</span>
+<span class="nc" id="L339">								        .getConceptId());</span>
+<span class="fc" id="L340">						}</span>
+						break;
+					}
+					
+				}
+<span class="nc" id="L345">			}</span>
+		}
+<span class="fc" id="L347">	}</span>
+	
+	@Override
+	protected void populateOrderTag(OrderTag oldOrderTag, FormEntrySession session, HttpServletRequest submission) {
+<span class="fc" id="L351">		OrderTag1_10 orderTag = (OrderTag1_10) oldOrderTag;</span>
+		
+<span class="fc" id="L353">		super.populateOrderTag(orderTag, session, submission);</span>
+
+        try {
+<span class="fc" id="L356">            orderTag.dosingType = (Class&lt;? extends DosingInstructions&gt;)Context.loadClass((String) dosingTypeWidget.getValue(session.getContext(), submission));</span>
+<span class="nc" id="L357">        } catch (ClassNotFoundException e) {</span>
+<span class="nc" id="L358">            throw new APIException(e);</span>
+<span class="fc" id="L359">        }</span>
+		
+<span class="fc" id="L361">		String doseUnitsValue = (String) doseUnitsWidget.getValue(session.getContext(), submission);</span>
+<span class="pc bpc" id="L362" title="1 of 2 branches missed.">		if (doseUnitsValue != null) {</span>
+<span class="fc" id="L363">			orderTag.doseUnits = Context.getConceptService().getConcept(Integer.valueOf(doseUnitsValue));</span>
+		}
+		
+<span class="fc" id="L366">		orderTag.quantity = quantityWidget.getValue(session.getContext(), submission);</span>
+		
+<span class="fc" id="L368">		String quantityUnitsValue = (String) quantityUnitsWidget.getValue(session.getContext(), submission);</span>
+<span class="fc bfc" id="L369" title="All 2 branches covered.">		if (quantityUnitsValue != null) {</span>
+<span class="fc" id="L370">			orderTag.quantityUnits = Context.getConceptService().getConcept(Integer.valueOf(quantityUnitsValue));</span>
+		}
+
+<span class="fc" id="L373">        Double drugOrderDuration = durationWidget.getValue(session.getContext(), submission);</span>
+<span class="pc bpc" id="L374" title="1 of 2 branches missed.">        if (drugOrderDuration != null) {</span>
+<span class="nc" id="L375">            orderTag.duration = drugOrderDuration.intValue();</span>
+        }
+		
+<span class="fc" id="L378">		String durationUnitsValue = (String) durationUnitsWidget.getValue(session.getContext(), submission);</span>
+<span class="fc bfc" id="L379" title="All 2 branches covered.">		if (durationUnitsValue != null) {</span>
+<span class="fc" id="L380">			orderTag.durationUnits = Context.getConceptService().getConcept(Integer.valueOf(durationUnitsValue));</span>
+		}
+		
+<span class="fc" id="L383">		String careSettingValue = (String) careSettingWidget.getValue(session.getContext(), submission);</span>
+<span class="pc bpc" id="L384" title="1 of 2 branches missed.">		if (careSettingValue != null) {</span>
+<span class="fc" id="L385">			orderTag.careSettingId = Integer.valueOf(Integer.valueOf(careSettingValue));</span>
+		}
+		
+<span class="fc" id="L388">		String routeValue = (String) routeWidget.getValue(session.getContext(), submission);</span>
+<span class="pc bpc" id="L389" title="1 of 2 branches missed.">		if (routeValue != null) {</span>
+<span class="fc" id="L390">			orderTag.route = Context.getConceptService().getConcept(Integer.valueOf(routeValue));</span>
+		}
+
+<span class="fc" id="L393">        Double refillsValue = numRefillsWidget.getValue(session.getContext(), submission);</span>
+<span class="pc bpc" id="L394" title="1 of 2 branches missed.">        if (refillsValue != null) {</span>
+<span class="nc" id="L395">            orderTag.numRefills = refillsValue.intValue();</span>
+        }
+<span class="fc" id="L397">	}</span>
+	
+	@Override
+	protected void enterOrder(FormEntrySession session, OrderTag oldOrderTag) {
+<span class="fc" id="L401">		OrderTag1_10 orderTag = (OrderTag1_10) oldOrderTag;</span>
+		
+<span class="fc" id="L403">		DrugOrder drugOrder = new DrugOrder();</span>
+<span class="fc" id="L404">		setOrderer(session, drugOrder);</span>
+		
+<span class="fc" id="L406">		drugOrder.setDrug(orderTag.drug);</span>
+<span class="fc" id="L407">		drugOrder.setConcept(orderTag.drug.getConcept());</span>
+<span class="fc" id="L408">		drugOrder.setPatient(session.getPatient());</span>
+<span class="fc" id="L409">		drugOrder.setDosingType(orderTag.dosingType);</span>
+<span class="fc" id="L410">		drugOrder.setDose(orderTag.dose);</span>
+<span class="fc" id="L411">		drugOrder.setDoseUnits(orderTag.doseUnits);</span>
+<span class="fc" id="L412">		drugOrder.setQuantity(orderTag.quantity);</span>
+<span class="fc" id="L413">		drugOrder.setQuantityUnits(orderTag.quantityUnits);</span>
+<span class="fc" id="L414">		drugOrder.setDuration(orderTag.duration);</span>
+<span class="fc" id="L415">		drugOrder.setDurationUnits(orderTag.durationUnits);</span>
+<span class="fc" id="L416">		drugOrder.setRoute(orderTag.route);</span>
+<span class="fc" id="L417">		drugOrder.setCareSetting(Context.getOrderService().getCareSetting(orderTag.careSettingId));</span>
+<span class="fc" id="L418">		OrderFrequency orderFrequency = Context.getOrderService().getOrderFrequency(Integer.valueOf(orderTag.frequency));</span>
+<span class="fc" id="L419">		drugOrder.setFrequency(orderFrequency);</span>
+<span class="fc" id="L420">		drugOrder.setDateActivated(orderTag.startDate);</span>
+<span class="fc" id="L421">        drugOrder.setNumRefills(orderTag.numRefills);</span>
+		//order duration:
+<span class="pc bpc" id="L423" title="1 of 2 branches missed.">		if (orderTag.orderDuration != null)</span>
+<span class="nc" id="L424">			drugOrder.setAutoExpireDate(calculateAutoExpireDate(orderTag.startDate, orderTag.orderDuration));</span>
+<span class="fc" id="L425">		drugOrder.setVoided(false);</span>
+<span class="fc" id="L426">		drugOrder.setOrderType(Context.getOrderService().getOrderTypeByUuid(DRUG_ORDER_TYPE_UUID));</span>
+<span class="pc bpc" id="L427" title="1 of 2 branches missed.">		if (!StringUtils.isEmpty(orderTag.instructions))</span>
+<span class="nc" id="L428">			drugOrder.setInstructions((String) orderTag.instructions);</span>
+		
+<span class="fc" id="L430">		DrugOrder discontinuationOrder = createDiscontinuationOrderIfNeeded(drugOrder, orderTag.discontinuedDate,</span>
+		    orderTag.discontinuedReasonStr);
+		
+<span class="fc" id="L433">		log.debug(&quot;adding new drug order, drugId is &quot; + orderTag.drugId + &quot; and startDate is &quot; + orderTag.startDate);</span>
+<span class="fc" id="L434">		session.getSubmissionActions().getCurrentEncounter().addOrder(drugOrder);</span>
+<span class="fc bfc" id="L435" title="All 2 branches covered.">		if (discontinuationOrder != null) {</span>
+<span class="fc" id="L436">			setOrderer(session, discontinuationOrder);</span>
+<span class="fc" id="L437">			session.getSubmissionActions().getCurrentEncounter().addOrder(discontinuationOrder);</span>
+		}
+<span class="fc" id="L439">	}</span>
+	
+	private void setOrderer(FormEntrySession session, DrugOrder drugOrder) {
+<span class="pc bpc" id="L442" title="1 of 2 branches missed.">		if (drugOrder.getUuid() == null)</span>
+<span class="nc" id="L443">			drugOrder.setUuid(UUID.randomUUID().toString());</span>
+		
+<span class="fc" id="L445">		Set&lt;EncounterProvider&gt; encounterProviders = session.getSubmissionActions().getCurrentEncounter()</span>
+<span class="fc" id="L446">		        .getEncounterProviders();</span>
+<span class="fc bfc" id="L447" title="All 2 branches covered.">		for (EncounterProvider encounterProvider : encounterProviders) {</span>
+<span class="pc bpc" id="L448" title="1 of 2 branches missed.">			if (!encounterProvider.isVoided()) {</span>
+<span class="fc" id="L449">				drugOrder.setOrderer(encounterProvider.getProvider());</span>
+			}
+<span class="fc" id="L451">		}</span>
+<span class="fc" id="L452">	}</span>
+	
+	@Override
+	protected void editOrder(FormEntrySession session, OrderTag oldOrderTag) {
+<span class="fc" id="L456">		OrderTag1_10 orderTag = (OrderTag1_10) oldOrderTag;</span>
+<span class="fc" id="L457">		DrugOrder discontinuationOrder = null;</span>
+		
+<span class="fc bfc" id="L459" title="All 2 branches covered.">		if (!existingOrder.getAction().equals(Action.DISCONTINUE)) {</span>
+			//Discontinued orders must not be changed except for discontinue date and reason
+<span class="fc" id="L461">			DrugOrder revisedOrder = existingOrder.cloneForRevision();</span>
+<span class="fc" id="L462">			setOrderer(session, revisedOrder);</span>
+<span class="fc" id="L463">			revisedOrder.setDrug(orderTag.drug);</span>
+<span class="fc" id="L464">			revisedOrder.setConcept(orderTag.drug.getConcept());</span>
+<span class="fc" id="L465">			revisedOrder.setDosingType(orderTag.dosingType);</span>
+<span class="fc" id="L466">			revisedOrder.setDose(orderTag.dose);</span>
+<span class="fc" id="L467">			revisedOrder.setDoseUnits(orderTag.doseUnits);</span>
+<span class="fc" id="L468">			revisedOrder.setQuantity(orderTag.quantity);</span>
+<span class="fc" id="L469">			revisedOrder.setQuantityUnits(orderTag.quantityUnits);</span>
+<span class="fc" id="L470">			revisedOrder.setDuration(orderTag.duration);</span>
+<span class="fc" id="L471">			revisedOrder.setDurationUnits(orderTag.durationUnits);</span>
+<span class="fc" id="L472">			revisedOrder.setRoute(orderTag.route);</span>
+<span class="fc" id="L473">			revisedOrder.setCareSetting(Context.getOrderService().getCareSetting(orderTag.careSettingId));</span>
+<span class="fc" id="L474">			OrderFrequency orderFrequency = Context.getOrderService().getOrderFrequency(Integer.valueOf(orderTag.frequency));</span>
+<span class="fc" id="L475">			revisedOrder.setFrequency(orderFrequency);</span>
+<span class="fc" id="L476">			revisedOrder.setDateActivated(orderTag.startDate);</span>
+<span class="fc" id="L477">            revisedOrder.setNumRefills(orderTag.numRefills);</span>
+<span class="pc bpc" id="L478" title="1 of 2 branches missed.">			if (orderTag.orderDuration != null)</span>
+<span class="nc" id="L479">				revisedOrder.setAutoExpireDate(calculateAutoExpireDate(orderTag.startDate, orderTag.orderDuration));</span>
+<span class="pc bpc" id="L480" title="1 of 2 branches missed.">			if (!StringUtils.isEmpty(orderTag.instructions))</span>
+<span class="nc" id="L481">				revisedOrder.setInstructions((String) orderTag.instructions);</span>
+			
+<span class="fc" id="L483">			log.debug(&quot;modifying drug order, drugId is &quot; + orderTag.drugId + &quot; and startDate is &quot; + orderTag.startDate);</span>
+<span class="fc" id="L484">			session.getSubmissionActions().getCurrentEncounter().setDateChanged(new Date());</span>
+<span class="fc" id="L485">			session.getSubmissionActions().getCurrentEncounter().addOrder(revisedOrder);</span>
+			
+<span class="fc" id="L487">			discontinuationOrder = createDiscontinuationOrderIfNeeded(revisedOrder, orderTag.discontinuedDate,</span>
+			    orderTag.discontinuedReasonStr);
+<span class="fc" id="L489">		} else {</span>
+<span class="fc" id="L490">			Context.getOrderService().voidOrder(existingOrder, &quot;Update discontinued date or reason&quot;);</span>
+<span class="fc" id="L491">			discontinuationOrder = existingOrder.cloneForRevision();</span>
+<span class="fc" id="L492">			discontinuationOrder.setDateActivated(orderTag.discontinuedDate);</span>
+<span class="fc" id="L493">			discontinuationOrder.setOrderReason(HtmlFormEntryUtil.getConcept(orderTag.discontinuedReasonStr));</span>
+		}
+		
+<span class="fc bfc" id="L496" title="All 2 branches covered.">		if (discontinuationOrder != null) {</span>
+<span class="fc" id="L497">			session.getSubmissionActions().getCurrentEncounter().setDateChanged(new Date());</span>
+<span class="fc" id="L498">			setOrderer(session, discontinuationOrder);</span>
+<span class="fc" id="L499">			session.getSubmissionActions().getCurrentEncounter().addOrder(discontinuationOrder);</span>
+		}
+<span class="fc" id="L501">	}</span>
+	
+	private DrugOrder createDiscontinuationOrderIfNeeded(DrugOrder drugOrder, Date discontinuedDate,
+	        String discontinuedReasonStr) {
+<span class="fc" id="L505">		DrugOrder discontinuationOrder = null;</span>
+		
+<span class="fc bfc" id="L507" title="All 2 branches covered.">		if (discontinuedDate != null) {</span>
+<span class="fc" id="L508">			discontinuationOrder = drugOrder.cloneForDiscontinuing();</span>
+<span class="fc" id="L509">			discontinuationOrder.setDateActivated(discontinuedDate);</span>
+<span class="pc bpc" id="L510" title="1 of 2 branches missed.">			if (!StringUtils.isEmpty(discontinuedReasonStr))</span>
+<span class="nc" id="L511">				discontinuationOrder.setOrderReason(HtmlFormEntryUtil.getConcept(discontinuedReasonStr));</span>
+<span class="pc bpc" id="L512" title="1 of 2 branches missed.">		} else if (drugOrder.getAutoExpireDate() != null) {</span>
+<span class="nc" id="L513">			Date date = new Date();</span>
+<span class="nc bnc" id="L514" title="All 2 branches missed.">			if (drugOrder.getAutoExpireDate().getTime() &lt; date.getTime()) {</span>
+<span class="nc" id="L515">				drugOrder.setDateActivated(drugOrder.getAutoExpireDate());</span>
+<span class="nc" id="L516">				discontinuationOrder = drugOrder.cloneForDiscontinuing();</span>
+			}
+		}
+		
+<span class="fc" id="L520">		return discontinuationOrder;</span>
+	}
+	
+	@Override
+	protected OrderTag newOrderTag() {
+<span class="fc" id="L525">		return new OrderTag1_10();</span>
+	}
+	
+<span class="fc" id="L528">	protected class OrderTag1_10 extends OrderTag {</span>
+		
+		public Class&lt;? extends DosingInstructions&gt; dosingType;
+		
+		public Concept doseUnits;
+		
+		public Double quantity;
+		
+		public Concept quantityUnits;
+		
+		public Integer duration;
+		
+		public Concept durationUnits;
+		
+		public Concept route;
+		
+		public Integer careSettingId;
+
+        public Integer numRefills;
+	}
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.8.202204050719</span></div></body></html>

@@ -1,0 +1,108 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>OpenmrsObjectSubstituter.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">HTML Form Entry API</a> &gt; <a href="index.source.html" class="el_package">org.openmrs.module.htmlformentry.substitution</a> &gt; <span class="el_source">OpenmrsObjectSubstituter.java</span></div><h1>OpenmrsObjectSubstituter.java</h1><pre class="source lang-java linenums">package org.openmrs.module.htmlformentry.substitution;
+
+import java.util.Map;
+
+import org.apache.commons.lang.StringUtils;
+import org.openmrs.OpenmrsMetadata;
+import org.openmrs.OpenmrsObject;
+import org.openmrs.Role;
+import org.openmrs.module.htmlformentry.HtmlFormEntryUtil;
+
+
+/**
+ * Performs substitution of references to OpenmrsObjects.  Tests if the passed value is a reference to an OpenmrsObject. 
+ * If so, checks to see if that OpenmrsObject is in the substitutionMap key set.  If so, returns a reference to the 
+ * OpenmrsObject associated with that key in the map; otherwise, just returns the passed value.
+ */
+<span class="nc" id="L17">public class OpenmrsObjectSubstituter implements Substituter {</span>
+	
+	@Override
+    public String substitute(String value, Class&lt;?&gt; clazz, Map&lt;OpenmrsObject, OpenmrsObject&gt; substitutionMap) {
+		
+		// see if this value is a uuid referenced in the substitutionMap
+<span class="nc bnc" id="L23" title="All 2 branches missed.">		if (HtmlFormEntryUtil.isValidUuidFormat(value)) {</span>
+<span class="nc" id="L24">			String replacementValue = substituteUuid(value, substitutionMap);</span>
+			
+			// if we've found a substitution, we are done
+<span class="nc bnc" id="L27" title="All 2 branches missed.">			if (!StringUtils.equals(value, replacementValue)) {</span>
+<span class="nc" id="L28">				return replacementValue;</span>
+			}
+		}
+		
+		// see if this value is a name using the same method
+<span class="nc bnc" id="L33" title="All 2 branches missed.">		if (OpenmrsMetadata.class.isAssignableFrom(clazz)) {</span>
+<span class="nc" id="L34">			String replacementValue =  substituteName(value, clazz, substitutionMap);</span>
+			
+			// if we've found a substitution, we are done
+<span class="nc bnc" id="L37" title="All 2 branches missed.">			if (!StringUtils.equals(value, replacementValue)) {</span>
+<span class="nc" id="L38">				return replacementValue;</span>
+			}
+		}
+		// handle the special cases of a role, which is references by the getRole instead of getName
+<span class="nc bnc" id="L42" title="All 2 branches missed.">		if (Role.class.equals(clazz)) {</span>
+<span class="nc" id="L43">			String replacementValue = substituteRoleName(value, substitutionMap);</span>
+			
+			// if we've found a substitution, we are done
+<span class="nc bnc" id="L46" title="All 2 branches missed.">			if (!StringUtils.equals(value, replacementValue)) {</span>
+<span class="nc" id="L47">				return replacementValue;</span>
+			}
+		}
+		
+		// otherwise, no substitution to perform, return the existing value
+<span class="nc" id="L52">		return value;</span>
+		
+	}
+	
+	/**
+	 * Test to see if the uuid references an Object in the substitutionMap key, and then substitute
+	 * out as necessary
+	 */
+	private String substituteUuid(String uuid, Map&lt;OpenmrsObject, OpenmrsObject&gt; substitutionMap) {
+<span class="nc bnc" id="L61" title="All 2 branches missed.">		for (OpenmrsObject incoming : substitutionMap.keySet()) {</span>
+<span class="nc bnc" id="L62" title="All 2 branches missed.">			if (StringUtils.equals(incoming.getUuid(), uuid)) {</span>
+<span class="nc" id="L63">				String replacementUuid = substitutionMap.get(incoming).getUuid();</span>
+<span class="nc bnc" id="L64" title="All 2 branches missed.">				if (HtmlFormEntryUtil.isValidUuidFormat(replacementUuid)) {</span>
+<span class="nc" id="L65">					return replacementUuid;</span>
+				} else {
+<span class="nc" id="L67">					throw new IllegalArgumentException(&quot;UUID has an supported format &quot; + &quot;[&quot; + replacementUuid + &quot;]&quot;);</span>
+				}
+			}
+<span class="nc" id="L70">		}</span>
+		
+		// if we didn't find a match, just return the existing value
+<span class="nc" id="L73">		return uuid;</span>
+	}
+	
+	/**
+	 * Test to see if the name references an Object in the substitutionMap key, and then substitute
+	 * out as necessary
+	 */
+	private String substituteName(String name, Class&lt;?&gt; clazz, Map&lt;OpenmrsObject, OpenmrsObject&gt; substitutionMap) {
+<span class="nc bnc" id="L81" title="All 2 branches missed.">		for (OpenmrsObject incoming : substitutionMap.keySet()) {</span>
+<span class="nc bnc" id="L82" title="All 4 branches missed.">			if (incoming.getClass().equals(clazz) &amp;&amp; incoming instanceof OpenmrsMetadata</span>
+<span class="nc bnc" id="L83" title="All 2 branches missed.">			        &amp;&amp; StringUtils.equals(((OpenmrsMetadata) incoming).getName(), name)) {</span>
+<span class="nc" id="L84">				return ((OpenmrsMetadata) substitutionMap.get(incoming)).getName();</span>
+			}
+<span class="nc" id="L86">		}</span>
+		
+		// if we didn't find a match, just return the existing value
+<span class="nc" id="L89">		return name;</span>
+	}
+	
+	/**
+	 * Test to see if the role references a Role in the substitutionMap key, and then substitute out
+	 * as necessary
+	 */
+	private String substituteRoleName(String role, Map&lt;OpenmrsObject, OpenmrsObject&gt; substitutionMap) {
+<span class="nc bnc" id="L97" title="All 2 branches missed.">		for (OpenmrsObject incoming : substitutionMap.keySet()) {</span>
+<span class="nc bnc" id="L98" title="All 2 branches missed.">			if (incoming.getClass().equals(Role.class) </span>
+<span class="nc bnc" id="L99" title="All 2 branches missed.">			        &amp;&amp; StringUtils.equals(((Role) incoming).getRole(), role)) {</span>
+<span class="nc" id="L100">				return ((Role) substitutionMap.get(incoming)).getRole();</span>
+			}
+<span class="nc" id="L102">		}</span>
+		
+		// if we didn't find a match, just return the existing value
+<span class="nc" id="L105">		return role;</span>
+	}
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.8.202204050719</span></div></body></html>

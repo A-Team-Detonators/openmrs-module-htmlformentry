@@ -1,0 +1,508 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>HtmlFormEntryExportUtil.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">HTML Form Entry API</a> &gt; <a href="index.source.html" class="el_package">org.openmrs.module.htmlformentry.export</a> &gt; <span class="el_source">HtmlFormEntryExportUtil.java</span></div><h1>HtmlFormEntryExportUtil.java</h1><pre class="source lang-java linenums">package org.openmrs.module.htmlformentry.export;
+
+import java.io.StringWriter;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Set;
+
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.transform.Transformer;
+import javax.xml.transform.TransformerException;
+import javax.xml.transform.TransformerFactory;
+import javax.xml.transform.dom.DOMSource;
+import javax.xml.transform.stream.StreamResult;
+
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+import org.openmrs.Concept;
+import org.openmrs.Encounter;
+import org.openmrs.Obs;
+import org.openmrs.PatientIdentifierType;
+import org.openmrs.api.context.Context;
+import org.openmrs.module.htmlformentry.FormEntryContext;
+import org.openmrs.module.htmlformentry.FormEntryContext.Mode;
+import org.openmrs.module.htmlformentry.FormEntrySession;
+import org.openmrs.module.htmlformentry.FormSubmissionController;
+import org.openmrs.module.htmlformentry.HtmlForm;
+import org.openmrs.module.htmlformentry.HtmlFormEntryUtil;
+import org.openmrs.module.htmlformentry.Translator;
+import org.openmrs.module.htmlformentry.action.FormSubmissionControllerAction;
+import org.openmrs.module.htmlformentry.compatibility.EncounterCompatibility;
+import org.openmrs.module.htmlformentry.element.ObsSubmissionElement;
+import org.openmrs.module.htmlformentry.schema.HtmlFormField;
+import org.openmrs.module.htmlformentry.schema.HtmlFormSchema;
+import org.openmrs.module.htmlformentry.schema.ObsField;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.NamedNodeMap;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
+
+<span class="nc" id="L46">public class HtmlFormEntryExportUtil {</span>
+    
+<span class="nc" id="L48">    protected final static Log log = LogFactory.getLog(HtmlFormEntryExportUtil.class);</span>
+    
+<span class="nc" id="L50">    private static DateFormat DATE_FORMATTER = new SimpleDateFormat(&quot;dd-MMM-yyyy&quot;);</span>
+    
+    private static final String DEFAULT_QUOTE = &quot;\&quot;&quot;;
+
+    private static final String DEFAULT_COLUMN_SEPARATOR = &quot;,&quot;;
+
+    private static final String DEFAULT_LINE_SEPARATOR = &quot;\n&quot;;
+    
+    private static final String EMPTY = &quot;&quot;;
+    
+    /**
+     * returns a Map&lt;Integer, String&gt; of all form sections, in order, 
+     * where the String value is either the specified name, or an arbitrary one if none was given.
+     * and the integer is the numeric index of the sections, starting with 0.
+     * 
+     * @param HtmlForm htmlForm
+     * @return
+     */
+    public static Map&lt;Integer, String&gt; getSectionIndex(HtmlForm htmlForm) throws Exception{
+<span class="nc" id="L69">        Document doc = HtmlFormEntryUtil.stringToDocument(htmlForm.getXmlData());</span>
+<span class="nc" id="L70">        FormEntrySession session = new FormEntrySession(HtmlFormEntryUtil.getFakePerson(), htmlForm, null); // session gets a null HttpSession</span>
+<span class="nc" id="L71">        NodeList nl = doc.getElementsByTagName(&quot;section&quot;);</span>
+<span class="nc" id="L72">        Map&lt;Integer, String&gt; ret = new LinkedHashMap&lt;Integer, String&gt;();</span>
+<span class="nc bnc" id="L73" title="All 2 branches missed.">        for (int i = 0; i &lt; nl.getLength(); i++){</span>
+<span class="nc" id="L74">            Node sectionNode = nl.item(i);</span>
+<span class="nc" id="L75">            NamedNodeMap map = sectionNode.getAttributes();</span>
+<span class="nc" id="L76">            String headerLabel = &quot;no name specified&quot;;</span>
+<span class="nc bnc" id="L77" title="All 2 branches missed.">            for (int j = 0; j &lt; map.getLength(); ++j) {</span>
+<span class="nc" id="L78">                Node attribute = map.item(j);</span>
+<span class="nc bnc" id="L79" title="All 2 branches missed.">                if (attribute.getNodeName().equals(&quot;headerLabel&quot;)) {</span>
+<span class="nc" id="L80">                    headerLabel = attribute.getNodeValue();</span>
+                }
+<span class="nc bnc" id="L82" title="All 2 branches missed.">                if (attribute.getNodeName().equals(&quot;headerCode&quot;)) {</span>
+<span class="nc" id="L83">                    Translator trans = session.getContext().getTranslator();</span>
+<span class="nc" id="L84">                    headerLabel = trans.translate(Context.getLocale().toString(), attribute.getNodeValue());</span>
+                }
+            }
+<span class="nc" id="L87">            ret.put(i, headerLabel);</span>
+        }
+<span class="nc" id="L89">        return ret;</span>
+    }
+    
+    /**
+     * 
+     * Returns a section as a complete htmlform, including the three required encounter tags.
+     * 
+     * @param htmlForm
+     * @param sectionIndex
+     * @return
+     * @throws Exception
+     */
+    public static String getSectionAsFormXml(HtmlForm htmlForm, Integer sectionIndex) throws Exception{
+<span class="nc" id="L102">        Document doc = HtmlFormEntryUtil.stringToDocument(htmlForm.getXmlData());</span>
+<span class="nc" id="L103">        NodeList nl = doc.getElementsByTagName(&quot;section&quot;);</span>
+<span class="nc" id="L104">        Node sectionNode = null;</span>
+        try {
+<span class="nc" id="L106">            sectionNode = nl.item(sectionIndex);</span>
+<span class="nc" id="L107">        } catch (Exception ex){</span>
+<span class="nc" id="L108">            throw new RuntimeException(&quot;The section index that you've passed in is out of range.  There are only &quot; + nl.getLength() + &quot; section tags in the document and you requested section tag &quot; + sectionIndex);</span>
+<span class="nc" id="L109">        }</span>
+<span class="nc" id="L110">        DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();</span>
+<span class="nc" id="L111">        DocumentBuilder db = dbf.newDocumentBuilder();</span>
+<span class="nc" id="L112">        Document doc2 = db.newDocument();</span>
+<span class="nc" id="L113">        Node formRoot = doc2.createElement(&quot;htmlform&quot;);</span>
+<span class="nc" id="L114">        doc2.appendChild(formRoot);</span>
+<span class="nc" id="L115">        formRoot.appendChild(doc2.importNode(sectionNode, true));</span>
+<span class="nc bnc" id="L116" title="All 2 branches missed.">        if (doc2.getElementsByTagName(&quot;encounterLocation&quot;).getLength() == 0){</span>
+<span class="nc" id="L117">            Node encLoc = doc2.createElement(&quot;encounterLocation&quot;);</span>
+<span class="nc" id="L118">            formRoot.appendChild(encLoc);</span>
+        }
+<span class="nc bnc" id="L120" title="All 2 branches missed.">        if (doc2.getElementsByTagName(&quot;encounterDate&quot;).getLength() == 0){</span>
+<span class="nc" id="L121">            Node encDate = doc2.createElement(&quot;encounterDate&quot;);</span>
+<span class="nc" id="L122">            formRoot.appendChild(encDate);</span>
+        }
+<span class="nc bnc" id="L124" title="All 2 branches missed.">        if (doc2.getElementsByTagName(&quot;encounterProvider&quot;).getLength() == 0){</span>
+<span class="nc" id="L125">            Node encDate = doc2.createElement(&quot;encounterProvider&quot;);</span>
+<span class="nc" id="L126">            Element encDateElement = (Element) encDate;</span>
+<span class="nc" id="L127">            encDateElement.setAttribute(&quot;role&quot;,&quot;Provider&quot;);</span>
+<span class="nc" id="L128">            formRoot.appendChild(encDate);</span>
+           
+        }
+<span class="nc" id="L131">        doc2.normalize();</span>
+            
+        try
+        {
+<span class="nc" id="L135">           DOMSource domSource = new DOMSource(doc2);</span>
+<span class="nc" id="L136">           StringWriter writer = new StringWriter();</span>
+<span class="nc" id="L137">           StreamResult result = new StreamResult(writer);</span>
+<span class="nc" id="L138">           TransformerFactory tf = TransformerFactory.newInstance();</span>
+<span class="nc" id="L139">           Transformer transformer = tf.newTransformer();</span>
+<span class="nc" id="L140">           transformer.transform(domSource, result);</span>
+<span class="nc" id="L141">           return writer.toString();</span>
+        }
+<span class="nc" id="L143">        catch(TransformerException ex)</span>
+        {
+<span class="nc" id="L145">           ex.printStackTrace();</span>
+<span class="nc" id="L146">           return null;</span>
+        }
+    }
+    
+    /**
+     * 
+     * Returns the encounter with the obs that aren't used when populating form are removed.  
+     * This *doesn't* save the encounter.
+     * TODO: handle Orders?
+     * 
+     * @param e
+     * @param htmlform
+     * @return
+     * @throws Exception
+     */
+    public static Encounter trimEncounterToMatchForm(Encounter e, HtmlForm htmlform) throws Exception {
+        
+       //this should move existing obs from session to tag handlers.
+<span class="nc" id="L164">        FormEntrySession session = new FormEntrySession(e.getPatient(), e, FormEntryContext.Mode.VIEW, htmlform, null); // session gets a null HttpSession</span>
+<span class="nc" id="L165">        session.getHtmlToDisplay();</span>
+        
+<span class="nc bnc" id="L167" title="All 2 branches missed.">        if (log.isDebugEnabled()){</span>
+<span class="nc" id="L168">            Map&lt;Concept, List&lt;Obs&gt;&gt;  map = session.getContext().getExistingObs();</span>
+<span class="nc bnc" id="L169" title="All 2 branches missed.">            if (map != null){</span>
+<span class="nc bnc" id="L170" title="All 2 branches missed.">                for (Map.Entry&lt;Concept, List&lt;Obs&gt;&gt; existingObs : map.entrySet()){</span>
+<span class="nc" id="L171">                    List&lt;Obs&gt; oList = existingObs.getValue();</span>
+<span class="nc bnc" id="L172" title="All 2 branches missed.">                    for (Obs oInner : oList)</span>
+<span class="nc" id="L173">                        log.debug(&quot;Obs in existingObs &quot; + existingObs.getKey() + &quot; &quot; + oInner.getConcept());</span>
+<span class="nc" id="L174">                }</span>
+            }
+<span class="nc" id="L176">            Map&lt;Obs, Set&lt;Obs&gt;&gt; map2 = session.getContext().getExistingObsInGroups();</span>
+<span class="nc bnc" id="L177" title="All 2 branches missed.">            if (map2 != null){</span>
+<span class="nc bnc" id="L178" title="All 2 branches missed.">                for (Map.Entry&lt;Obs, Set&lt;Obs&gt;&gt; existingObsInGroups : map2.entrySet()){</span>
+<span class="nc" id="L179">                    Set&lt;Obs&gt; oList = existingObsInGroups.getValue();</span>
+<span class="nc bnc" id="L180" title="All 2 branches missed.">                    for (Obs oInner : oList)</span>
+<span class="nc" id="L181">                        log.debug(&quot;Obs in existingObsInGroups &quot; + existingObsInGroups.getKey().getConcept() + &quot; &quot; + oInner.getConcept());</span>
+<span class="nc" id="L182">                }</span>
+            }
+        }
+<span class="nc" id="L185">        Encounter ret = new Encounter();</span>
+<span class="nc" id="L186">        ret.setCreator(e.getCreator());</span>
+<span class="nc" id="L187">        ret.setEncounterDatetime(e.getEncounterDatetime());</span>
+<span class="nc" id="L188">        EncounterCompatibility.setProvider(ret, EncounterCompatibility.getProvider(e));</span>
+<span class="nc" id="L189">        ret.setLocation(e.getLocation());</span>
+<span class="nc" id="L190">        ret.setDateCreated(e.getDateCreated());</span>
+<span class="nc" id="L191">        ret.setPatient(e.getPatient());</span>
+        //renders new encounter unsave-able:
+<span class="nc" id="L193">        ret.setEncounterId(e.getEncounterId());</span>
+        
+<span class="nc bnc" id="L195" title="All 2 branches missed.">        for (Obs oTest : e.getAllObs()){</span>
+<span class="nc" id="L196">            boolean found = false;</span>
+<span class="nc bnc" id="L197" title="All 4 branches missed.">            if (session.getContext().getExistingObs() != null &amp;&amp; !oTest.isObsGrouping()){</span>
+<span class="nc" id="L198">                List&lt;Obs&gt; obsList = session.getContext().getExistingObs().get(oTest.getConcept());</span>
+<span class="nc bnc" id="L199" title="All 4 branches missed.">                if (obsList != null &amp;&amp; obsList.size() &gt; 0){</span>
+<span class="nc bnc" id="L200" title="All 2 branches missed.">                    for (Obs o : obsList){</span>
+<span class="nc bnc" id="L201" title="All 2 branches missed.">                        if (o.getObsId().equals(oTest.getObsId())){</span>
+<span class="nc" id="L202">                            found = true;</span>
+<span class="nc" id="L203">                            continue;</span>
+                        }
+<span class="nc" id="L205">                    }   </span>
+                }
+            } 
+<span class="nc bnc" id="L208" title="All 4 branches missed.">            if (!found &amp;&amp; session.getContext().getExistingObsInGroups() != null){</span>
+<span class="nc bnc" id="L209" title="All 2 branches missed.">                for (Map.Entry&lt;Obs, Set&lt;Obs&gt;&gt; mapEntry : session.getContext().getExistingObsInGroups().entrySet()){</span>
+<span class="nc bnc" id="L210" title="All 2 branches missed.">                    if (mapEntry.getKey().equals(oTest)){</span>
+<span class="nc" id="L211">                        found = true;</span>
+<span class="nc" id="L212">                        continue;</span>
+                    } else {
+<span class="nc" id="L214">                        Set&lt;Obs&gt; oSet = mapEntry.getValue();</span>
+                        //note: oSet.contains fails for some reason
+<span class="nc bnc" id="L216" title="All 2 branches missed.">                        for (Obs o:oSet){</span>
+<span class="nc bnc" id="L217" title="All 2 branches missed.">                              if (o.getObsId().equals(oTest.getObsId())){</span>
+<span class="nc" id="L218">                                  found = true; </span>
+<span class="nc" id="L219">                                  continue;</span>
+                              }    
+<span class="nc" id="L221">                        }  </span>
+                    }
+<span class="nc" id="L223">                }</span>
+            }
+<span class="nc bnc" id="L225" title="All 2 branches missed.">            if (!found)</span>
+<span class="nc" id="L226">                ret.addObs(oTest);</span>
+<span class="nc" id="L227">        }</span>
+<span class="nc" id="L228">        session = null;</span>
+<span class="nc" id="L229">        return ret;</span>
+    }  
+    
+    /**
+     * 
+     * Generate the header row for the csv file.
+     * 
+     * @param form
+     * @param extraCols
+     * @return
+     * @throws Exception
+     */ 
+    public static String generateColumnHeadersFromHtmlForm(HtmlForm form, List&lt;String&gt; extraCols, StringBuffer sb, List&lt;PatientIdentifierType&gt; pitList) throws Exception {
+<span class="nc" id="L242">        FormEntrySession session = new FormEntrySession(HtmlFormEntryUtil.getFakePerson(), form, null); // session gets a null HttpSession</span>
+<span class="nc" id="L243">        session.getHtmlToDisplay();</span>
+<span class="nc" id="L244">        HtmlFormSchema hfs = session.getContext().getSchema();</span>
+        
+<span class="nc" id="L246">        sb.</span>
+<span class="nc" id="L247">        append(DEFAULT_QUOTE).append(&quot;ENCOUNTER_ID&quot;).append(DEFAULT_QUOTE).append(DEFAULT_COLUMN_SEPARATOR).</span>
+<span class="nc" id="L248">        append(DEFAULT_QUOTE).append(&quot;ENCOUNTER_DATE&quot;).append(DEFAULT_QUOTE).append(DEFAULT_COLUMN_SEPARATOR).</span>
+<span class="nc" id="L249">        append(DEFAULT_QUOTE).append(&quot;ENCOUNTER_LOCATION&quot;).append(DEFAULT_QUOTE).append(DEFAULT_COLUMN_SEPARATOR).</span>
+<span class="nc" id="L250">        append(DEFAULT_QUOTE).append(&quot;ENCOUNTER_PROVIDER&quot;).append(DEFAULT_QUOTE).append(DEFAULT_COLUMN_SEPARATOR).</span>
+<span class="nc" id="L251">        append(DEFAULT_QUOTE).append(&quot;INTERNAL_PATIENT_ID&quot;).append(DEFAULT_QUOTE).append(DEFAULT_COLUMN_SEPARATOR);</span>
+<span class="nc" id="L252">        int index = 1;</span>
+<span class="nc bnc" id="L253" title="All 2 branches missed.">        for (PatientIdentifierType pit :  pitList){</span>
+<span class="nc" id="L254">            sb.append(DEFAULT_QUOTE).append(pit.getName()).append(DEFAULT_QUOTE);</span>
+<span class="nc bnc" id="L255" title="All 2 branches missed.">            if (index &lt; pitList.size())</span>
+<span class="nc" id="L256">                sb.append(DEFAULT_COLUMN_SEPARATOR);</span>
+<span class="nc" id="L257">            index ++;</span>
+<span class="nc" id="L258">        }    </span>
+
+<span class="nc" id="L260">        Set&lt;HtmlFormField&gt; fields = hfs.getAllFields();</span>
+
+<span class="nc bnc" id="L262" title="All 2 branches missed.">        for (HtmlFormField hfsec : fields) {</span>
+<span class="nc" id="L263">            sb = generateColumnHeadersFromHtmlFormHelper(hfsec, extraCols, sb);</span>
+<span class="nc" id="L264">        }</span>
+
+<span class="nc" id="L266">        session = null;</span>
+<span class="nc" id="L267">        sb.append(DEFAULT_LINE_SEPARATOR);</span>
+<span class="nc" id="L268">        return sb.toString();</span>
+    }
+    
+    private static StringBuffer generateColumnHeadersFromHtmlFormHelper(HtmlFormField hff, List&lt;String&gt; extraCols, StringBuffer sb){
+<span class="nc bnc" id="L272" title="All 2 branches missed.">        if (hff instanceof ObsField){</span>
+<span class="nc" id="L273">            ObsField of = (ObsField) hff;      </span>
+<span class="nc" id="L274">            sb = buildHeadersForObsField(of, extraCols, sb);</span>
+        }
+<span class="nc" id="L276">        return sb;</span>
+    }
+    
+    /**
+     * 
+     * Builds the root column name for the concept from the conceptID
+     * 
+     * @param of
+     * @return
+     */
+    private static String buildColumnHeader(ObsField of){
+<span class="nc" id="L287">        StringBuilder sb = new StringBuilder(EMPTY);</span>
+<span class="nc" id="L288">        Locale loc = Context.getLocale();</span>
+<span class="nc bnc" id="L289" title="All 2 branches missed.">        if (of.getQuestion() != null){</span>
+            //TODO: add fieldId, fieldPart, Page???
+<span class="nc" id="L291">            sb.append(of.getQuestion().getShortestName(loc, false));</span>
+<span class="nc bnc" id="L292" title="All 2 branches missed.">        } else if (of.getAnswers().size() == 1){</span>
+<span class="nc" id="L293">            sb.append(of.getAnswers().get(0).getConcept().getShortestName(loc, false));</span>
+        } else {
+<span class="nc" id="L295">            throw new RuntimeException(&quot;Obs Field has no conceptId, and multiple answers -- this isn't yet supported.&quot;);</span>
+        }
+<span class="nc" id="L297">        return sb.toString().replaceAll(&quot;\\s&quot;, &quot;_&quot;).replaceAll(&quot;-&quot;, &quot;_&quot;).toUpperCase();</span>
+    }
+    
+    /**
+     * 
+     * Adds all of the columns for an Obs Field.
+     * 
+     * @param of
+     * @param extraCols
+     * @param sb
+     * @return
+     */
+    private static StringBuffer buildHeadersForObsField(ObsField of, List&lt;String&gt; extraCols, StringBuffer sb){
+        
+<span class="nc" id="L311">        sb.append(DEFAULT_COLUMN_SEPARATOR);</span>
+<span class="nc" id="L312">        sb.append(DEFAULT_QUOTE);</span>
+<span class="nc" id="L313">        String columnHeader = buildColumnHeader(of);</span>
+<span class="nc" id="L314">        sb.append(columnHeader);</span>
+<span class="nc" id="L315">        sb.append(DEFAULT_QUOTE);</span>
+    
+<span class="nc" id="L317">        sb.append(DEFAULT_COLUMN_SEPARATOR);</span>
+<span class="nc" id="L318">        sb.append(DEFAULT_QUOTE);     </span>
+<span class="nc" id="L319">        sb.append(columnHeader + &quot;_DATE&quot;);</span>
+<span class="nc" id="L320">        sb.append(DEFAULT_QUOTE);</span>
+        
+      //always export obsGroupId
+<span class="nc" id="L323">        sb.append(DEFAULT_COLUMN_SEPARATOR);</span>
+<span class="nc" id="L324">        sb.append(DEFAULT_QUOTE);     </span>
+<span class="nc" id="L325">        sb.append(columnHeader + &quot;_PARENT&quot;);</span>
+<span class="nc" id="L326">        sb.append(DEFAULT_QUOTE);</span>
+        
+<span class="nc bnc" id="L328" title="All 2 branches missed.">        if (extraCols != null){</span>
+<span class="nc bnc" id="L329" title="All 2 branches missed.">            for (String st : extraCols){</span>
+<span class="nc bnc" id="L330" title="All 2 branches missed.">                if (st.equals(&quot;valueModifier&quot;)){</span>
+<span class="nc" id="L331">                    sb.append(DEFAULT_COLUMN_SEPARATOR);</span>
+<span class="nc" id="L332">                    sb.append(DEFAULT_QUOTE);        </span>
+<span class="nc" id="L333">                    sb.append(columnHeader + &quot;_VALUE_MOD&quot;);                                   </span>
+<span class="nc" id="L334">                    sb.append(DEFAULT_QUOTE);</span>
+<span class="nc bnc" id="L335" title="All 2 branches missed.">                } else if (st.equals(&quot;accessionNumber&quot;)){</span>
+<span class="nc" id="L336">                    sb.append(DEFAULT_COLUMN_SEPARATOR);</span>
+<span class="nc" id="L337">                    sb.append(DEFAULT_QUOTE);        </span>
+<span class="nc" id="L338">                    sb.append(columnHeader + &quot;_ACCESSION_NUM&quot;);                                   </span>
+<span class="nc" id="L339">                    sb.append(DEFAULT_QUOTE);</span>
+<span class="nc bnc" id="L340" title="All 2 branches missed.">                } else if (st.equals(&quot;comment&quot;)){</span>
+<span class="nc" id="L341">                    sb.append(DEFAULT_COLUMN_SEPARATOR);</span>
+<span class="nc" id="L342">                    sb.append(DEFAULT_QUOTE);        </span>
+<span class="nc" id="L343">                    sb.append(columnHeader + &quot;_COMMENT&quot;);                                   </span>
+<span class="nc" id="L344">                    sb.append(DEFAULT_QUOTE);</span>
+                }
+<span class="nc" id="L346">            }</span>
+        }
+        
+<span class="nc" id="L349">        return sb;</span>
+    }
+    
+    /**
+     * 
+     * Generates all of the data rows
+     * 
+     * @param form
+     * @param extraCols
+     * @param sb
+     * @return
+     * @throws Exception
+     */
+    public static String generateColumnDataFromHtmlForm(List&lt;Encounter&gt; encounters, HtmlForm form, List&lt;String&gt; extraCols, StringBuffer sb, Locale locale,List&lt;PatientIdentifierType&gt; pitList) throws Exception {
+<span class="nc bnc" id="L363" title="All 2 branches missed.">        for (Encounter e: encounters){</span>
+            
+<span class="nc" id="L365">            sb.append(DEFAULT_QUOTE).append(e.getEncounterId()).append(DEFAULT_QUOTE).append(DEFAULT_COLUMN_SEPARATOR);         </span>
+<span class="nc" id="L366">            sb.append(DEFAULT_QUOTE).append(DATE_FORMATTER.format(e.getEncounterDatetime())).append(DEFAULT_QUOTE).append(DEFAULT_COLUMN_SEPARATOR);</span>
+<span class="nc" id="L367">            sb.append(DEFAULT_QUOTE).append(e.getLocation().getName()).append(DEFAULT_QUOTE).append(DEFAULT_COLUMN_SEPARATOR);</span>
+<span class="nc" id="L368">            sb.append(DEFAULT_QUOTE).append(EncounterCompatibility.getProvider(e).getGivenName()+ &quot; &quot; + EncounterCompatibility.getProvider(e).getFamilyName()).append(DEFAULT_QUOTE).append(DEFAULT_COLUMN_SEPARATOR);</span>
+<span class="nc bnc" id="L369" title="All 2 branches missed.">            sb.append(DEFAULT_QUOTE).append((e.getPatient() != null ? e.getPatient().getPatientId() : EMPTY)).append(DEFAULT_QUOTE).append(DEFAULT_COLUMN_SEPARATOR);       </span>
+<span class="nc" id="L370">            int index = 1;</span>
+<span class="nc bnc" id="L371" title="All 2 branches missed.">            for (PatientIdentifierType pit :  pitList){</span>
+<span class="nc" id="L372">                sb.append(DEFAULT_QUOTE).append(e.getPatient().getPatientIdentifier(pit)).append(DEFAULT_QUOTE);</span>
+<span class="nc bnc" id="L373" title="All 2 branches missed.">                if (index &lt; pitList.size())</span>
+<span class="nc" id="L374">                    sb.append(DEFAULT_COLUMN_SEPARATOR);</span>
+<span class="nc" id="L375">                index ++;</span>
+<span class="nc" id="L376">            }</span>
+            
+<span class="nc" id="L378">            FormEntrySession session = new FormEntrySession(e.getPatient(), e, Mode.VIEW, form, null); // session doesn't get HttpSession</span>
+<span class="nc" id="L379">            session.getHtmlToDisplay();</span>
+<span class="nc" id="L380">            FormSubmissionController  fsa = session.getSubmissionController();</span>
+<span class="nc" id="L381">            List&lt;FormSubmissionControllerAction&gt; actions = fsa.getActions();</span>
+<span class="nc bnc" id="L382" title="All 2 branches missed.">            for (FormSubmissionControllerAction fsca : actions){</span>
+<span class="nc bnc" id="L383" title="All 2 branches missed.">                if (fsca instanceof ObsSubmissionElement){</span>
+<span class="nc" id="L384">                    ObsSubmissionElement ose = (ObsSubmissionElement) fsca;</span>
+<span class="nc" id="L385">                    sb = appendObsToRow(ose, sb, extraCols, locale);   </span>
+                } else {
+                    //TODO: add programs, orders, logic, etc...
+                    // just make sure these are in the headers too...
+                }
+<span class="nc" id="L390">            }</span>
+<span class="nc" id="L391">            session = null;</span>
+<span class="nc" id="L392">            sb.append(DEFAULT_LINE_SEPARATOR);</span>
+<span class="nc" id="L393">        }</span>
+<span class="nc" id="L394">        return sb.toString();</span>
+    }
+    
+    /**
+     * 
+     * Writes the row entries for the Obs
+     * 
+     * @param o
+     * @param sb
+     * @param extraCols
+     * @param rowStarted
+     * @return
+     */
+    private static StringBuffer appendObsToRow(ObsSubmissionElement ose, StringBuffer sb, List&lt;String&gt; extraCols, Locale locale){
+<span class="nc" id="L408">            Obs o = ose.getExistingObs();       </span>
+
+<span class="nc" id="L410">            sb.append(DEFAULT_COLUMN_SEPARATOR);</span>
+<span class="nc" id="L411">            sb.append(DEFAULT_QUOTE);</span>
+<span class="nc bnc" id="L412" title="All 2 branches missed.">            if (ose.getConcept() != null)</span>
+<span class="nc bnc" id="L413" title="All 2 branches missed.">                sb.append((o != null) ? getObsValueAsString(Context.getLocale(), o):EMPTY);</span>
+            else 
+<span class="nc bnc" id="L415" title="All 2 branches missed.">                sb.append((o != null) ? o.getConcept().getName(locale, false):EMPTY);</span>
+<span class="nc" id="L416">            sb.append(DEFAULT_QUOTE);</span>
+            
+<span class="nc" id="L418">            sb.append(DEFAULT_COLUMN_SEPARATOR);</span>
+<span class="nc" id="L419">            sb.append(DEFAULT_QUOTE);     </span>
+<span class="nc bnc" id="L420" title="All 2 branches missed.">            sb.append((o!=null)? Context.getDateFormat().format(o.getObsDatetime()):EMPTY);                                   </span>
+<span class="nc" id="L421">            sb.append(DEFAULT_QUOTE); </span>
+            
+<span class="nc" id="L423">            sb.append(DEFAULT_COLUMN_SEPARATOR);</span>
+<span class="nc" id="L424">            sb.append(DEFAULT_QUOTE);     </span>
+<span class="nc" id="L425">            sb.append(getObsGroupPath(o));                                   </span>
+<span class="nc" id="L426">            sb.append(DEFAULT_QUOTE);</span>
+            
+<span class="nc bnc" id="L428" title="All 2 branches missed.">            if (extraCols != null){</span>
+<span class="nc bnc" id="L429" title="All 2 branches missed.">                for (String st : extraCols){</span>
+<span class="nc bnc" id="L430" title="All 2 branches missed.">                    if (st.equals(&quot;valueModifier&quot;)){</span>
+<span class="nc" id="L431">                        sb.append(DEFAULT_COLUMN_SEPARATOR);</span>
+<span class="nc" id="L432">                        sb.append(DEFAULT_QUOTE);        </span>
+<span class="nc bnc" id="L433" title="All 4 branches missed.">                        sb.append((o != null &amp;&amp; o.getValueModifier() != null) ? o.getValueModifier():EMPTY);                                   </span>
+<span class="nc" id="L434">                        sb.append(DEFAULT_QUOTE);</span>
+<span class="nc bnc" id="L435" title="All 2 branches missed.">                    } else if (st.equals(&quot;accessionNumber&quot;)){</span>
+<span class="nc" id="L436">                        sb.append(DEFAULT_COLUMN_SEPARATOR);</span>
+<span class="nc" id="L437">                        sb.append(DEFAULT_QUOTE);        </span>
+<span class="nc bnc" id="L438" title="All 4 branches missed.">                        sb.append((o != null &amp;&amp; o.getAccessionNumber() != null) ? o.getAccessionNumber():EMPTY);                                   </span>
+<span class="nc" id="L439">                        sb.append(DEFAULT_QUOTE);</span>
+<span class="nc bnc" id="L440" title="All 2 branches missed.">                    } else if (st.equals(&quot;comment&quot;)){</span>
+<span class="nc" id="L441">                        sb.append(DEFAULT_COLUMN_SEPARATOR);</span>
+<span class="nc" id="L442">                        sb.append(DEFAULT_QUOTE);        </span>
+<span class="nc bnc" id="L443" title="All 4 branches missed.">                        sb.append((o != null &amp;&amp; o.getComment() != null) ? o.getComment():EMPTY);                                   </span>
+<span class="nc" id="L444">                        sb.append(DEFAULT_QUOTE);</span>
+                    }
+<span class="nc" id="L446">                }</span>
+            }
+<span class="nc" id="L448">        return sb;</span>
+    }
+    
+    public static String getObsGroupPath(Obs o){
+<span class="nc" id="L452">        StringBuilder st = new StringBuilder(EMPTY);</span>
+<span class="nc bnc" id="L453" title="All 2 branches missed.">        if (o != null)</span>
+<span class="nc bnc" id="L454" title="All 2 branches missed.">            while (o.getObsGroup() != null){</span>
+<span class="nc" id="L455">                o = o.getObsGroup();</span>
+<span class="nc" id="L456">                st.insert(0, o.getObsId() + &quot;|&quot;);</span>
+            }
+<span class="nc" id="L458">        return st.toString();</span>
+    }
+    
+    /**
+     * The main method for exporting an htmlform to a csv.
+     * 
+     * @param encounters
+     * @param form
+     * @param extraCols
+     * @param sb
+     * @param locale
+     * @param pitList
+     * @return the complete StringBuffer, ready for export
+     */
+    public static StringBuffer buildHtmlFormExport(List&lt;Encounter&gt; encounters, HtmlForm htmlForm, List&lt;String&gt; extraCols, StringBuffer sb, Locale locale,List&lt;PatientIdentifierType&gt; pitList){
+        try {
+<span class="nc" id="L474">            HtmlFormEntryExportUtil.generateColumnHeadersFromHtmlForm(htmlForm, extraCols, sb, pitList);</span>
+<span class="nc" id="L475">            HtmlFormEntryExportUtil.generateColumnDataFromHtmlForm(encounters, htmlForm, extraCols, sb, Context.getLocale(), pitList);</span>
+<span class="nc" id="L476">        } catch (Exception ex){</span>
+<span class="nc" id="L477">            ex.printStackTrace();</span>
+<span class="nc" id="L478">            throw new RuntimeException(&quot;Unable to export form.  Check the log for details.  Underlying error was: &quot; + ex.getMessage());</span>
+<span class="nc" id="L479">        }</span>
+<span class="nc" id="L480">        return sb;</span>
+    }
+    
+    /**
+     * 
+     * format the obs value
+     * 
+     * @param locale
+     * @param o
+     * @return
+     */
+    public static String getObsValueAsString(Locale locale, Obs o){
+<span class="nc" id="L492">        String ret = &quot;&quot;;</span>
+<span class="nc bnc" id="L493" title="All 2 branches missed.">        if (o.getConcept() != null){</span>
+<span class="nc" id="L494">            String abbrev = o.getConcept().getDatatype().getHl7Abbreviation();</span>
+<span class="nc bnc" id="L495" title="All 2 branches missed.">            if (abbrev.equals(&quot;DT&quot;)){</span>
+<span class="nc bnc" id="L496" title="All 2 branches missed.">                return (o.getValueDatetime() == null ? &quot;&quot; : Context.getDateFormat().format(o.getValueDatetime()));</span>
+<span class="nc bnc" id="L497" title="All 4 branches missed.">            } else if (abbrev.equals(&quot;TS&quot;) &amp;&amp; o.getValueDatetime() != null){</span>
+<span class="nc" id="L498">                SimpleDateFormat sdf = new SimpleDateFormat(&quot;yyyy-MM-dd HH:mm:ss&quot;);</span>
+<span class="nc" id="L499">                return sdf.format(o.getValueDatetime());</span>
+            } else {
+<span class="nc" id="L501">                ret = o.getValueAsString(locale);</span>
+            }    
+        }
+<span class="nc" id="L504">        return ret;</span>
+    }
+    
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.8.202204050719</span></div></body></html>

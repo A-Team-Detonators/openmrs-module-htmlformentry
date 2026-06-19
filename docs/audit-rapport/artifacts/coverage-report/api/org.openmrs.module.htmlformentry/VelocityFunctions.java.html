@@ -1,0 +1,431 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>VelocityFunctions.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">HTML Form Entry API</a> &gt; <a href="index.source.html" class="el_package">org.openmrs.module.htmlformentry</a> &gt; <span class="el_source">VelocityFunctions.java</span></div><h1>VelocityFunctions.java</h1><pre class="source lang-java linenums">package org.openmrs.module.htmlformentry;
+
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
+import java.util.Locale;
+
+import org.apache.commons.lang.StringUtils;
+import org.joda.time.DateTime;
+import org.joda.time.Days;
+import org.joda.time.LocalDate;
+import org.joda.time.Months;
+import org.openmrs.Concept;
+import org.openmrs.Encounter;
+import org.openmrs.EncounterType;
+import org.openmrs.Location;
+import org.openmrs.Obs;
+import org.openmrs.Patient;
+import org.openmrs.PatientProgram;
+import org.openmrs.PatientState;
+import org.openmrs.Program;
+import org.openmrs.ProgramWorkflow;
+import org.openmrs.api.AdministrationService;
+import org.openmrs.api.LocationService;
+import org.openmrs.api.ObsService;
+import org.openmrs.api.ProgramWorkflowService;
+import org.openmrs.api.context.Context;
+import org.openmrs.logic.LogicCriteria;
+import org.openmrs.logic.LogicService;
+import org.openmrs.logic.result.EmptyResult;
+import org.openmrs.logic.result.Result;
+import org.openmrs.module.htmlformentry.compatibility.EncounterServiceCompatibility;
+import org.openmrs.util.LocaleUtility;
+
+
+public class VelocityFunctions {
+	
+	private FormEntrySession session;
+	private ObsService obsService;
+	private LogicService logicService;
+	private ProgramWorkflowService programWorkflowService;
+	private AdministrationService administrationService;
+	private LocationService locationService;
+	
+<span class="fc" id="L45">	public VelocityFunctions(FormEntrySession session) {</span>
+<span class="fc" id="L46">		this.session = session;</span>
+<span class="fc" id="L47">	}</span>
+	
+	private ObsService getObsService() {
+<span class="nc bnc" id="L50" title="All 2 branches missed.">		if (obsService == null)</span>
+<span class="nc" id="L51">			obsService = Context.getObsService();</span>
+<span class="nc" id="L52">		return obsService;</span>
+	}
+	
+	private LogicService getLogicService() {
+<span class="nc bnc" id="L56" title="All 2 branches missed.">		if (logicService == null)</span>
+<span class="nc" id="L57">			logicService = Context.getLogicService();</span>
+<span class="nc" id="L58">		return logicService;</span>
+	}
+	
+	private ProgramWorkflowService getProgramWorkflowService() {
+<span class="nc bnc" id="L62" title="All 2 branches missed.">		if (programWorkflowService == null)</span>
+<span class="nc" id="L63">			programWorkflowService = Context.getProgramWorkflowService();</span>
+<span class="nc" id="L64">		return programWorkflowService;</span>
+	}
+
+	private AdministrationService getAdministrationService() {
+<span class="nc bnc" id="L68" title="All 2 branches missed.">		if (administrationService == null)</span>
+<span class="nc" id="L69">			administrationService = Context.getAdministrationService();</span>
+<span class="nc" id="L70">		return administrationService;</span>
+	}
+	
+	private LocationService getLocationService() {
+<span class="nc bnc" id="L74" title="All 2 branches missed.">		if (locationService == null)</span>
+<span class="nc" id="L75">			locationService = Context.getLocationService();</span>
+<span class="nc" id="L76">		return locationService;</span>
+	}
+	
+	private void cannotBePreviewed() {
+<span class="nc bnc" id="L80" title="All 2 branches missed.">		if (&quot;testing-html-form-entry&quot;.equals(session.getPatient().getUuid()))</span>
+<span class="nc" id="L81">			throw new CannotBePreviewedException();</span>
+<span class="nc" id="L82">    }</span>
+	
+	/**
+	 *
+	 * @param locationIdentifier
+	 * @return the location with the specified locationId, uuid or name.
+	 */
+	public Location location(String locationIdentifier) {
+<span class="nc" id="L90">		return HtmlFormEntryUtil.getLocation(locationIdentifier);</span>
+    }
+
+	public List&lt;Obs&gt; allObs(String conceptId) {
+
+<span class="nc bnc" id="L95" title="All 2 branches missed.">        if (session.getPatient() == null) {</span>
+<span class="nc" id="L96">			return new ArrayList&lt;Obs&gt;();</span>
+        }
+
+<span class="nc" id="L99">        cannotBePreviewed();</span>
+
+<span class="nc" id="L101">        Patient p = session.getPatient();</span>
+<span class="nc" id="L102">		Concept concept = HtmlFormEntryUtil.getConcept(conceptId);</span>
+
+<span class="nc bnc" id="L104" title="All 4 branches missed.">        if (p == null || concept == null) {</span>
+<span class="nc" id="L105">			return new ArrayList&lt;Obs&gt;();</span>
+        }
+        else {
+<span class="nc" id="L108">			return getObsService().getObservationsByPersonAndConcept(p, concept);</span>
+        }
+	}
+
+    public List&lt;Obs&gt; allObs(Integer conceptId) {
+<span class="nc" id="L113">        return allObs(conceptId.toString());</span>
+    }
+
+
+    /**
+	 * @return the most recent obs given the passed conceptId
+	 * &lt;strong&gt;Should&lt;/strong&gt; return the most recent obs given the passed conceptId
+	 */
+	public Obs latestObs(String conceptId) {
+
+<span class="nc" id="L123">        List&lt;Obs&gt; obs = allObs(conceptId);</span>
+
+<span class="nc bnc" id="L125" title="All 4 branches missed.">        if (obs == null || obs.isEmpty()) {</span>
+<span class="nc" id="L126">			return null;</span>
+        }
+		else {
+<span class="nc" id="L129">			return obs.get(0);</span>
+        }
+
+	}
+
+    public Obs latestObs(Integer conceptId) {
+<span class="nc" id="L135">        return latestObs(conceptId.toString());</span>
+    }
+
+	/**
+	 * @return the first obs given the passed conceptId
+	 * &lt;strong&gt;Should&lt;/strong&gt; return the first obs given the passed conceptId
+	 */
+	public Obs earliestObs(String conceptId) {
+
+<span class="nc" id="L144">        List&lt;Obs&gt; obs = allObs(conceptId);</span>
+
+<span class="nc bnc" id="L146" title="All 4 branches missed.">        if (obs == null || obs.isEmpty()) {</span>
+<span class="nc" id="L147">				return null;</span>
+        }
+		else {
+<span class="nc" id="L150">			return obs.get(obs.size() - 1);</span>
+        }
+
+	}
+
+    public Obs earliestObs(Integer conceptId) {
+<span class="nc" id="L156">        return earliestObs(conceptId.toString());</span>
+    }
+
+	/**
+	 * @return the all the encounters of the specified type
+	 * &lt;strong&gt;Should&lt;/strong&gt; return all the encounters of the specified type
+	 * &lt;strong&gt;Should&lt;/strong&gt; return all encounters if no type specified
+	 */
+    public List&lt;Encounter&gt; allEncounters(String encounterTypeId){
+<span class="nc" id="L165">		EncounterType encounterType = HtmlFormEntryUtil.getEncounterType(encounterTypeId);</span>
+<span class="nc" id="L166">		return getAllEncounters(encounterType);</span>
+    }
+    
+	private List&lt;Encounter&gt; getAllEncounters(EncounterType type) {
+<span class="nc bnc" id="L170" title="All 2 branches missed.">		if (session.getPatient() == null) {</span>
+<span class="nc" id="L171">			return new ArrayList&lt;Encounter&gt;();</span>
+		}
+<span class="nc" id="L173">		cannotBePreviewed();</span>
+<span class="nc" id="L174">		Patient p = session.getPatient();</span>
+<span class="nc bnc" id="L175" title="All 2 branches missed.">		if (p == null) {</span>
+<span class="nc" id="L176">			return new ArrayList&lt;Encounter&gt;();</span>
+		}
+		else {
+<span class="nc bnc" id="L179" title="All 2 branches missed.">			if (type == null) {</span>
+<span class="nc" id="L180">				return Context.getEncounterService().getEncountersByPatient(p);</span>
+			}
+			else {
+<span class="nc" id="L183">				List&lt;EncounterType&gt; typeList = new ArrayList&lt;EncounterType&gt;();</span>
+<span class="nc" id="L184">				typeList.add(type);</span>
+				
+<span class="nc" id="L186">				EncounterServiceCompatibility esc = Context.getRegisteredComponent(&quot;htmlformentry.EncounterServiceCompatibility&quot;, EncounterServiceCompatibility.class);</span>
+<span class="nc" id="L187">				return esc.getEncounters(p, null, null, null, null, typeList, null, null, null, false);</span>
+			}
+		}
+	}
+	
+	/**
+	 * @return the most recent encounter of the specified type
+	 * &lt;strong&gt;Should&lt;/strong&gt; return the most recent encounter of the specified type
+	 * &lt;strong&gt;Should&lt;/strong&gt; return the most recent encounter of any type if no type specified
+	 */
+	public Encounter latestEncounter(String encounterTypeId){
+<span class="nc" id="L198">		EncounterType encounterType = null;</span>
+<span class="nc bnc" id="L199" title="All 2 branches missed.">		if (StringUtils.isNotEmpty(encounterTypeId)) {</span>
+<span class="nc" id="L200">			encounterType = HtmlFormEntryUtil.getEncounterType(encounterTypeId);			</span>
+		}
+		
+<span class="nc" id="L203">		return getLatestEncounter(encounterType);</span>
+	}
+	
+	private Encounter getLatestEncounter(EncounterType type) {
+<span class="nc" id="L207">		List&lt;Encounter&gt; encounters = getAllEncounters(type);</span>
+<span class="nc bnc" id="L208" title="All 4 branches missed.">		if (encounters == null || encounters.isEmpty()) {</span>
+<span class="nc" id="L209">			return null;</span>
+		}
+		else {
+<span class="nc" id="L212">			return encounters.get(encounters.size() - 1);</span>
+		}
+	}
+	
+	/**
+	 * @return the most recent encounter
+	 * &lt;strong&gt;Should&lt;/strong&gt; return the most recent encounter
+	 */
+	public Encounter latestEncounter() {
+<span class="nc" id="L221">		return latestEncounter(null);</span>
+	}
+	
+	public Result logic(String expression) {
+<span class="nc bnc" id="L225" title="All 2 branches missed.">		if (session.getPatient() == null)</span>
+<span class="nc" id="L226">			return new EmptyResult();</span>
+<span class="nc" id="L227">		cannotBePreviewed();</span>
+<span class="nc" id="L228">		LogicCriteria lc = getLogicService().parse(expression);</span>
+<span class="nc" id="L229">		return getLogicService().eval(session.getPatient().getPatientId(), lc);</span>
+	}
+	
+	public ProgramWorkflow getWorkflow(Integer id) {
+<span class="nc bnc" id="L233" title="All 2 branches missed.">		for (Program p : Context.getProgramWorkflowService().getAllPrograms()) {</span>
+<span class="nc bnc" id="L234" title="All 2 branches missed.">			for (ProgramWorkflow w : p.getAllWorkflows()) {</span>
+<span class="nc bnc" id="L235" title="All 2 branches missed.">				if (w.getProgramWorkflowId().equals(id)) {</span>
+<span class="nc" id="L236">					return w;</span>
+				}
+<span class="nc" id="L238">			}</span>
+<span class="nc" id="L239">		}</span>
+<span class="nc" id="L240">		return null;</span>
+	}
+
+	@SuppressWarnings(&quot;deprecation&quot;)
+    public PatientState currentProgramWorkflowStatus(Integer programWorkflowId) {
+<span class="nc" id="L245">		Patient p = session.getPatient();</span>
+<span class="nc bnc" id="L246" title="All 4 branches missed.">		if (p == null || p.getId() == null) {</span>
+<span class="nc" id="L247">			return null;</span>
+		}
+<span class="nc" id="L249">		cannotBePreviewed();</span>
+<span class="nc" id="L250">		ProgramWorkflow workflow = getWorkflow(programWorkflowId); // not sure if and how I want to reference the UUID</span>
+<span class="nc" id="L251">		List&lt;PatientProgram&gt; pps = getProgramWorkflowService().getPatientPrograms(p, workflow.getProgram(), null, null,</span>
+		    null, null, false);
+<span class="nc" id="L253">		PatientProgram mostRecentPatientProgram = null;</span>
+<span class="nc bnc" id="L254" title="All 2 branches missed.">		for (PatientProgram pp : pps) {</span>
+			// try to figure out which program enrollment is active or the most
+			// recent one; guess this would better fit somewhere in the
+			// ProgramWorkflowServive
+<span class="nc bnc" id="L258" title="All 2 branches missed.">			if (!pp.isVoided()) {</span>
+<span class="nc bnc" id="L259" title="All 2 branches missed.">				if (mostRecentPatientProgram == null) {</span>
+<span class="nc" id="L260">					mostRecentPatientProgram = pp;</span>
+				} else {
+<span class="nc bnc" id="L262" title="All 4 branches missed.">					if (mostRecentPatientProgram.getDateCompleted() != null &amp;&amp; pp.getDateCompleted() == null) {</span>
+						// found an uncompleted one
+<span class="nc" id="L264">						mostRecentPatientProgram = pp;</span>
+<span class="nc bnc" id="L265" title="All 4 branches missed.">					} else if (mostRecentPatientProgram.getDateCompleted() != null &amp;&amp; pp.getDateCompleted() != null</span>
+<span class="nc bnc" id="L266" title="All 2 branches missed.">					        &amp;&amp; pp.getDateCompleted().after(mostRecentPatientProgram.getDateCompleted())) {</span>
+						// pp was completed later
+						// maybe the start date is also important
+<span class="nc" id="L269">						mostRecentPatientProgram = pp;</span>
+					} else {
+						// let the states decide for uncompleted programs
+						// (_should_ not be necessary, but partially due
+						// to the ProgramLocation module, and Reopening of old
+						// programs, and patient merges, it is here)
+<span class="nc" id="L275">						PatientState mostRecentState = mostRecentPatientProgram.getCurrentState(workflow);</span>
+<span class="nc" id="L276">						PatientState ps = pp.getCurrentState(workflow);</span>
+<span class="nc bnc" id="L277" title="All 4 branches missed.">						if (mostRecentState == null || ps == null) {</span>
+							// just do nothing
+<span class="nc bnc" id="L279" title="All 4 branches missed.">						} else if (mostRecentState.getEndDate() != null &amp;&amp; ps.getEndDate() == null) {</span>
+<span class="nc" id="L280">							mostRecentPatientProgram = pp;</span>
+<span class="nc bnc" id="L281" title="All 2 branches missed.">						} else if (ps.getStartDate().after(mostRecentState.getStartDate())) {</span>
+<span class="nc" id="L282">							mostRecentPatientProgram = pp;</span>
+						}
+					}
+				}
+			}
+<span class="nc" id="L287">		}</span>
+<span class="nc bnc" id="L288" title="All 2 branches missed.">		if (mostRecentPatientProgram != null) {</span>
+<span class="nc" id="L289">			PatientState ps = mostRecentPatientProgram.getCurrentState(workflow);</span>
+<span class="nc bnc" id="L290" title="All 6 branches missed.">			if (ps != null &amp;&amp; ps.getState() != null &amp;&amp; ps.getState().getConcept().getName() != null) {</span>
+<span class="nc" id="L291">				return ps;</span>
+			}
+		}
+<span class="nc" id="L294">		return null;</span>
+	}
+
+ /**
+     *
+     * @return   patient's age given in months
+     * &lt;strong&gt;Should&lt;/strong&gt;  return the ageInMonths accurately to the nearest month
+     */
+
+    public Integer patientAgeInMonths() {
+
+<span class="nc" id="L305">        Patient patient = session.getPatient();</span>
+<span class="nc bnc" id="L306" title="All 4 branches missed.">        if(patient == null || patient.getBirthdate() == null){</span>
+<span class="nc" id="L307">          return null;     // if there is error in patient's data return age as null</span>
+        }
+<span class="nc" id="L309">        Date birthdate = patient.getBirthdate();</span>
+<span class="nc" id="L310">        DateTime today = new DateTime();</span>
+<span class="nc" id="L311">        DateTime dob = new DateTime(birthdate.getTime());</span>
+<span class="nc" id="L312">        return Months.monthsBetween(dob.toDateMidnight(), today.toDateMidnight()).getMonths();</span>
+    }
+
+ /**
+     *
+     * @return   patient's age in days
+     * &lt;strong&gt;Should&lt;/strong&gt;  return the ageInDays accurately to the nearest date
+     */
+    public Integer patientAgeInDays(){
+
+<span class="nc" id="L322">        Patient patient = session.getPatient();</span>
+<span class="nc bnc" id="L323" title="All 4 branches missed.">        if(patient == null  || patient.getBirthdate() == null){</span>
+<span class="nc" id="L324">          return null;   // if there is error in patient's data return age as null</span>
+        }
+<span class="nc" id="L326">        Date birthdate = patient.getBirthdate();</span>
+<span class="nc" id="L327">        DateTime today = new DateTime();</span>
+<span class="nc" id="L328">        DateTime dob = new DateTime(birthdate.getTime());</span>
+<span class="nc" id="L329">        return Days.daysBetween(dob.toDateMidnight(), today.toDateMidnight()).getDays();</span>
+    }
+
+    /**
+    * 
+    * @return	concept of given id
+    * &lt;strong&gt;Should&lt;/strong&gt;	return Concept object against given concept code (id, uuid or mapping)
+    */
+    public Concept getConcept(String conceptCode) {
+<span class="nc" id="L338">        return HtmlFormEntryUtil.getConcept(conceptCode);</span>
+    }
+
+    /**
+     * @param specification
+     * @return a java Locale object for the given String specification
+     */
+    public Locale locale(String specification) {
+<span class="nc" id="L346">        return LocaleUtility.fromSpecification(specification);</span>
+    }
+
+    /**
+     * @param date
+     * @return date with any time component smaller than day set to zero
+     */
+    public Date startOfDay(Date date) {
+<span class="nc" id="L354">        LocalDate day = new LocalDate(date.getTime());</span>
+<span class="nc" id="L355">        return day.toDate();</span>
+    }
+
+    /**
+     * Translates a message code based on current locale
+     *
+     * @param code
+     * @return localzied message for the code
+     */
+    public String message(String code) {
+<span class="nc" id="L365">        return session.getContext().getTranslator().translate(Context.getLocale().toString(), code);</span>
+    }
+
+	/**
+	 * Retrieves a global property value by name
+	 * @param propertyName
+	 * @return the value of the global property with the given name, or an empty string if not configured
+	 */
+	public String globalProperty(String propertyName) {
+<span class="nc" id="L374">		return getAdministrationService().getGlobalProperty(propertyName, &quot;&quot;);</span>
+	}
+
+	/**
+	 * Retrieves a global property value by name
+	 * @param propertyName
+	 * @param defaultValue
+	 * @return the value of the global property with the given name, or the default value if not configured
+	 */
+	public String globalProperty(String propertyName, String defaultValue) {
+<span class="nc" id="L384">		return getAdministrationService().getGlobalProperty(propertyName, defaultValue);</span>
+	}
+
+    /**
+     * Returns an arbitrary obs if there are multiple matches
+     * @param encounter
+     * @param conceptCode
+     * @return an obs in encounter for the given concept, or null if none exists
+     */
+    public Obs getObs(Encounter encounter, String conceptCode) {
+<span class="nc bnc" id="L394" title="All 2 branches missed.">        if (encounter == null) {</span>
+<span class="nc" id="L395">            return null;</span>
+        }
+<span class="nc" id="L397">        Concept concept = HtmlFormEntryUtil.getConcept(conceptCode);</span>
+<span class="nc bnc" id="L398" title="All 2 branches missed.">        if (concept == null) {</span>
+<span class="nc" id="L399">            throw new IllegalArgumentException(&quot;No concept found for: &quot; + conceptCode);</span>
+        }
+<span class="nc bnc" id="L401" title="All 2 branches missed.">        for (Obs candidate : encounter.getAllObs()) {</span>
+<span class="nc bnc" id="L402" title="All 2 branches missed.">            if (candidate.getConcept().equals(concept)) {</span>
+<span class="nc" id="L403">                return candidate;</span>
+            }
+<span class="nc" id="L405">        }</span>
+<span class="nc" id="L406">        return null;</span>
+    }
+
+    /**
+     * @param encounter
+     * @param conceptCode
+     * @return all obs in the encounter with the given concept
+     */
+    public List&lt;Obs&gt; allObs(Encounter encounter, String conceptCode) {
+<span class="nc bnc" id="L415" title="All 2 branches missed.">        if (encounter == null) {</span>
+<span class="nc" id="L416">            return null;</span>
+        }
+<span class="nc" id="L418">        Concept concept = HtmlFormEntryUtil.getConcept(conceptCode);</span>
+<span class="nc bnc" id="L419" title="All 2 branches missed.">        if (concept == null) {</span>
+<span class="nc" id="L420">            throw new IllegalArgumentException(&quot;No concept found for: &quot; + conceptCode);</span>
+        }
+<span class="nc" id="L422">        List&lt;Obs&gt; matches = new ArrayList&lt;Obs&gt;();</span>
+<span class="nc bnc" id="L423" title="All 2 branches missed.">        for (Obs candidate : encounter.getAllObs()) {</span>
+<span class="nc bnc" id="L424" title="All 2 branches missed.">            if (candidate.getConcept().equals(concept)) {</span>
+<span class="nc" id="L425">                matches.add(candidate);</span>
+            }
+<span class="nc" id="L427">        }</span>
+<span class="nc" id="L428">        return matches;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.8.202204050719</span></div></body></html>

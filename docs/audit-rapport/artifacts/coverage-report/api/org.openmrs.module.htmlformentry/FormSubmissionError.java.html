@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>FormSubmissionError.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">HTML Form Entry API</a> &gt; <a href="index.source.html" class="el_package">org.openmrs.module.htmlformentry</a> &gt; <span class="el_source">FormSubmissionError.java</span></div><h1>FormSubmissionError.java</h1><pre class="source lang-java linenums">package org.openmrs.module.htmlformentry;
+
+import org.openmrs.module.htmlformentry.widget.Widget;
+
+/**
+ * Encapsulates an error that may be raised while validating a form submission 
+ */
+public class FormSubmissionError {
+
+    private Widget sourceWidget;
+    private String id;
+    private String error;
+    
+<span class="fc" id="L14">    public FormSubmissionError(Widget sourceWidget, String error) {</span>
+<span class="fc" id="L15">        this.sourceWidget = sourceWidget;</span>
+<span class="fc" id="L16">        this.error = error;</span>
+<span class="fc" id="L17">    }</span>
+    
+<span class="fc" id="L19">    public FormSubmissionError(String id, String error) {</span>
+<span class="fc" id="L20">        this.id = id;</span>
+<span class="fc" id="L21">        this.error = error;</span>
+<span class="fc" id="L22">    }</span>
+    
+    @Override
+    public String toString() {
+<span class="pc bpc" id="L26" title="1 of 2 branches missed.">    	return (sourceWidget != null ? sourceWidget.getClass().getSimpleName() : id) + &quot; -&gt; &quot; + error;</span>
+    }
+
+    /**
+     * Gets the widget that is the source of the error.
+     * 
+     * @return the widget that is the source of the error
+     */
+    public Widget getSourceWidget() {
+<span class="nc" id="L35">        return sourceWidget;</span>
+    }
+
+    /**
+     * Sets the widget that is the source of the error.
+     * 
+     * @param sourceWidget the widget that is the source of the error
+     */
+    public void setSourceWidget(Widget sourceWidget) {
+<span class="nc" id="L44">        this.sourceWidget = sourceWidget;</span>
+<span class="nc" id="L45">    }</span>
+
+    /**
+     * Gets the ID
+     * 
+     * @return the id
+     */
+    public String getId() {
+<span class="fc" id="L53">        return id;</span>
+    }
+
+    /**
+     * Sets the ID
+     * 
+     * @param id value to set
+     */
+    public void setId(String id) {
+<span class="nc" id="L62">        this.id = id;</span>
+<span class="nc" id="L63">    }</span>
+
+    /**
+     * Gets the error message
+     * 
+     * @return the error message
+     */
+    public String getError() {
+<span class="fc" id="L71">        return error;</span>
+    }
+
+    /**
+     * Sets the error message
+     * 
+     * @param error the error message to set
+     */
+    public void setError(String error) {
+<span class="nc" id="L80">        this.error = error;</span>
+<span class="nc" id="L81">    }</span>
+    
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.8.202204050719</span></div></body></html>

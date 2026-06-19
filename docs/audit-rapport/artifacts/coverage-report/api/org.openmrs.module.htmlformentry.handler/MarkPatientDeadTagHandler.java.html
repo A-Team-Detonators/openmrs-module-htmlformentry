@@ -1,0 +1,176 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>MarkPatientDeadTagHandler.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">HTML Form Entry API</a> &gt; <a href="index.source.html" class="el_package">org.openmrs.module.htmlformentry.handler</a> &gt; <span class="el_source">MarkPatientDeadTagHandler.java</span></div><h1>MarkPatientDeadTagHandler.java</h1><pre class="source lang-java linenums">package org.openmrs.module.htmlformentry.handler;
+
+import org.openmrs.Concept;
+import org.openmrs.Encounter;
+import org.openmrs.Obs;
+import org.openmrs.Patient;
+import org.openmrs.api.AdministrationService;
+import org.openmrs.api.PatientService;
+import org.openmrs.module.htmlformentry.BadFormDesignException;
+import org.openmrs.module.htmlformentry.CustomFormSubmissionAction;
+import org.openmrs.module.htmlformentry.FormEntryContext;
+import org.openmrs.module.htmlformentry.FormEntrySession;
+import org.openmrs.module.htmlformentry.FormSubmissionController;
+import org.openmrs.module.htmlformentry.FormSubmissionError;
+import org.openmrs.module.htmlformentry.HtmlFormEntryConstants;
+import org.openmrs.module.htmlformentry.HtmlFormEntryUtil;
+import org.openmrs.module.htmlformentry.action.FormSubmissionControllerAction;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
+
+import javax.servlet.http.HttpServletRequest;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
+
+<span class="fc" id="L27">public class MarkPatientDeadTagHandler extends SubstitutionTagHandler {</span>
+
+    @Autowired
+    private PatientService patientService;
+
+    @Autowired
+    @Qualifier(&quot;adminService&quot;)
+    private AdministrationService administrationService;
+
+    public void setPatientService(PatientService patientService) {
+<span class="nc" id="L37">        this.patientService = patientService;</span>
+<span class="nc" id="L38">    }</span>
+
+    public void setAdministrationService(AdministrationService administrationService) {
+<span class="nc" id="L41">        this.administrationService = administrationService;</span>
+<span class="nc" id="L42">    }</span>
+
+    @Override
+    protected List&lt;AttributeDescriptor&gt; createAttributeDescriptors() {
+<span class="fc" id="L46">        return Arrays.asList(new AttributeDescriptor(&quot;causeOfDeathFromObs&quot;, Concept.class));</span>
+    }
+
+    @Override
+    protected String getSubstitution(FormEntrySession session, FormSubmissionController controllerActions, Map&lt;String, String&gt; parameters) throws BadFormDesignException {
+<span class="nc" id="L51">        boolean deathDateFromEncounter = parseBooleanAttribute(parameters.get(&quot;deathDateFromEncounter&quot;), true);</span>
+<span class="nc" id="L52">        boolean preserveExistingDeathDate = parseBooleanAttribute(parameters.get(&quot;preserveExistingDeathDate&quot;), false);</span>
+<span class="nc" id="L53">        boolean preserveExistingCauseOfDeath = parseBooleanAttribute(parameters.get(&quot;preserveExistingCauseOfDeath&quot;), false);</span>
+<span class="nc" id="L54">        Concept causeOfDeathFromObs = null;</span>
+<span class="nc bnc" id="L55" title="All 2 branches missed.">        if (parameters.containsKey(&quot;causeOfDeathFromObs&quot;)) {</span>
+<span class="nc" id="L56">            causeOfDeathFromObs = HtmlFormEntryUtil.getConcept(parameters.get(&quot;causeOfDeathFromObs&quot;));</span>
+        }
+
+<span class="nc" id="L59">        Action action = new Action();</span>
+<span class="nc" id="L60">        action.setDeathDateFromEncounter(deathDateFromEncounter);</span>
+<span class="nc" id="L61">        action.setPreserveExistingDeathDate(preserveExistingDeathDate);</span>
+<span class="nc" id="L62">        action.setPreserveExistingCauseOfDeath(preserveExistingCauseOfDeath);</span>
+<span class="nc" id="L63">        action.setCauseOfDeathFromObs(causeOfDeathFromObs);</span>
+
+<span class="nc" id="L65">        controllerActions.addAction(action);</span>
+
+<span class="nc" id="L67">        return &quot;&quot;;</span>
+    }
+
+    Concept getUnknownConcept() {
+        try {
+<span class="nc" id="L72">            String conceptId = administrationService.getGlobalProperty(HtmlFormEntryConstants.GP_UNKNOWN_CONCEPT);</span>
+<span class="nc" id="L73">            return HtmlFormEntryUtil.getConcept(conceptId);</span>
+<span class="nc" id="L74">        } catch (Exception ex) {</span>
+<span class="nc" id="L75">            throw new IllegalStateException(&quot;Error looking up \&quot;Unknown\&quot; concept for cause of death, which must be &quot; +</span>
+                    &quot;specified in a global property called \&quot;&quot; + HtmlFormEntryConstants.GP_UNKNOWN_CONCEPT + &quot;\&quot;.&quot;, ex);
+        }
+    }
+
+    /**
+     * This method is only for testing, e.g. to construct an action to match against
+     * @return
+     */
+    public Action newAction() {
+<span class="nc" id="L85">        return new Action();</span>
+    }
+
+<span class="nc" id="L88">    public class Action implements FormSubmissionControllerAction, CustomFormSubmissionAction {</span>
+
+        private boolean deathDateFromEncounter;
+        private boolean preserveExistingDeathDate;
+        private boolean preserveExistingCauseOfDeath;
+        private Concept causeOfDeathFromObs;
+
+        @Override
+        public Collection&lt;FormSubmissionError&gt; validateSubmission(FormEntryContext context, HttpServletRequest submission) {
+            // this can't fail validation since there is no user-controller input
+<span class="nc" id="L98">            return null;</span>
+        }
+
+        @Override
+        public void handleSubmission(FormEntrySession session, HttpServletRequest submission) {
+<span class="nc" id="L103">            session.getSubmissionActions().addCustomFormSubmissionAction(this);</span>
+<span class="nc" id="L104">        }</span>
+
+        @Override
+        public void applyAction(FormEntrySession session) {
+<span class="nc" id="L108">            Patient patient = session.getPatient();</span>
+<span class="nc" id="L109">            Encounter encounter = session.getEncounter();</span>
+<span class="nc" id="L110">            patient.setDead(true);</span>
+<span class="nc bnc" id="L111" title="All 2 branches missed.">            if (deathDateFromEncounter) {</span>
+<span class="nc bnc" id="L112" title="All 4 branches missed.">                if (patient.getDeathDate() == null || !preserveExistingDeathDate) {</span>
+<span class="nc" id="L113">                    patient.setDeathDate(encounter.getEncounterDatetime());</span>
+                }
+            }
+<span class="nc bnc" id="L116" title="All 4 branches missed.">            if (patient.getCauseOfDeath() == null || !preserveExistingCauseOfDeath) {</span>
+<span class="nc" id="L117">                Concept causeOfDeath = null;</span>
+<span class="nc bnc" id="L118" title="All 2 branches missed.">                if (causeOfDeathFromObs != null) {</span>
+<span class="nc" id="L119">                    causeOfDeath = findObsCodedValue(session.getEncounter(), causeOfDeathFromObs);</span>
+                }
+<span class="nc bnc" id="L121" title="All 2 branches missed.">                if (causeOfDeath == null) {</span>
+                    // don't overwrite with Unknown, even if we haven't specifically said to preserve existing
+<span class="nc" id="L123">                    causeOfDeath = patient.getCauseOfDeath();</span>
+                }
+<span class="nc bnc" id="L125" title="All 2 branches missed.">                if (causeOfDeath == null) {</span>
+<span class="nc" id="L126">                    causeOfDeath = getUnknownConcept();</span>
+                }
+<span class="nc" id="L128">                patient.setCauseOfDeath(causeOfDeath);</span>
+            }
+<span class="nc" id="L130">            patientService.savePatient(patient);</span>
+<span class="nc" id="L131">        }</span>
+
+        private Concept findObsCodedValue(Encounter encounter, Concept concept) {
+<span class="nc bnc" id="L134" title="All 2 branches missed.">            for (Obs candidate : encounter.getAllObs(false)) {</span>
+<span class="nc bnc" id="L135" title="All 2 branches missed.">                if (candidate.getConcept().equals(concept)) {</span>
+<span class="nc" id="L136">                    return candidate.getValueCoded();</span>
+                }
+<span class="nc" id="L138">            }</span>
+<span class="nc" id="L139">            return null;</span>
+        }
+
+        public boolean isDeathDateFromEncounter() {
+<span class="nc" id="L143">            return deathDateFromEncounter;</span>
+        }
+
+        public void setDeathDateFromEncounter(boolean deathDateFromEncounter) {
+<span class="nc" id="L147">            this.deathDateFromEncounter = deathDateFromEncounter;</span>
+<span class="nc" id="L148">        }</span>
+
+        public boolean isPreserveExistingDeathDate() {
+<span class="nc" id="L151">            return preserveExistingDeathDate;</span>
+        }
+
+        public void setPreserveExistingDeathDate(boolean preserveExistingDeathDate) {
+<span class="nc" id="L155">            this.preserveExistingDeathDate = preserveExistingDeathDate;</span>
+<span class="nc" id="L156">        }</span>
+
+        public boolean isPreserveExistingCauseOfDeath() {
+<span class="nc" id="L159">            return preserveExistingCauseOfDeath;</span>
+        }
+
+        public void setPreserveExistingCauseOfDeath(boolean preserveExistingCauseOfDeath) {
+<span class="nc" id="L163">            this.preserveExistingCauseOfDeath = preserveExistingCauseOfDeath;</span>
+<span class="nc" id="L164">        }</span>
+
+        public Concept getCauseOfDeathFromObs() {
+<span class="nc" id="L167">            return causeOfDeathFromObs;</span>
+        }
+
+        public void setCauseOfDeathFromObs(Concept causeOfDeathFromObs) {
+<span class="nc" id="L171">            this.causeOfDeathFromObs = causeOfDeathFromObs;</span>
+<span class="nc" id="L172">        }</span>
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.8.202204050719</span></div></body></html>

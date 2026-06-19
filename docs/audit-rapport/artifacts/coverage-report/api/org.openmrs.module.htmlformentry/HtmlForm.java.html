@@ -1,0 +1,166 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>HtmlForm.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">HTML Form Entry API</a> &gt; <a href="index.source.html" class="el_package">org.openmrs.module.htmlformentry</a> &gt; <span class="el_source">HtmlForm.java</span></div><h1>HtmlForm.java</h1><pre class="source lang-java linenums">package org.openmrs.module.htmlformentry;
+
+import java.util.Collection;
+import java.util.Map;
+
+import org.openmrs.BaseOpenmrsMetadata;
+import org.openmrs.Form;
+import org.openmrs.OpenmrsObject;
+import org.openmrs.module.htmlformentry.substitution.HtmlFormSubstitutionUtils;
+
+/**
+ * The basic HTML Form data object
+ */
+
+public class HtmlForm extends BaseOpenmrsMetadata {
+	
+	/** Unique identifying id */
+	private Integer id;
+	
+	/** The Form object this HTML Form is associated with */
+	private Form form;
+	
+	/** Actual XML content of the form */
+	private String xmlData;
+	
+	/** Deprecated fields: this class now inherits its name and description from its form */
+	private String deprecatedName;
+	
+	private String deprecatedDescription;
+	
+	/** Allows HtmlForm to be shared via Metadata Sharing Module **/
+	private Collection&lt;OpenmrsObject&gt; dependencies;
+	
+<span class="fc" id="L34">	public HtmlForm() {</span>
+<span class="fc" id="L35">	}</span>
+	
+	/** Gets the unique identifying id for this HTML Form */
+	@Override
+    public Integer getId() {
+<span class="fc" id="L40">		return id;</span>
+	}
+	
+	/** Sets the unique identifying id for this HTML Form */
+	@Override
+    public void setId(Integer id) {
+<span class="fc" id="L46">		this.id = id;</span>
+<span class="fc" id="L47">	}</span>
+	
+	/** Gets the Form object this HTML Form is associated with */
+	public Form getForm() {
+<span class="fc" id="L51">		return form;</span>
+	}
+	
+	/** Sets the Form object this HTML Form is associated with */
+	public void setForm(Form form) {
+<span class="fc" id="L56">		this.form = form;</span>
+<span class="fc" id="L57">	}</span>
+	
+	/**
+	 * Gets the name (inherited from form)
+	 */
+	@Override
+	public String getName() {
+<span class="pc bpc" id="L64" title="1 of 2 branches missed.">		return form != null ? form.getName() : null;</span>
+	}
+	
+	/**
+	 * Not supported (set the name on the form instead)
+	 */
+	@Override
+	public void setName(String name) {
+		//throw new UnsupportedOperationException(&quot;Not supported. Set the name on form instead&quot;); 
+<span class="nc" id="L73">	}</span>
+	
+	/**
+	 * Gets the description (inherited from form)
+	 */
+	@Override
+	public String getDescription() {
+<span class="nc bnc" id="L80" title="All 2 branches missed.">		return form != null ? form.getDescription() : null;</span>
+	}
+	
+	/**
+	 * Not supported (set the description on the form instead)
+	 */
+	@Override
+	public void setDescription(String description) {
+		//throw new UnsupportedOperationException(&quot;Not supported. Set the description on form instead&quot;); 
+<span class="nc" id="L89">	}</span>
+	
+	/** Gets the actual XML content of the form */
+	public String getXmlData() {
+<span class="fc" id="L93">		return xmlData;</span>
+	}
+	
+	/** Sets the actual XML content of the form */
+	public void setXmlData(String xmlData) {
+<span class="fc" id="L98">		this.xmlData = xmlData;</span>
+<span class="fc" id="L99">	}</span>
+	
+	/**
+	 * @return the deprecatedName
+	 */
+	public String getDeprecatedName() {
+<span class="nc" id="L105">		return deprecatedName;</span>
+	}
+	
+	/**
+	 * @param deprecatedName the deprecatedName to set
+	 */
+	public void setDeprecatedName(String deprecatedName) {
+<span class="nc" id="L112">		this.deprecatedName = deprecatedName;</span>
+<span class="nc" id="L113">	}</span>
+	
+	/**
+	 * @return the deprecatedDescription
+	 */
+	public String getDeprecatedDescription() {
+<span class="nc" id="L119">		return deprecatedDescription;</span>
+	}
+	
+	/**
+	 * @param deprecatedDescription the deprecatedDescription to set
+	 */
+	public void setDeprecatedDescription(String deprecatedDescription) {
+<span class="nc" id="L126">		this.deprecatedDescription = deprecatedDescription;</span>
+<span class="nc" id="L127">	}</span>
+	
+	/**
+	 * @return the dependencies
+	 */
+	public Collection&lt;OpenmrsObject&gt; getDependencies() {
+<span class="fc" id="L133">		return dependencies;</span>
+	}
+	
+	/**
+	 * @param dependencies the dependencies to set
+	 */
+	public void setDependencies(Collection&lt;OpenmrsObject&gt; dependencies) {
+<span class="fc" id="L140">		this.dependencies = dependencies;</span>
+<span class="fc" id="L141">	}</span>
+	
+	/** Allows HtmlForm to be shared via Metadata Sharing Module **/
+	protected Object writeReplace() {
+<span class="nc" id="L145">		HtmlFormExporter exporter = new HtmlFormExporter(this);</span>
+		
+		// default: includeLocations = true, includePersons = false, includeRoles = true, includePatientIdentifierTypes = true
+<span class="nc" id="L148">		return exporter.export(true, false, true, true);</span>
+	}
+	
+	/**
+	 * Allows HtmlForm to be shared via Metadata Sharing Module.
+	 * &lt;p&gt;
+	 * The onSave method is called just before saving this form in the database on the destination
+	 * server. It is used to replace references to incoming OpenMrs objects with references to existing OpenMrs objects that will be used within
+	 * this form on the destination server.
+	 * 
+	 * @param incomingToExisting map from items included in this form to items existing in the
+	 *            destination server
+	 * &lt;strong&gt;Should&lt;/strong&gt; should replace uuids and names
+	 */
+	protected void onSave(Map&lt;OpenmrsObject, OpenmrsObject&gt; incomingToExisting) {
+<span class="nc" id="L163">		HtmlFormSubstitutionUtils.replaceIncomingOpenmrsObjectsWithExistingOpenmrsObjects(this, incomingToExisting);</span>
+<span class="nc" id="L164">	}</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.8.202204050719</span></div></body></html>
