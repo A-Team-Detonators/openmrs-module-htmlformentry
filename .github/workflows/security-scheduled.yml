@@ -62,7 +62,7 @@ jobs:
             --sbom=sbom-weekly.cyclonedx.json
 
       - name: Upload wekelijkse SBOM
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: sbom-weekly-${{ github.run_number }}
           path: sbom-weekly.cyclonedx.json

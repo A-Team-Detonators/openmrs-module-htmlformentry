@@ -32,7 +32,7 @@ jobs:
         run: mvn clean package --no-transfer-progress -DskipTests -P ci
 
       - name: Upload build artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: build-artifacts
           path: "**/target/*.jar"
@@ -73,7 +73,7 @@ jobs:
 
       - name: Upload coverage rapport
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: coverage-report
           path: coverage-reports/
@@ -81,7 +81,7 @@ jobs:
  
       - name: Upload test reports
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: test-reports
           path: "**/target/surefire-reports/**"
@@ -133,14 +133,14 @@ jobs:
           output: codeql-results
 
       - name: Upload CodeQL SARIF
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: codeql-sarif
           path: codeql-results/
           retention-days: 90   # NEN-7510: beveiligingsrapporten langer bewaren
       
       - name: Upload compiled classes
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: compiled-classes
           path: |
@@ -184,7 +184,7 @@ jobs:
           upload-artifact: false
 
       - name: Upload SBOM als artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: sbom-cyclonedx-anchore
           path: sbom.cyclonedx.json
