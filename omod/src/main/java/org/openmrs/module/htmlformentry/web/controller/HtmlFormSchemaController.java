@@ -16,6 +16,7 @@ import org.springframework.ui.Model;
 import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.openmrs.module.htmlformentry.web.util.HtmlFormFileValidator;
 
 import java.io.File;
 import javax.servlet.http.HttpSession;
@@ -35,18 +36,14 @@ public class HtmlFormSchemaController {
     public void viewSchema(@RequestParam(value="id", required=false) Integer id,
                            @RequestParam(value="filePath", required=false) String filePath,
                            Model model, HttpSession httpSession) throws Exception {
+        Context.requirePrivilege("Manage Forms");
         String message = "";
         String xml = null;
         if (StringUtils.hasText(filePath)) {
         	model.addAttribute("filePath", filePath);
         	try {
-        		File f = new File(filePath);
-        		if (f != null && f.exists()) {
-        			xml = OpenmrsUtil.getFileAsString(f);
-        		}
-        		else {
-        			message = "Please specify a valid file path.";
-        		}
+        		File f = HtmlFormFileValidator.validate(filePath);
+                xml = OpenmrsUtil.getFileAsString(f);
         	}
         	catch (Exception e) {
         		log.error("An error occurred while loading the html.", e);

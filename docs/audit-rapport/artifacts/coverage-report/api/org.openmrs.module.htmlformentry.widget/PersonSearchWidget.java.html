@@ -1,0 +1,209 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>PersonSearchWidget.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">HTML Form Entry API</a> &gt; <a href="index.source.html" class="el_package">org.openmrs.module.htmlformentry.widget</a> &gt; <span class="el_source">PersonSearchWidget.java</span></div><h1>PersonSearchWidget.java</h1><pre class="source lang-java linenums">package org.openmrs.module.htmlformentry.widget;
+
+import javax.servlet.http.HttpServletRequest;
+
+import org.openmrs.Person;
+import org.openmrs.api.context.Context;
+import org.openmrs.module.htmlformentry.FormEntryContext;
+import org.openmrs.module.htmlformentry.FormEntryContext.Mode;
+import org.openmrs.module.htmlformentry.HtmlFormEntryUtil;
+import org.springframework.util.StringUtils;
+
+/**
+ * A widget that allows for the selection of a Person.  Implemented uses a pop-up to display person 
+ * search.
+ */
+public class PersonSearchWidget implements Widget {
+	
+	private Person person;
+	
+<span class="nc" id="L20">	private String searchAttribute = null;</span>
+<span class="nc" id="L21">	private String attributeValue = null;</span>
+<span class="nc" id="L22">	private String searchProgram = null;</span>
+	
+<span class="nc" id="L24">	public PersonSearchWidget() { }</span>
+
+	@Override
+    public void setInitialValue(Object initialValue) {
+<span class="nc" id="L28">	    person = (Person) initialValue;</span>
+<span class="nc" id="L29">    }</span>
+	
+	
+	@Override
+    public String generateHtml(FormEntryContext context) {
+		
+<span class="nc bnc" id="L35" title="All 2 branches missed.">		if (context.getMode() == Mode.VIEW) {</span>
+<span class="nc bnc" id="L36" title="All 2 branches missed.">            if (person != null)</span>
+<span class="nc" id="L37">                return WidgetFactory.displayValue(person.getPersonName().toString());</span>
+            else
+<span class="nc" id="L39">                return &quot;&quot;;</span>
+        }
+     
+<span class="nc" id="L42">        StringBuilder sb = new StringBuilder();</span>
+        
+<span class="nc" id="L44">        sb.append(&quot;&lt;script type='text/javascript'&gt; \n&quot;);</span>
+<span class="nc" id="L45">        sb.append(&quot;var $j = jQuery.noConflict(); &quot;);</span>
+<span class="nc" id="L46">        sb.append(&quot;$j(document).ready(function() { \n&quot;);</span>
+<span class="nc" id="L47">        sb.append(&quot;	$j('#displayPopup_&quot;);</span>
+<span class="nc" id="L48">        sb.append(context.getFieldName(this));</span>
+<span class="nc" id="L49">        sb.append(&quot;').dialog({ \n&quot;);</span>
+<span class="nc" id="L50">        sb.append(&quot;			title: 'dynamic', \n&quot;);</span>
+<span class="nc" id="L51">        sb.append(&quot;			autoOpen: false, \n&quot;);</span>
+<span class="nc" id="L52">        sb.append(&quot;			draggable: false, \n&quot;);</span>
+<span class="nc" id="L53">        sb.append(&quot;			resizable: false, \n&quot;);</span>
+<span class="nc" id="L54">        sb.append(&quot;			width: '95%', \n&quot;);</span>
+<span class="nc" id="L55">        sb.append(&quot;			modal: true, \n&quot;);</span>
+<span class="nc" id="L56">        sb.append(&quot;			open: function(a, b) { $j('#displayPopupLoading_&quot;);</span>
+<span class="nc" id="L57">        sb.append(context.getFieldName(this));</span>
+<span class="nc" id="L58">        sb.append(&quot;').show(); } \n&quot;);</span>
+<span class="nc" id="L59">        sb.append(&quot;	}); \n&quot;);</span>
+<span class="nc" id="L60">        sb.append(&quot;}); \n&quot;);</span>
+
+<span class="nc" id="L62">        sb.append(&quot;function loadUrlIntoPopup_&quot;);</span>
+<span class="nc" id="L63">        sb.append(context.getFieldName(this));</span>
+<span class="nc" id="L64">        sb.append(&quot;(title, urlToLoad) { \n&quot;);</span>
+<span class="nc" id="L65">        sb.append(&quot;	$j('#displayPopupIframe_&quot;);</span>
+<span class="nc" id="L66">    	sb.append(context.getFieldName(this));</span>
+<span class="nc" id="L67">    	sb.append(&quot;').attr('src', urlToLoad); \n&quot;);</span>
+<span class="nc" id="L68">        sb.append(&quot;	$j('#displayPopup_&quot;);</span>
+<span class="nc" id="L69">    	sb.append(context.getFieldName(this));</span>
+<span class="nc" id="L70">    	sb.append(&quot;') \n&quot;);</span>
+<span class="nc" id="L71">        sb.append(&quot;		.dialog('option', 'title', title) \n&quot;);</span>
+<span class="nc" id="L72">        sb.append(&quot;		.dialog('option', 'height', $j(window).height() - 50) \n&quot;); </span>
+<span class="nc" id="L73">        sb.append(&quot;		.dialog('open'); \n&quot;);</span>
+<span class="nc" id="L74">        sb.append(&quot;} \n&quot;);</span>
+        
+<span class="nc" id="L76">        sb.append(&quot;function showPopup_&quot;);</span>
+<span class="nc" id="L77">        sb.append(context.getFieldName(this));</span>
+<span class="nc" id="L78">        sb.append(&quot;() { \n&quot;);</span>
+<span class="nc" id="L79">    	sb.append(&quot;	loadUrlIntoPopup_&quot;);</span>
+<span class="nc" id="L80">    	sb.append(context.getFieldName(this));</span>
+<span class="nc" id="L81">    	sb.append(&quot;('&quot;);</span>
+<span class="nc" id="L82">    	sb.append(Context.getMessageSourceService().getMessage(&quot;htmlformentry.personSearchPopup&quot;));</span>
+<span class="nc" id="L83">    	sb.append(&quot;', (openmrsContextPath.startsWith('/') ? '' : '/') + openmrsContextPath + '/module/htmlformentry/personSearch.form?inPopup=true&amp;prefix=&quot;);</span>
+<span class="nc" id="L84">    	sb.append(context.getFieldName(this));</span>
+<span class="nc bnc" id="L85" title="All 2 branches missed.">    	if(searchAttribute != null)</span>
+    	{
+<span class="nc" id="L87">    		sb.append(&quot;&amp;searchAttribute=&quot;);</span>
+<span class="nc" id="L88">    		sb.append(searchAttribute);</span>
+    	}
+<span class="nc bnc" id="L90" title="All 2 branches missed.">    	if(attributeValue != null)</span>
+    	{
+<span class="nc" id="L92">    		sb.append(&quot;&amp;attributeValue=&quot;);</span>
+<span class="nc" id="L93">    		sb.append(attributeValue);</span>
+    	}
+<span class="nc bnc" id="L95" title="All 2 branches missed.">    	if(searchProgram != null)</span>
+    	{
+<span class="nc" id="L97">    		sb.append(&quot;&amp;searchProgram=&quot;);</span>
+<span class="nc" id="L98">    		sb.append(searchProgram);</span>
+    	}
+<span class="nc" id="L100">    	sb.append(&quot;'); \n&quot;);	</span>
+<span class="nc" id="L101">    	sb.append(&quot; $j('#displayPopupLoading_&quot;);</span>
+<span class="nc" id="L102">    	sb.append(context.getFieldName(this));</span>
+<span class="nc" id="L103">    	sb.append(&quot;').hide(); \n&quot;);</span>
+<span class="nc" id="L104">    	sb.append(&quot;} \n&quot;);</span>
+    	
+<span class="nc" id="L106">    	sb.append(&quot;function setValue(id, name, prefix) { \n&quot;);</span>
+<span class="nc" id="L107">    	sb.append(&quot;var idField = \&quot;#\&quot; + prefix; \n&quot;);</span>
+<span class="nc" id="L108">    	sb.append(&quot;var nameField = \&quot;#\&quot; + prefix + 'name'; \n&quot;);</span>
+<span class="nc" id="L109">    	sb.append(&quot;var popup = \&quot;#displayPopup_\&quot; + prefix; \n&quot;);</span>
+<span class="nc" id="L110">    	sb.append(&quot; $j(idField).val(id); \n&quot;);</span>
+<span class="nc" id="L111">    	sb.append(&quot; $j(nameField).val(name); \n&quot;);</span>
+<span class="nc" id="L112">    	sb.append(&quot;$j(popup).dialog('close'); \n&quot;);</span>
+<span class="nc" id="L113">    	sb.append(&quot; } \n&quot;);</span>
+    	
+<span class="nc" id="L115">        sb.append(&quot;&lt;/script&gt; \n&quot;);</span>
+    	
+<span class="nc" id="L117">    	sb.append(&quot;&lt;div id='displayPopup_&quot;);</span>
+<span class="nc" id="L118">    	sb.append(context.getFieldName(this));</span>
+<span class="nc" id="L119">    	sb.append(&quot;'&gt; \n&quot;);</span>
+<span class="nc" id="L120">    	sb.append(&quot;&lt;div id='displayPopupLoading_&quot;);</span>
+<span class="nc" id="L121">    	sb.append(context.getFieldName(this));</span>
+<span class="nc" id="L122">    	sb.append(&quot;'&gt;Loading&lt;/div&gt; \n&quot;);</span>
+<span class="nc" id="L123">    	sb.append(&quot;&lt;iframe id='displayPopupIframe_&quot;);</span>
+<span class="nc" id="L124">    	sb.append(context.getFieldName(this));</span>
+<span class="nc" id="L125">    	sb.append(&quot;' width='100%' height='100%' marginWidth='0' marginHeight='0' frameBorder='0' scrolling='auto'&gt;&lt;/iframe&gt; \n&quot;);</span>
+<span class="nc" id="L126">    	sb.append(&quot;&lt;/div&gt;&quot;);</span>
+    	
+<span class="nc" id="L128">    	sb.append(&quot;&lt;input type='button' value='&quot;);</span>
+<span class="nc" id="L129">    	sb.append(Context.getMessageSourceService().getMessage(&quot;htmlformentry.personSearchPopup&quot;));</span>
+<span class="nc" id="L130">    	sb.append(&quot;' onClick='showPopup_&quot;);</span>
+<span class="nc" id="L131">    	sb.append(context.getFieldName(this));</span>
+<span class="nc" id="L132">    	sb.append(&quot;()'&gt; \n&quot;);</span>
+    	
+<span class="nc" id="L134">    	sb.append(&quot;&lt;input name='&quot;);</span>
+<span class="nc" id="L135">    	sb.append(context.getFieldName(this));</span>
+<span class="nc" id="L136">    	sb.append(&quot;name' id='&quot;);</span>
+<span class="nc" id="L137">    	sb.append(context.getFieldName(this));</span>
+<span class="nc" id="L138">    	sb.append(&quot;name' readonly='true' &gt;&quot;);</span>
+<span class="nc" id="L139">    	sb.append(&quot;&lt;input name='&quot;);</span>
+<span class="nc" id="L140">    	sb.append(context.getFieldName(this));</span>
+<span class="nc" id="L141">    	sb.append(&quot;' id='&quot;);</span>
+<span class="nc" id="L142">    	sb.append(context.getFieldName(this));</span>
+<span class="nc" id="L143">    	sb.append(&quot;' type='hidden'&gt;&quot;);</span>
+    	
+    	
+<span class="nc" id="L146">        return sb.toString();</span>
+    }
+
+	@Override
+    public Object getValue(FormEntryContext context, HttpServletRequest request) {
+		
+<span class="nc" id="L152">		String val = request.getParameter(context.getFieldName(this));</span>
+<span class="nc bnc" id="L153" title="All 2 branches missed.">        if (StringUtils.hasText(val))</span>
+        {
+<span class="nc" id="L155">        	person = (Person)HtmlFormEntryUtil.convertToType(val, Person.class);</span>
+<span class="nc" id="L156">            return person;</span>
+        }
+<span class="nc" id="L158">        return null;</span>
+    }
+
+	
+    /**
+     * @return the searchAttribute
+     */
+    public String getSearchAttribute() {
+<span class="nc" id="L166">    	return searchAttribute;</span>
+    }
+
+	
+    /**
+     * @param searchAttribute the searchAttribute to set
+     */
+    public void setSearchAttribute(String searchAttribute) {
+<span class="nc" id="L174">    	this.searchAttribute = searchAttribute;</span>
+<span class="nc" id="L175">    }</span>
+
+	
+    /**
+     * @return the attributeValue
+     */
+    public String getAttributeValue() {
+<span class="nc" id="L182">    	return attributeValue;</span>
+    }
+
+	
+    /**
+     * @param attributeValue the attributeValue to set
+     */
+    public void setAttributeValue(String attributeValue) {
+<span class="nc" id="L190">    	this.attributeValue = attributeValue;</span>
+<span class="nc" id="L191">    }</span>
+
+	
+    /**
+     * @return the searchProgram
+     */
+    public String getSearchProgram() {
+<span class="nc" id="L198">    	return searchProgram;</span>
+    }
+
+	
+    /**
+     * @param searchProgram the searchProgram to set
+     */
+    public void setSearchProgram(String searchProgram) {
+<span class="nc" id="L206">    	this.searchProgram = searchProgram;</span>
+<span class="nc" id="L207">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.8.202204050719</span></div></body></html>

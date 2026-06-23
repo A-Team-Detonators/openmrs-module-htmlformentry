@@ -1,0 +1,4 @@
+-------------------------------------------------------------------------------
+Test set: org.openmrs.module.htmlformentry.StandardRegimenElement1_10Test
+-------------------------------------------------------------------------------
+Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 8.347 s -- in org.openmrs.module.htmlformentry.StandardRegimenElement1_10Test

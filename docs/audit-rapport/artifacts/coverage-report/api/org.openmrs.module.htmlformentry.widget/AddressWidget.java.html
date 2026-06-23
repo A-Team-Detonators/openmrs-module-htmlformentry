@@ -1,0 +1,160 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>AddressWidget.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">HTML Form Entry API</a> &gt; <a href="index.source.html" class="el_package">org.openmrs.module.htmlformentry.widget</a> &gt; <span class="el_source">AddressWidget.java</span></div><h1>AddressWidget.java</h1><pre class="source lang-java linenums">package org.openmrs.module.htmlformentry.widget;
+
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+
+import javax.servlet.http.HttpServletRequest;
+
+import org.openmrs.PersonAddress;
+import org.openmrs.api.context.Context;
+import org.openmrs.messagesource.MessageSourceService;
+import org.openmrs.module.htmlformentry.FormEntryContext;
+import org.openmrs.module.htmlformentry.FormEntryContext.Mode;
+import org.openmrs.module.htmlformentry.compatibility.AddressSupportCompatibility;
+
+/**
+ * A widget that allows the input of a Person address. Implemented using text fields
+ * that accept all name properties. The fields will display based on the 
+ * layout and templet defined in the global property.
+ */
+public class AddressWidget extends Gadget {
+
+	private PersonAddress initialValue;
+<span class="nc" id="L25">	private Map&lt;String, TextFieldWidget&gt; widgetMap = new HashMap&lt;String, TextFieldWidget&gt;();</span>
+
+<span class="nc" id="L27">	public AddressWidget() {</span>
+<span class="nc" id="L28">		widgetMap.put(&quot;address1&quot;, new TextFieldWidget());</span>
+<span class="nc" id="L29">		widgetMap.put(&quot;address2&quot;, new TextFieldWidget());</span>
+<span class="nc" id="L30">		widgetMap.put(&quot;cityVillage&quot;, new TextFieldWidget());</span>
+<span class="nc" id="L31">		widgetMap.put(&quot;stateProvince&quot;, new TextFieldWidget());</span>
+<span class="nc" id="L32">		widgetMap.put(&quot;postalCode&quot;, new TextFieldWidget());</span>
+<span class="nc" id="L33">		widgetMap.put(&quot;country&quot;, new TextFieldWidget());</span>
+<span class="nc" id="L34">		widgetMap.put(&quot;latitude&quot;, new TextFieldWidget());</span>
+<span class="nc" id="L35">		widgetMap.put(&quot;longitude&quot;, new TextFieldWidget());</span>
+<span class="nc" id="L36">		widgetMap.put(&quot;countyDistrict&quot;, new TextFieldWidget());</span>
+<span class="nc" id="L37">		widgetMap.put(&quot;neighborhoodCell&quot;, new TextFieldWidget());</span>
+<span class="nc" id="L38">		widgetMap.put(&quot;townshipDivision&quot;, new TextFieldWidget());</span>
+<span class="nc" id="L39">		widgetMap.put(&quot;subregion&quot;, new TextFieldWidget());</span>
+<span class="nc" id="L40">		widgetMap.put(&quot;region&quot;, new TextFieldWidget());</span>
+<span class="nc" id="L41">	}</span>
+
+	public AddressWidget(PersonAddress personAddress) {
+<span class="nc" id="L44">		this();</span>
+<span class="nc" id="L45">		setInitialValue(personAddress);</span>
+<span class="nc" id="L46">	}</span>
+
+	@Override
+    public String generateHtml(FormEntryContext context) {
+<span class="nc" id="L50">		MessageSourceService messageSourceService = Context.getMessageSourceService();</span>
+<span class="nc" id="L51">		AddressSupportCompatibility addressSupport = Context.getRegisteredComponent(&quot;htmlformentry.AddressSupportCompatibility&quot;, AddressSupportCompatibility.class);</span>
+		
+		TextFieldWidget textFieldWidget;
+		Map&lt;String, String&gt; fieldMap;
+		
+<span class="nc bnc" id="L56" title="All 2 branches missed.">		if (!isRegistered) {</span>
+<span class="nc" id="L57">			registerWidgets(context);</span>
+<span class="nc" id="L58">			isRegistered = true;</span>
+		}
+
+		// have the date and time widgets generate their HTML
+<span class="nc" id="L62">		StringBuilder sb = new StringBuilder();</span>
+		
+<span class="nc" id="L64">		sb.append(&quot;&lt;table&gt;&quot;);</span>
+		
+<span class="nc" id="L66">		List&lt;List&lt;Map&lt;String, String&gt;&gt;&gt; fieldLines = addressSupport.getLines();</span>
+		
+<span class="nc bnc" id="L68" title="All 2 branches missed.">		for (List&lt;Map&lt;String, String&gt;&gt; line : fieldLines) {</span>
+<span class="nc" id="L69">			sb.append(&quot;&lt;tr&gt;&quot;);</span>
+<span class="nc" id="L70">			int colIndex = 0;			</span>
+<span class="nc bnc" id="L71" title="All 2 branches missed.">			for (Iterator&lt;Map&lt;String, String&gt;&gt; iterator = line.iterator(); iterator.hasNext();colIndex++ ) {				</span>
+				
+<span class="nc" id="L73">				fieldMap = iterator.next();				</span>
+				
+<span class="nc bnc" id="L75" title="All 2 branches missed.">				if (fieldMap.get(&quot;isToken&quot;).equals(addressSupport.getLayoutToken())) {</span>
+					
+<span class="nc" id="L77">					String label = messageSourceService.getMessage(fieldMap.get(&quot;displayText&quot;));</span>
+<span class="nc" id="L78">					textFieldWidget = widgetMap.get(fieldMap.get(&quot;codeName&quot;));</span>
+<span class="nc" id="L79">					textFieldWidget.setTextFieldSize(Integer.parseInt(fieldMap.get(&quot;displaySize&quot;)));</span>
+<span class="nc" id="L80">					sb.append(&quot;&lt;td&gt;&quot;).append(label).append(&quot;&lt;/td&gt;&quot;);</span>
+<span class="nc bnc" id="L81" title="All 4 branches missed.">					if(!iterator.hasNext() &amp;&amp; colIndex &lt; addressSupport.getMaxTokens()){</span>
+<span class="nc" id="L82">						sb.append(&quot;&lt;td colspan='&quot;).append(addressSupport.getMaxTokens()-colIndex).append(&quot;'&gt;&quot;);</span>
+					}else{
+<span class="nc" id="L84">						sb.append(&quot;&lt;td&gt;&quot;);	</span>
+					}
+<span class="nc" id="L86">					sb.append(textFieldWidget.generateHtml(context)).append(&quot;&lt;/td&gt;&quot;);</span>
+				}
+			}
+<span class="nc" id="L89">			sb.append(&quot;&lt;/tr&gt;&quot;);</span>
+<span class="nc" id="L90">		}</span>
+<span class="nc" id="L91">		sb.append(&quot;&lt;/table&gt; \n&quot;);</span>
+<span class="nc" id="L92">		return sb.toString();</span>
+	}
+
+	@Override
+    public PersonAddress getValue(FormEntryContext context, HttpServletRequest request) {
+
+<span class="nc" id="L98">		PersonAddress returnPersonAddress = new PersonAddress();</span>
+
+<span class="nc" id="L100">		returnPersonAddress.setAddress1(getWidgetValue(&quot;address1&quot;, context, request));</span>
+<span class="nc" id="L101">		returnPersonAddress.setAddress2(getWidgetValue(&quot;address2&quot;, context, request));</span>
+<span class="nc" id="L102">		returnPersonAddress.setCityVillage(getWidgetValue(&quot;cityVillage&quot;, context, request));</span>
+<span class="nc" id="L103">		returnPersonAddress.setStateProvince(getWidgetValue(&quot;stateProvince&quot;, context, request));</span>
+<span class="nc" id="L104">		returnPersonAddress.setPostalCode(getWidgetValue(&quot;postalCode&quot;, context, request));</span>
+<span class="nc" id="L105">		returnPersonAddress.setCountry(getWidgetValue(&quot;country&quot;, context, request));</span>
+<span class="nc" id="L106">		returnPersonAddress.setLatitude(getWidgetValue(&quot;latitude&quot;, context, request));</span>
+<span class="nc" id="L107">		returnPersonAddress.setLongitude(getWidgetValue(&quot;longitude&quot;, context, request));</span>
+<span class="nc" id="L108">		returnPersonAddress.setCountyDistrict(getWidgetValue(&quot;countyDistrict&quot;, context, request));</span>
+<span class="nc" id="L109">		returnPersonAddress.setAddress3(getWidgetValue(&quot;neighborhoodCell&quot;, context, request));</span>
+<span class="nc" id="L110">		returnPersonAddress.setAddress4(getWidgetValue(&quot;townshipDivision&quot;, context, request));</span>
+<span class="nc" id="L111">		returnPersonAddress.setAddress5(getWidgetValue(&quot;subregion&quot;, context, request));</span>
+<span class="nc" id="L112">		returnPersonAddress.setAddress6(getWidgetValue(&quot;region&quot;, context, request));</span>
+
+<span class="nc bnc" id="L114" title="All 2 branches missed.">		if (context.getMode() == Mode.EDIT) {</span>
+<span class="nc" id="L115">			PersonAddress preferedAddress = context.getExistingPatient().getPersonAddress();</span>
+<span class="nc bnc" id="L116" title="All 4 branches missed.">			if (preferedAddress != null &amp;&amp; returnPersonAddress.equalsContent(preferedAddress)) {</span>
+<span class="nc" id="L117">				returnPersonAddress = preferedAddress;</span>
+			}
+		}
+
+<span class="nc" id="L121">		return returnPersonAddress;</span>
+	}
+
+	private String getWidgetValue(String fieldName, FormEntryContext context, HttpServletRequest request) {
+<span class="nc" id="L125">		return widgetMap.get(fieldName).getValue(context, request);</span>
+	}
+
+	private void setWidgetValue(String fieldName, String value) {
+<span class="nc" id="L129">		widgetMap.get(fieldName).setInitialValue(value);</span>
+<span class="nc" id="L130">	}</span>
+
+	@Override
+    public void setInitialValue(Object value) {
+<span class="nc bnc" id="L134" title="All 2 branches missed.">		if (value != null) {</span>
+<span class="nc" id="L135">			initialValue = (PersonAddress) value;</span>
+
+<span class="nc" id="L137">			setWidgetValue(&quot;address1&quot;, initialValue.getAddress1());</span>
+<span class="nc" id="L138">			setWidgetValue(&quot;address2&quot;, initialValue.getAddress2());</span>
+<span class="nc" id="L139">			setWidgetValue(&quot;cityVillage&quot;, initialValue.getCityVillage());</span>
+<span class="nc" id="L140">			setWidgetValue(&quot;stateProvince&quot;, initialValue.getStateProvince());</span>
+<span class="nc" id="L141">			setWidgetValue(&quot;postalCode&quot;, initialValue.getPostalCode());</span>
+<span class="nc" id="L142">			setWidgetValue(&quot;country&quot;, initialValue.getCountry());</span>
+<span class="nc" id="L143">			setWidgetValue(&quot;latitude&quot;, initialValue.getLatitude());</span>
+<span class="nc" id="L144">			setWidgetValue(&quot;longitude&quot;, initialValue.getLongitude());</span>
+<span class="nc" id="L145">			setWidgetValue(&quot;countyDistrict&quot;, initialValue.getCountyDistrict());</span>
+<span class="nc" id="L146">			setWidgetValue(&quot;neighborhoodCell&quot;, initialValue.getAddress3());</span>
+<span class="nc" id="L147">			setWidgetValue(&quot;townshipDivision&quot;, initialValue.getAddress4());</span>
+<span class="nc" id="L148">			setWidgetValue(&quot;subregion&quot;, initialValue.getAddress5());</span>
+<span class="nc" id="L149">			setWidgetValue(&quot;region&quot;, initialValue.getAddress6());</span>
+		}
+<span class="nc" id="L151">	}</span>
+
+	@Override
+	protected void registerWidgets(FormEntryContext context) {
+<span class="nc bnc" id="L155" title="All 2 branches missed.">		for (String key : widgetMap.keySet()) {</span>
+<span class="nc" id="L156">			context.registerWidget(widgetMap.get(key));</span>
+<span class="nc" id="L157">		}</span>
+<span class="nc" id="L158">	}</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.8.202204050719</span></div></body></html>

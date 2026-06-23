@@ -1,0 +1,7 @@
+GROUP,PACKAGE,CLASS,INSTRUCTION_MISSED,INSTRUCTION_COVERED,BRANCH_MISSED,BRANCH_COVERED,LINE_MISSED,LINE_COVERED,COMPLEXITY_MISSED,COMPLEXITY_COVERED,METHOD_MISSED,METHOD_COVERED
+HTML Form Entry API 1.10,org.openmrs.module.htmlformentry.regimen,RegimenUtil1_10,36,252,16,28,9,60,17,11,1,5
+HTML Form Entry API 1.10,org.openmrs.module.htmlformentry.element,DrugOrderSubmissionElement1_10,91,1337,30,70,19,260,27,45,0,22
+HTML Form Entry API 1.10,org.openmrs.module.htmlformentry.element,StandardRegimenElement1_10,62,328,25,31,16,75,25,13,1,9
+HTML Form Entry API 1.10,org.openmrs.module.htmlformentry.element,DrugOrderSubmissionElement1_10.OrderTag1_10,0,6,0,0,0,1,0,1,0,1
+HTML Form Entry API 1.10,org.openmrs.module.htmlformentry.handler,DrugOrderTagHandlerSupport1_10,31,19,0,0,5,4,1,2,1,2
+HTML Form Entry API 1.10,org.openmrs.module.htmlformentry.handler,StandardRegimenTagHandlerSupport1_10,31,19,0,0,5,4,1,2,1,2

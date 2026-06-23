@@ -9,18 +9,14 @@ updates:
       day: "monday"
       time: "06:00"
     open-pull-requests-limit: 10
+    target-branch: "dev"        # Dependabot opent PR's naar dev, niet prod
     labels:
       - "dependencies"
       - "security"
-    reviewers:
-      - "jouw-org/security-team"
     commit-message:
       prefix: "deps"
       include: "scope"
     groups:
-      spring-boot:
-        patterns:
-          - "org.springframework.boot*"
       openmrs:
         patterns:
           - "org.openmrs*"
@@ -32,17 +28,9 @@ updates:
       interval: "weekly"
       day: "monday"
     open-pull-requests-limit: 5
+    target-branch: "dev"
     labels:
       - "dependencies"
       - "ci-cd"
     commit-message:
       prefix: "ci"
-
-  # Docker base images
-  - package-ecosystem: "docker"
-    directory: "/docker"
-    schedule:
-      interval: "weekly"
-    labels:
-      - "dependencies"
-      - "docker"

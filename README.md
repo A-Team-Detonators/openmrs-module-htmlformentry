@@ -1,335 +1,317 @@
-# OpenMRS — Geharde CI/CD Omgeving
+# OpenMRS HtmlFormEntry — Geharde CI/CD Omgeving
 
-> **Mini-ISMS** | Beschrijft hoe omgevingen zijn ingericht, hoe testdata en productiedata gescheiden blijven, en hoe een nieuwe ontwikkelaar aan de slag kan.  
-> NEN-7510-compliant pipeline voor het OpenMRS-project.
+> **Mini-ISMS** voor de `openmrs-module-htmlformentry`-module.  
+> Beschrijft hoe de branchstrategie en CI-pipeline zijn ingericht, en hoe een nieuwe ontwikkelaar aan de slag kan.  
+> NEN-7510-compliant pipeline.
 
 ---
 
 ## Inhoudsopgave
 
-1. [Omgevingen](#1-omgevingen)
-2. [Branchstrategie](#2-branchstrategie)
-3. [CI/CD Pipeline](#3-cicd-pipeline)
+1. [Omgevingen & branchstrategie](#1-omgevingen--branchstrategie)
+2. [CI/CD Pipeline](#2-cicd-pipeline)
+3. [Bekende bouwbeperking (omod)](#3-bekende-bouwbeperking-omod)
 4. [Beveiliging & NEN-7510 compliance](#4-beveiliging--nen-7510-compliance)
-5. [Gescheiden secrets](#5-gescheiden-secrets)
-6. [Voorkomen van testdata in productie](#6-voorkomen-van-testdata-in-productie)
-7. [Onboarding nieuwe ontwikkelaar](#7-onboarding-nieuwe-ontwikkelaar)
-8. [Goedkeuringsproces voor productiedeploy](#8-goedkeuringsproces-voor-productiedeploy)
+5. [Secrets](#5-secrets)
+6. [Onboarding nieuwe ontwikkelaar](#6-onboarding-nieuwe-ontwikkelaar)
+7. [Goedkeuringsproces voor productie](#7-goedkeuringsproces-voor-productie)
+8. [GitHub Environments & branch protection instellen (eenmalig)](#8-github-environments--branch-protection-instellen-eenmalig)
 
 ---
 
-## 1. Omgevingen
+## 1. Omgevingen & branchstrategie
 
-Het project kent twee GitHub Environments met volledig gescheiden configuratie en secrets:
+Het project volgt een volledig **OTAP-model** met vier vaste hoofdbranches binnen de GitHub-organisatie **A-Team-Detonators**:
 
-| Omgeving | Branch | URL | Approval vereist |
+| Branch | Fase | Doel | Approval vereist |
 |---|---|---|---|
-| **test** | `dev` | https://test.openmrs.example.com | Nee |
-| **production** | `main` | https://openmrs.example.com | **Ja — minimaal 1 reviewer** |
+| `dev` | Ontwikkeling | Actieve ontwikkeling, integratie van features | **Ja — minimaal 1 reviewer** |
+| `test` | Test | Geautomatiseerde validatie na integratie | **Ja — minimaal 1 reviewer** |
+| `acceptation` | Acceptatie | Acceptatietests door het team vóór productie | **Ja — minimaal 1 reviewer** |
+| `production` | Productie | Live omgeving | **Ja — minimaal 1 reviewer** |
 
-### Hoe zijn de omgevingen ingericht?
+### Flow
+
+```
+feature/* ──► dev ──► test ──► acceptation ──► production
+```
+
+Merges verlopen **altijd via Pull Request**. Direct pushen naar `test`, `acceptation` of `production` is geblokkeerd door branch protection. CODEOWNERS zorgt voor automatische reviewertoewijzing via team **@A-Team-Detonators/C4-Detonators**.
+
+### Mappenstructuur
 
 ```
 .
-├── environments/
-│   ├── test/
-│   │   └── .env.example          ← voorbeeldconfiguratie test
-│   └── production/
-│       └── .env.example          ← voorbeeldconfiguratie productie
-├── docker/
-│   ├── docker-compose.test.yml   ← teststack (poort 8081)
-│   └── docker-compose.production.yml  ← productiestack (poort 8080)
-└── .github/
-    ├── workflows/
-    │   ├── ci.yml                ← build, test, SAST, SBOM
-    │   ├── deploy-test.yml       ← automatisch deploy naar test
-    │   └── deploy-production.yml ← deploy naar productie met approval gate
-    ├── dependabot.yml
-    └── CODEOWNERS
+├── .github/
+│   ├── workflows/
+│   │   ├── ci.yml                  ← build, test, coverage, CodeQL, SBOM, OSV, SonarQube
+│   │   ├── dependency-review.yml   ← dependency review op PR's
+│   │   └── security-scheduled.yml  ← wekelijkse CodeQL + SBOM scan (ma 03:00 UTC)
+│   ├── actions/
+│   │   └── setup-openmrs-maven/    ← composite action: Maven settings voor OpenMRS repo
+│   ├── dependabot.yml              ← automatische dependency-updates naar dev (maandag)
+│   ├── CODEOWNERS                  ← @A-Team-Detonators/C4-Detonators als verplichte reviewer
+│   └── instructions/
+│       └── aikido_rules.instructions.md
+├── docs/
+│   ├── onderhoudbaarheid/          ← SonarQube-bevindingen en refactordocumentatie
+│   ├── SecurityImprovements/       ← beveiligingsverbeteringen
+│   └── overige/                    ← CI-CD, logging, risicoanalyse, threat model, etc.
+├── NEN7510-controls.md             ← volledige NEN-7510 controlematrix
+└── README-module.md                ← module documentatie
+└── README.md                       ← dit bestand (mini-ISMS)
 ```
-
-**GitHub Environments** worden geconfigureerd via `scripts/setup-branch-protection.sh`:
-
-```bash
-export GITHUB_ORG=jouw-org
-export GITHUB_REPO=openmrs-project
-bash scripts/setup-branch-protection.sh
-```
-
-Dit script stelt in:
-- Branch protection op `main` (2 reviewers, alle CI-checks verplicht, geen force push)
-- Branch protection op `dev` (1 reviewer, CI-checks verplicht)
-- GitHub Environment `test` (geen wachttijd, geen verplichte reviewer)
-- GitHub Environment `production` (5 minuten wachttijd, verplichte reviewer uit het platform-team)
 
 ---
 
-## 2. Branchstrategie
+## 2. CI/CD Pipeline
 
-```
-feature/* ──► dev ──► main
-                │              │
-           auto-deploy    approval-gate
-             (test)        (productie)
-```
+### Workflows overzicht
 
-| Branch | Doel | Direct push | Force push |
-|---|---|---|---|
-| `main` | Productiecode | ❌ Alleen via PR | ❌ |
-| `dev` | Integratiebranch / test | ❌ Alleen via PR | ❌ |
-| `feature/*` | Ontwikkeling | ✅ | ✅ (eigen branch) |
+| Workflow | Bestand | Trigger |
+|---|---|---|
+| CI — Build, Test & Security | `ci.yml` | Push/PR op alle 4 branches |
+| Dependency Review | `dependency-review.yml` | PR op production, acceptation, test, dev |
+| Periodieke Beveiligingsscan | `security-scheduled.yml` | Elke maandag 03:00 UTC + handmatig |
 
-**Minimale vereisten om te mergen naar `main`:**
+### CI-pipeline (`ci.yml`) — bij elke push of pull request
 
-- [ ] Build geslaagd
-- [ ] Alle tests geslaagd
-- [ ] CodeQL SAST geslaagd (geen high/critical kwetsbaarheden)
-- [ ] Dependency Review geslaagd (geen high/critical kwetsbare afhankelijkheden)
-- [ ] Minimaal 2 goedkeurende reviews, waarvan 1 van een code-owner
-- [ ] Alle review-commentaren opgelost
-
----
-
-## 3. CI/CD Pipeline
-
-### Elke push / pull request
+De CI-pipeline bestaat uit zeven jobs. Build is de startvoorwaarde; Tests en CodeQL draaien parallel daarna; SBOM→OSV en SonarQube volgen op hun respectievelijke voorgangers:
 
 ```
 push / PR
     │
-    ├─► Build (Maven)
-    ├─► Tests (JUnit/Surefire)
-    ├─► CodeQL SAST ──────────────────► SARIF upload (Security tab)
-    ├─► Dependency Review (alleen PR) ► commentaar op PR
-    └─► SBOM genereren (CycloneDX) ───► OSV Scanner SCA
+    ▼
+1. Build  ──────────────────────────────────────────────────────────────────┐
+    │                                                                        │
+    ├──► 2. Tests (JUnit + JaCoCo coverage)                                 │
+    │         │                                                              │
+    │         └──► 7. SonarQube (vereist coverage van stap 2)               │
+    │                                                                        │
+    ├──► 3. CodeQL SAST ──────────────────────────► SARIF → Security tab    │
+    │                                                                        │
+    ├──► 4. Dependency Review (alleen bij PR) ────► blokkeert bij high CVE  │
+    │                                                                        │
+    └──► 5. SBOM (anchore/sbom-action → CycloneDX JSON)                     │
+              │                                                              │
+              └──► 6. OSV Scan (scant SBOM op bekende kwetsbaarheden)       │
+                                                                             │
+    compiled-classes artifact ◄─────────────────────────────────────────────┘
 ```
 
-### Na merge naar `dev` → automatische deploy naar test
+#### Stap 1 — Build
 
-```
-merge dev
-    └─► deploy-test.yml
-            ├─► Docker Compose up (test)
-            └─► Health check
-```
+Bouwt alle api-modules met Java 8 (Temurin) en Maven. De `omod`-module is uitgesloten (zie sectie 3). Produceert een `build-artifacts`-artifact (`.jar`-bestanden, 90 dagen bewaard).
 
-### Na merge naar `main` → deploy naar productie (met approval)
+#### Stap 2 — Tests & coverage
 
-```
-merge main
-    └─► deploy-production.yml
-            ├─► [APPROVAL GATE] ← reviewer klikt "Approve"
-            ├─► CI-status validatie
-            ├─► Docker Compose up (productie)
-            ├─► Health check
-            └─► GitHub Deployment record (audit trail)
+```bash
+mvn verify jacoco:report -pl api,api-1.9,api-1.10,api-2.0,api-2.2,api-tests -am -P ci
 ```
 
-### Wekelijkse geplande scan (elke maandag 03:00 UTC)
+Draait alle JUnit-tests via Maven Surefire. JaCoCo genereert een coverage-rapport per module. Beide worden als artifact opgeslagen (90 dagen) en doorgegeven aan SonarQube.
 
-- CodeQL scan op volledige codebase
-- SBOM genereren + OSV Scanner SCA
-- Artefacten bewaard gedurende 365 dagen
+#### Stap 3 — CodeQL SAST
+
+Statische beveiligingsanalyse van de Java-broncode. Resultaten (SARIF) zijn zichtbaar in de GitHub Security-tab en worden 90 dagen bewaard als artifact.
+
+#### Stap 4 — Dependency Review
+
+Draait **uitsluitend op pull requests**. Blokkeert de PR bij afhankelijkheden met `high` of `critical` CVE's, en bij verboden licenties (GPL-3.0, AGPL-3.0).
+
+#### Stap 5 & 6 — SBOM + OSV Scan
+
+`anchore/sbom-action` genereert een CycloneDX JSON SBOM direct van de broncode. Vervolgens scant `google/osv-scanner-action` de SBOM op bekende kwetsbaarheden. De SBOM wordt 90 dagen bewaard.
+
+#### Stap 7 — SonarQube
+
+SonarQube vereist Java 17 voor de scanner, terwijl de codebase op Java 8 is gebouwd. Beide versies worden gelijktijdig opgezet:
+
+```
+Java 8  → mvn verify (compileert de broncode opnieuw)
+Java 17 → mvn sonar:sonar (draait de SonarQube scanner)
+```
+
+De scanner leest de JaCoCo coverage-rapporten uit stap 2. Resultaten zijn zichtbaar in SonarQube Cloud.
+
+Benodigde secrets: `SONAR_TOKEN`, `PROJECT_KEY`, `ORGANIZATION_KEY`, `SONAR_HOST_URL`.
+
+### Wekelijkse beveiligingsscan (`security-scheduled.yml`)
+
+Elke maandag om 03:00 UTC (ook handmatig te starten via `workflow_dispatch`):
+- Volledige CodeQL-analyse op de huidige broncode
+- SBOM-generatie + OSV Scanner SCA
+
+SBOM-artefacten van de wekelijkse scan worden **365 dagen** bewaard (NEN-7510 langetermijn auditvereiste).
+
+---
+
+## 3. Bekende bouwbeperking (omod)
+
+De `omod`-submodule gebruikt `maven-openmrs-plugin:1.0.1`, opgehaald van `mavenrepo.openmrs.org`. Deze repository is vanuit GitHub Actions-runners niet betrouwbaar bereikbaar.
+
+**Gevolg:** een volledige `mvn package` faalt in CI.
+
+**Oplossing:** de `omod`-module wordt in alle CI-stappen uitgesloten via:
+
+```bash
+mvn ... -pl api,api-1.9,api-1.10,api-2.0,api-2.2,api-tests -am
+```
+
+De composite action `.github/actions/setup-openmrs-maven` configureert Maven met de juiste OpenMRS repository-instellingen voor de overige modules.
+
+**Risicobeoordeling:** laag — de `omod` is een packaging-wrapper zonder eigen logica. Alle business-logica in de `api`-modules wordt volledig gebuild, getest en geanalyseerd.
+
+**Lokaal builden** (inclusief omod): `mvn clean package` — werkt normaal met netwerktoegang tot de OpenMRS Nexus-repo.
 
 ---
 
 ## 4. Beveiliging & NEN-7510 compliance
 
-Zie [`docs/NEN7510-controls.md`](docs/NEN7510-controls.md) voor de volledige controlematrix.
+Zie [`NEN7510-controls.md`](NEN7510-controls.md) voor de volledige controlematrix.
 
-### Checklist compliante pipeline
-
-| Control | Maatregel | Waar |
+| Control | Maatregel | Locatie |
 |---|---|---|
-| ✅ Branch protection actief op `main` | Alleen via PR, 2 reviews verplicht | `scripts/setup-branch-protection.sh` |
-| ✅ CI-checks verplicht vóór merge | Build, Test, SAST, Dependency Review | `ci.yml` |
-| ✅ CodeQL SAST | Bij elke push én wekelijks gepland | `ci.yml`, `security-scheduled.yml` |
-| ✅ Secret Scanning | Via GitHub Advanced Security (repo-instelling) | GitHub Settings > Security |
-| ✅ Dependabot alerts & security updates | Wekelijks Maven, Actions, Docker | `.github/dependabot.yml` |
-| ✅ Dependency Review Action | Gekoppeld aan PR's, blokkeert bij high/critical | `ci.yml` |
-| ✅ SBOM (CycloneDX) + SCA | Gegenereerd bij elke CI-run + wekelijks | `ci.yml`, `security-scheduled.yml` |
-| ✅ GitHub Environments met protection rules | Test + productie, approval gate op productie | `setup-branch-protection.sh` |
-| ✅ Secrets gescheiden per environment | Zie sectie 5 | GitHub Environment Secrets |
-| ✅ Pipeline-artefacten bewaard | Logs, SBOM, rapporten met retention | Alle workflow-bestanden |
-| ✅ README beschrijft beleid (mini-ISMS) | Dit document | `README.md` |
-
-### Secret Scanning activeren
-
-Ga naar: **Settings → Security → Secret scanning → Enable**
-
-Activeer ook **Push protection** om te voorkomen dat secrets per ongeluk gepusht worden.
+| ✅ Branch protection op `dev`, `test`, `acceptation` en `production` | Alleen via PR; reviews verplicht; force push geblokkeerd | GitHub Settings → Branches |
+| ✅ CODEOWNERS | @A-Team-Detonators/C4-Detonators als verplichte reviewer op alles | `.github/CODEOWNERS` |
+| ✅ CI-checks verplicht vóór merge | Build, Test, CodeQL, Dep. Review, SonarQube | `ci.yml` |
+| ✅ CodeQL SAST | Bij elke push/PR + wekelijks gepland | `ci.yml`, `security-scheduled.yml` |
+| ✅ SonarQube | Codekwaliteit + security na elke CI-run | `ci.yml` job `sonar` |
+| ✅ JaCoCo coverage | Coverage-rapport per module, input voor SonarQube | `ci.yml` job `test` |
+| ✅ Dependabot | Wekelijks Maven + Actions, PR's naar `dev` | `.github/dependabot.yml` |
+| ✅ Dependency Review | Op elke PR; blokkeert bij high/critical CVE + verboden licenties | `dependency-review.yml`, `ci.yml` |
+| ✅ SBOM (CycloneDX) + OSV Scan | Bij elke CI-run + wekelijks | `ci.yml`, `security-scheduled.yml` |
+| ✅ GitHub Environments + approval gate | `production` vereist handmatige goedkeuring | GitHub Settings → Environments |
+| ✅ Secrets gescheiden | Repository secrets (SonarQube) en environment secrets (toekomstig) | GitHub Settings → Secrets |
+| ✅ Pipeline-artefacten bewaard | 90 dagen (dagelijks CI), 365 dagen (wekelijkse scan) | `retention-days` in alle workflows |
+| ✅ Secret Scanning + Push Protection | Via GitHub Advanced Security | GitHub Settings → Security |
 
 ---
 
-## 5. Gescheiden secrets
+## 5. Secrets
 
-Secrets worden **uitsluitend** beheerd via GitHub Environment Secrets. Ze zijn nooit in code, `.env`-bestanden of Docker Compose-bestanden opgenomen.
+Alle secrets worden beheerd via **GitHub Secrets** — nooit in code.
 
-```
-GitHub Repository Secrets     ← NIET gebruikt voor omgevingsspecifieke secrets
-GitHub Environment Secrets
-  ├── test
-  │   ├── DB_PASSWORD_TEST
-  │   └── OPENMRS_ADMIN_PASSWORD_TEST
-  └── production
-      ├── DB_PASSWORD_PROD
-      ├── OPENMRS_ADMIN_PASSWORD_PROD
-      └── SENTRY_DSN_PROD
-```
+### Repository secrets (beschikbaar in alle workflows)
 
-**Instellen via GitHub CLI (eenmalig, door een beheerder):**
+| Secret | Gebruik |
+|---|---|
+| `SONAR_TOKEN` | Authenticatie bij SonarQube Cloud |
+| `PROJECT_KEY` | SonarQube projectsleutel |
+| `ORGANIZATION_KEY` | SonarQube organisatiesleutel |
+| `SONAR_HOST_URL` | URL van de SonarQube-instantie |
 
-```bash
-# Test-secrets
-gh secret set DB_PASSWORD_TEST --env test --repo jouw-org/openmrs-project
-gh secret set OPENMRS_ADMIN_PASSWORD_TEST --env test --repo jouw-org/openmrs-project
-
-# Productie-secrets
-gh secret set DB_PASSWORD_PROD --env production --repo jouw-org/openmrs-project
-gh secret set OPENMRS_ADMIN_PASSWORD_PROD --env production --repo jouw-org/openmrs-project
-gh secret set SENTRY_DSN_PROD --env production --repo jouw-org/openmrs-project
-```
-
-Een workflow die draait in de `test`-environment heeft **geen toegang** tot `production`-secrets, en vice versa.
+> Deployment-secrets (database, applicatie) zijn niet van toepassing zolang er geen geautomatiseerde deploy-workflows actief zijn. De `docker/`-bestanden en `environments/`-configuraties in de repository dienen als referentie voor toekomstige deploymentinrichting.
 
 ---
 
-## 6. Voorkomen van testdata in productie
-
-Het systeem bevat meerdere lagen van bescherming om te voorkomen dat testdata in productie terechtkomt:
-
-### Laag 1 — Configuratiescheiding
-
-| Instelling | Test | Productie |
-|---|---|---|
-| `SEED_TEST_DATA` | `true` | **`false`** (hardcoded in Compose-file) |
-| Seed-script gemonteerd | ✅ `test-seed.sql` | ❌ Geen seed-mount |
-| `ENABLE_DEBUG_ENDPOINTS` | `true` | `false` |
-
-### Laag 2 — Netwerkisolatie
-
-Test- en productiecontainers draaien in gescheiden Docker-netwerken (`test-net` resp. `prod-net`). Ze kunnen elkaar **niet** bereiken.
-
-### Laag 3 — Aparte databases
-
-Elke omgeving heeft een eigen database-instantie met eigen credentials (zie sectie 5). Er is geen gedeeld database-volume.
-
-### Laag 4 — CI-validatie
-
-De `deploy-production.yml`-workflow bevat een expliciete stap die controleert of alle CI-checks geslaagd zijn vóór elke deploy.
-
-### Laag 5 — Approval gate
-
-Elke productiedeploy vereist handmatige goedkeuring van een lid van het platform-team (zie sectie 8).
-
-### Laag 6 — Geanonimiseerde testdata
-
-Alle testdata in `docker/seed/test-seed.sql` bestaat uitsluitend uit **gesynthetiseerde** (fictieve) patiëntrecords. Er worden nooit echte patiëntgegevens gebruikt als testdata.
-
----
-
-## 7. Onboarding nieuwe ontwikkelaar
-
-> Een nieuwe ontwikkelaar moet met alleen deze README aan de slag kunnen.
+## 6. Onboarding nieuwe ontwikkelaar
 
 ### Vereisten
 
-- Git
-- Docker Desktop (of Docker Engine + Docker Compose v2)
-- Java 17 (JDK) — bijv. via [SDKMAN](https://sdkman.io/): `sdk install java 17-tem`
-- GitHub CLI: `brew install gh` / [andere installatiemethode](https://cli.github.com/)
+- **Git**
+- **Java 8 JDK** — via [SDKMAN](https://sdkman.io/): `sdk install java 8.0.392-tem`
+- **Maven 3.x** — `sdk install maven`
+- **GitHub CLI** (optioneel) — [installatie](https://cli.github.com/)
 
 ### Stap 1 — Repository klonen
 
 ```bash
-git clone https://github.com/jouw-org/openmrs-project.git
-cd openmrs-project
+git clone https://github.com/A-Team-Detonators/openmrs-module-htmlformentry.git
+cd openmrs-module-htmlformentry
 ```
 
-### Stap 2 — Authenticeren bij GitHub
+### Stap 2 — Lokaal bouwen en testen
 
 ```bash
-gh auth login
+# Alleen api-modules (altijd werkend):
+mvn clean test -pl api,api-1.9,api-1.10,api-2.0,api-2.2,api-tests -am
+
+# Volledige build inclusief omod (vereist netwerktoegang tot OpenMRS Nexus):
+mvn clean package
 ```
 
-### Stap 3 — Lokale omgevingsvariabelen instellen
+### Stap 3 — Feature branch aanmaken
 
 ```bash
-cp environments/test/.env.example environments/test/.env
-# Vul de waarden in via het wachtwoordbeheer van het team (bijv. 1Password / Bitwarden)
-# NOOIT .env committen — het staat in .gitignore
-```
-
-### Stap 4 — Lokale test-omgeving starten
-
-```bash
-docker compose -f docker/docker-compose.test.yml --env-file environments/test/.env up -d
-```
-
-De applicatie is beschikbaar op http://localhost:8081/openmrs
-
-### Stap 5 — Testen uitvoeren
-
-```bash
-mvn test
-```
-
-### Stap 6 — Feature branch aanmaken en werken
-
-```bash
+git checkout dev
+git pull origin dev
 git checkout -b feature/mijn-feature
-# ... code schrijven ...
+
+# ... code schrijven en testen ...
+
 git add .
 git commit -m "feat: beschrijving van de wijziging"
 git push origin feature/mijn-feature
-# Open een Pull Request naar dev via de GitHub-interface of:
+
+# PR openen naar dev:
 gh pr create --base dev --title "feat: beschrijving" --body "..."
 ```
 
-### Stap 7 — CI controles begrijpen
+### Stap 4 — Flow naar productie
 
-Na het openen van een PR draaien automatisch:
+```
+feature/* → PR → dev
+dev       → PR → test
+test      → PR → acceptation
+acceptation → PR → production  (vereist approval van C4-Detonators)
+```
 
-1. **Build** — controleert of de code compileert
-2. **Tests** — unit- en integratietests
-3. **CodeQL** — statische beveiligingsanalyse
-4. **Dependency Review** — controleert nieuwe afhankelijkheden op kwetsbaarheden
-5. **SBOM** — genereert een software-stuklijst
+### Stap 5 — CI begrijpen
 
-Alle checks moeten groen zijn vóór merge. Rode checks worden direct in de PR getoond.
+Na het openen van een PR starten automatisch:
+
+| Check | Wat het doet |
+|---|---|
+| **Build** | Compileert api-modules met Java 8 |
+| **Tests** | Draait JUnit-tests + genereert JaCoCo coverage |
+| **CodeQL** | Statische beveiligingsanalyse |
+| **Dependency Review** | Controleert CVE's en licenties van nieuwe afhankelijkheden |
+| **SBOM + OSV Scan** | Genereert CycloneDX SBOM en scant op kwetsbaarheden |
+| **SonarQube** | Analyseert codekwaliteit en security (gebruikt JaCoCo coverage) |
+
+Alle checks moeten groen zijn vóór merge.
 
 ### Hulp nodig?
 
-- Pipeline-problemen: maak een issue aan met label `ci-cd`
-- Beveiligingsmeldingen: neem contact op met `@jouw-org/security-team`
-- Toegangsproblemen (secrets, environments): neem contact op met een beheerder
+- Pipeline-problemen → issue met label `ci-cd`
+- Beveiligingsmeldingen → `@A-Team-Detonators/C4-Detonators`
 
 ---
 
-## 8. Goedkeuringsproces voor productiedeploy
+## 7. Goedkeuringsproces voor productie
 
 ```
-1. Ontwikkelaar opent PR naar main
-2. Minimaal 2 reviewers keuren goed (waarvan 1 code-owner)
-3. Alle CI-checks zijn groen
-4. PR wordt gemerged naar main
-5. GitHub Actions start deploy-production workflow
-6. [WACHTTIJD 5 minuten]
-7. Een lid van @jouw-org/platform-team keurt de deployment goed in de GitHub-interface:
-   Actions → deploy-production → Review deployments → Approve
-8. Deploy wordt uitgevoerd
-9. Health check valideert de deployment
-10. GitHub Deployment-record wordt aangemaakt (audit trail)
+1. Ontwikkelaar opent PR: acceptation → production
+2. @A-Team-Detonators/C4-Detonators wordt automatisch toegewezen via CODEOWNERS
+3. Minimaal 1 reviewer keurt de PR goed
+4. Alle CI-checks zijn groen (inclusief SonarQube)
+5. PR wordt gemerged naar production
+6. GitHub Deployment-record wordt aangemaakt (audit trail)
 ```
 
-**Bij een mislukte deploy:** de workflow stopt automatisch. Voer een rollback uit via:
+---
+
+## 8. GitHub Environments & branch protection instellen (eenmalig)
 
 ```bash
-# Trigger een nieuwe deploy van de vorige stabiele tag
-gh workflow run deploy-production.yml \
-  -f version=<vorig-stabiel-sha>
+export GITHUB_ORG=A-Team-Detonators
+export GITHUB_REPO=openmrs-module-htmlformentry
+bash scripts/setup-branch-protection.sh
 ```
+
+Of handmatig via de GitHub-interface:
+
+**Branch protection op `dev`, `test`, `acceptation` en `production`:**
+- ✅ Require a pull request before merging
+- ✅ Require approvals (1), dismiss stale reviews
+- ✅ Require status checks: Build, Tests, CodeQL, SonarQube
+- ✅ Block force pushes / Do not allow bypassing
+
+**GitHub Environment `production`:**
+- Settings → Environments → `production`
+- Required reviewers: @A-Team-Detonators/C4-Detonators
 
 ---
 
-*Laatste update: zie git history | Eigenaar: @jouw-org/platform-team*
+*Laatste update: zie git history | Eigenaar: @A-Team-Detonators/C4-Detonators*

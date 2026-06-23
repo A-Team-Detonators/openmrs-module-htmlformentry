@@ -1,0 +1,588 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>PatientDetailSubmissionElement.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">HTML Form Entry API</a> &gt; <a href="index.source.html" class="el_package">org.openmrs.module.htmlformentry.element</a> &gt; <span class="el_source">PatientDetailSubmissionElement.java</span></div><h1>PatientDetailSubmissionElement.java</h1><pre class="source lang-java linenums">/**
+ * The contents of this file are subject to the OpenMRS Public License
+ * Version 1.0 (the &quot;License&quot;); you may not use this file except in
+ * compliance with the License. You may obtain a copy of the License at
+ * http://license.openmrs.org
+ *
+ * Software distributed under the License is distributed on an &quot;AS IS&quot;
+ * basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
+ * License for the specific language governing rights and limitations
+ * under the License.
+ *
+ * Copyright (C) OpenMRS, LLC.  All Rights Reserved.
+ */
+package org.openmrs.module.htmlformentry.element;
+
+import org.openmrs.Location;
+import org.openmrs.Patient;
+import org.openmrs.PatientIdentifier;
+import org.openmrs.PatientIdentifierType;
+import org.openmrs.Person;
+import org.openmrs.PersonAddress;
+import org.openmrs.PersonName;
+import org.openmrs.api.IdentifierNotUniqueException;
+import org.openmrs.api.context.Context;
+import org.openmrs.messagesource.MessageSourceService;
+import org.openmrs.module.htmlformentry.FormEntryContext;
+import org.openmrs.module.htmlformentry.FormEntryContext.Mode;
+import org.openmrs.module.htmlformentry.FormEntrySession;
+import org.openmrs.module.htmlformentry.FormSubmissionError;
+import org.openmrs.module.htmlformentry.HtmlFormEntryUtil;
+import org.openmrs.module.htmlformentry.ValidationException;
+import org.openmrs.module.htmlformentry.action.FormSubmissionControllerAction;
+import org.openmrs.module.htmlformentry.comparator.OptionComparator;
+import org.openmrs.module.htmlformentry.widget.AddressWidget;
+import org.openmrs.module.htmlformentry.widget.DateWidget;
+import org.openmrs.module.htmlformentry.widget.DropdownWidget;
+import org.openmrs.module.htmlformentry.widget.ErrorWidget;
+import org.openmrs.module.htmlformentry.widget.HiddenFieldWidget;
+import org.openmrs.module.htmlformentry.widget.NameWidget;
+import org.openmrs.module.htmlformentry.widget.NumberFieldWidget;
+import org.openmrs.module.htmlformentry.widget.Option;
+import org.openmrs.module.htmlformentry.widget.TextFieldWidget;
+import org.openmrs.module.htmlformentry.widget.Widget;
+import org.openmrs.util.OpenmrsUtil;
+import org.openmrs.validator.PatientIdentifierValidator;
+import org.springframework.util.StringUtils;
+
+import java.math.BigDecimal;
+import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Date;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+import javax.servlet.http.HttpServletRequest;
+
+/**
+ * Holds the widgets used to represent Patient Details, and serves as both the
+ * HtmlGeneratorElement and the FormSubmissionControllerAction for Patient
+ * Details.
+ */
+public class PatientDetailSubmissionElement implements HtmlGeneratorElement, FormSubmissionControllerAction {
+
+	public static final String FIELD_PERSON_NAME = &quot;name&quot;;
+
+	public static final String FIELD_BIRTH_DATE_OR_AGE = &quot;birthDateOrAge&quot;;
+
+	public static final String FIELD_BIRTH_DATE = &quot;birthDate&quot;;
+
+	public static final String FIELD_AGE = &quot;age&quot;;
+
+	public static final String FIELD_GENDER = &quot;gender&quot;;
+
+	public static final String FIELD_IDENTIFIER = &quot;identifier&quot;;
+
+	public static final String FIELD_IDENTIFIER_LOCATION = &quot;identifierLocation&quot;;
+
+	public static final String FIELD_ADDRESS = &quot;address&quot;;
+
+	private NameWidget nameWidget;
+	private ErrorWidget nameErrorWidget;
+	private DropdownWidget genderWidget;
+	private ErrorWidget genderErrorWidget;
+	private Widget ageWidget;
+	private ErrorWidget ageErrorWidget;
+	private Widget birthDateWidget;
+	private ErrorWidget birthDateErrorWidget;
+	private Widget identifierTypeWidget;
+	private Widget identifierTypeValueWidget;
+	private ErrorWidget identifierTypeValueErrorWidget;
+	private Widget identifierLocationWidget;
+	private ErrorWidget identifierLocationErrorWidget;
+	private AddressWidget addressWidget;
+
+	private boolean required;
+
+<span class="fc" id="L99">	public PatientDetailSubmissionElement(FormEntryContext context, Map&lt;String, String&gt; attributes) {</span>
+<span class="fc" id="L100">		createElement(context, attributes);</span>
+<span class="fc" id="L101">	}</span>
+
+	public void createElement(FormEntryContext context, Map&lt;String, String&gt; attributes) {
+<span class="fc" id="L104">		String field = attributes.get(&quot;field&quot;);</span>
+<span class="fc" id="L105">		Patient existingPatient = context.getExistingPatient();</span>
+
+		// Required attribute defaults to true if not specified
+<span class="pc bpc" id="L108" title="1 of 2 branches missed.">		required = ! &quot;false&quot;.equalsIgnoreCase(attributes.get(&quot;required&quot;));</span>
+
+<span class="pc bpc" id="L110" title="1 of 2 branches missed.">		if (FIELD_PERSON_NAME.equalsIgnoreCase(field)) {</span>
+<span class="nc" id="L111">			nameWidget = new NameWidget();</span>
+<span class="nc" id="L112">			nameErrorWidget = new ErrorWidget();</span>
+<span class="nc bnc" id="L113" title="All 2 branches missed.">			createWidgets(context, nameWidget, nameErrorWidget,</span>
+<span class="nc bnc" id="L114" title="All 2 branches missed.">					existingPatient != null &amp;&amp; existingPatient.getPersonName() != null ? existingPatient.getPersonName() : null);</span>
+		}
+<span class="pc bpc" id="L116" title="1 of 2 branches missed.">		else if (FIELD_GENDER.equalsIgnoreCase(field)) {</span>
+<span class="nc" id="L117">			MessageSourceService msg = Context.getMessageSourceService();</span>
+<span class="nc" id="L118">			genderWidget = new DropdownWidget();</span>
+<span class="nc" id="L119">			genderErrorWidget = new ErrorWidget();</span>
+<span class="nc" id="L120">			genderWidget.addOption(new Option(msg.getMessage(&quot;Patient.gender.male&quot;), &quot;M&quot;, false));</span>
+<span class="nc" id="L121">			genderWidget.addOption(new Option(msg.getMessage(&quot;Patient.gender.female&quot;), &quot;F&quot;, false));</span>
+<span class="nc bnc" id="L122" title="All 2 branches missed.">			createWidgets(context, genderWidget, genderErrorWidget, existingPatient != null ? existingPatient.getGender() : null);</span>
+<span class="nc" id="L123">		}</span>
+<span class="pc bpc" id="L124" title="1 of 2 branches missed.">		else if (FIELD_AGE.equalsIgnoreCase(field)) {</span>
+<span class="nc" id="L125">			ageWidget = new NumberFieldWidget(0d, 200d, false);</span>
+<span class="nc" id="L126">			ageErrorWidget = new ErrorWidget();</span>
+<span class="nc bnc" id="L127" title="All 2 branches missed.">			createWidgets(context, ageWidget, ageErrorWidget, existingPatient != null ? existingPatient.getAge() : null);</span>
+		}
+<span class="pc bpc" id="L129" title="1 of 2 branches missed.">		else if (FIELD_BIRTH_DATE.equalsIgnoreCase(field)) {</span>
+<span class="nc" id="L130">			birthDateWidget = new DateWidget();</span>
+<span class="nc" id="L131">			birthDateErrorWidget = new ErrorWidget();</span>
+<span class="nc bnc" id="L132" title="All 2 branches missed.">			createWidgets(context, birthDateWidget, birthDateErrorWidget, existingPatient != null ? existingPatient.getBirthdate() : null);</span>
+		}
+<span class="pc bpc" id="L134" title="1 of 2 branches missed.">		else if (FIELD_BIRTH_DATE_OR_AGE.equalsIgnoreCase(field)) {</span>
+<span class="nc" id="L135">			ageWidget = new NumberFieldWidget(0d, 200d, false);</span>
+<span class="nc" id="L136">			ageErrorWidget = new ErrorWidget();</span>
+<span class="nc bnc" id="L137" title="All 2 branches missed.">			createWidgets(context, ageWidget, ageErrorWidget, existingPatient != null ? existingPatient.getAge() : null);</span>
+
+<span class="nc" id="L139">			birthDateWidget = new DateWidget();</span>
+<span class="nc" id="L140">			birthDateErrorWidget = new ErrorWidget();</span>
+<span class="nc bnc" id="L141" title="All 2 branches missed.">			createWidgets(context, birthDateWidget, birthDateErrorWidget, existingPatient != null ? existingPatient.getBirthdate() : null);</span>
+
+		}
+<span class="pc bpc" id="L144" title="1 of 2 branches missed.">		else if (FIELD_IDENTIFIER.equalsIgnoreCase(field)) {</span>
+
+<span class="fc" id="L146">			PatientIdentifierType idType = HtmlFormEntryUtil.getPatientIdentifierType(attributes.get(&quot;identifierTypeId&quot;));</span>
+
+<span class="fc" id="L148">			identifierTypeValueWidget = new TextFieldWidget();</span>
+<span class="fc" id="L149">			identifierTypeValueErrorWidget = new ErrorWidget();</span>
+<span class="fc" id="L150">			String initialValue = null;</span>
+<span class="pc bpc" id="L151" title="1 of 2 branches missed.">			if (existingPatient != null) {</span>
+<span class="nc bnc" id="L152" title="All 2 branches missed.">				if (idType == null) {</span>
+<span class="nc bnc" id="L153" title="All 2 branches missed.">					if (existingPatient.getPatientIdentifier() != null) {</span>
+<span class="nc" id="L154">						initialValue = existingPatient.getPatientIdentifier().getIdentifier();</span>
+					}
+				} else {
+<span class="nc bnc" id="L157" title="All 2 branches missed.">					if (existingPatient.getPatientIdentifier(idType) != null) {</span>
+<span class="nc" id="L158">						initialValue = existingPatient.getPatientIdentifier(idType).getIdentifier();</span>
+					}
+				}
+			}
+<span class="fc" id="L162">			createWidgets(context, identifierTypeValueWidget, identifierTypeValueErrorWidget, initialValue);</span>
+
+<span class="pc bpc" id="L164" title="1 of 2 branches missed.">			if (idType != null) {</span>
+<span class="fc" id="L165">				identifierTypeWidget = new HiddenFieldWidget();</span>
+<span class="fc" id="L166">				createWidgets(context, identifierTypeWidget, null, idType.getId().toString());</span>
+			}
+			else {
+<span class="nc" id="L169">				identifierTypeWidget = new DropdownWidget();</span>
+<span class="nc" id="L170">				List&lt;PatientIdentifierType&gt; patientIdentifierTypes = HtmlFormEntryUtil.getPatientIdentifierTypes();</span>
+
+<span class="nc bnc" id="L172" title="All 2 branches missed.">				for (PatientIdentifierType patientIdentifierType : patientIdentifierTypes) {</span>
+<span class="nc" id="L173">					((DropdownWidget) identifierTypeWidget).addOption(new Option(patientIdentifierType.getName(), patientIdentifierType</span>
+<span class="nc" id="L174">							.getPatientIdentifierTypeId().toString(), false));</span>
+<span class="nc" id="L175">				}</span>
+
+<span class="nc bnc" id="L177" title="All 2 branches missed.">				createWidgets(context, identifierTypeWidget, null,</span>
+<span class="nc bnc" id="L178" title="All 2 branches missed.">						existingPatient != null &amp;&amp; existingPatient.getPatientIdentifier() != null ? existingPatient.getPatientIdentifier()</span>
+<span class="nc" id="L179">								.getIdentifierType().getId() : null);</span>
+			}
+<span class="fc" id="L181">		}</span>
+<span class="nc bnc" id="L182" title="All 2 branches missed.">		else if (FIELD_IDENTIFIER_LOCATION.equalsIgnoreCase(field)) {</span>
+<span class="nc" id="L183">			identifierLocationWidget = new DropdownWidget();</span>
+<span class="nc" id="L184">			identifierLocationErrorWidget = new ErrorWidget();</span>
+
+<span class="nc bnc" id="L186" title="All 2 branches missed.">            Location defaultLocation = existingPatient != null</span>
+<span class="nc bnc" id="L187" title="All 2 branches missed.">					&amp;&amp; existingPatient.getPatientIdentifier() != null ? existingPatient.getPatientIdentifier().getLocation() : null;</span>
+<span class="nc bnc" id="L188" title="All 2 branches missed.">			defaultLocation = defaultLocation == null ? context.getDefaultLocation() : defaultLocation;</span>
+<span class="nc" id="L189">            identifierLocationWidget.setInitialValue(defaultLocation);</span>
+
+<span class="nc" id="L191">            List&lt;Option&gt; locationOptions = new ArrayList&lt;Option&gt;();</span>
+<span class="nc bnc" id="L192" title="All 2 branches missed.">            for(Location location:Context.getLocationService().getAllLocations()) {</span>
+<span class="nc" id="L193">                Option option = new Option(location.getName(), location.getId().toString(), location.equals(defaultLocation));</span>
+<span class="nc" id="L194">                locationOptions.add(option);</span>
+<span class="nc" id="L195">            }</span>
+<span class="nc" id="L196">            Collections.sort(locationOptions, new OptionComparator());</span>
+
+            // if initialValueIsSet=false, no initial/default location, hence this shows the 'select input' field as first option
+<span class="nc bnc" id="L199" title="All 2 branches missed.">            boolean initialValueIsSet = !(defaultLocation == null);</span>
+<span class="nc bnc" id="L200" title="All 2 branches missed.">            ((DropdownWidget) identifierLocationWidget).addOption(new Option(Context.getMessageSourceService().getMessage(&quot;htmlformentry.chooseALocation&quot;), &quot;&quot;, !initialValueIsSet));</span>
+<span class="nc bnc" id="L201" title="All 2 branches missed.">            if (!locationOptions.isEmpty()) {</span>
+<span class="nc bnc" id="L202" title="All 2 branches missed.">                    for(Option option: locationOptions){</span>
+<span class="nc" id="L203">                    ((DropdownWidget) identifierLocationWidget).addOption(option);</span>
+<span class="nc" id="L204">                    }</span>
+            }
+<span class="nc" id="L206">			createWidgets(context, identifierLocationWidget, identifierLocationErrorWidget, defaultLocation);</span>
+<span class="nc" id="L207">		}</span>
+
+<span class="nc bnc" id="L209" title="All 2 branches missed.">		else if (FIELD_ADDRESS.equalsIgnoreCase(field)) {</span>
+<span class="nc" id="L210">			addressWidget = new AddressWidget();</span>
+<span class="nc bnc" id="L211" title="All 2 branches missed.">			createWidgets(context, addressWidget, null, existingPatient != null ? existingPatient.getPersonAddress() : null);</span>
+		}
+<span class="fc" id="L213">	}</span>
+
+	private void createWidgets(FormEntryContext context, Widget fieldWidget, ErrorWidget errorWidget, Object initialValue) {
+<span class="fc" id="L216">		context.registerWidget(fieldWidget);</span>
+<span class="fc bfc" id="L217" title="All 2 branches covered.">		if (errorWidget != null) {</span>
+<span class="fc" id="L218">			context.registerErrorWidget(fieldWidget, errorWidget);</span>
+		}
+<span class="pc bpc" id="L220" title="1 of 4 branches missed.">		if (initialValue != null &amp;&amp; StringUtils.hasText(initialValue.toString())) {</span>
+<span class="fc" id="L221">			fieldWidget.setInitialValue(initialValue);</span>
+		}
+<span class="fc" id="L223">	}</span>
+
+	@Override
+	public String generateHtml(FormEntryContext context) {
+<span class="fc" id="L227">		StringBuilder sb = new StringBuilder();</span>
+<span class="fc" id="L228">		MessageSourceService mss = Context.getMessageSourceService();</span>
+
+<span class="pc bpc" id="L230" title="1 of 2 branches missed.">		if (nameWidget != null) {</span>
+<span class="nc" id="L231">			sb.append(nameWidget.generateHtml(context));</span>
+<span class="nc bnc" id="L232" title="All 2 branches missed.">			if (context.getMode() != Mode.VIEW)</span>
+<span class="nc" id="L233">				sb.append(nameErrorWidget.generateHtml(context));</span>
+		}
+
+<span class="pc bpc" id="L236" title="1 of 2 branches missed.">		if (genderWidget != null) {</span>
+<span class="nc" id="L237">			sb.append(genderWidget.generateHtml(context));</span>
+<span class="nc bnc" id="L238" title="All 2 branches missed.">			if (context.getMode() != Mode.VIEW)</span>
+<span class="nc" id="L239">				sb.append(genderErrorWidget.generateHtml(context));</span>
+		}
+
+<span class="pc bpc" id="L242" title="1 of 2 branches missed.">		if (birthDateWidget != null) {</span>
+<span class="nc bnc" id="L243" title="All 2 branches missed.">			if (ageWidget != null) {</span>
+<span class="nc" id="L244">				sb.append(mss.getMessage(&quot;Person.birthdate&quot;)).append(&quot; &quot;);</span>
+			}
+<span class="nc" id="L246">			sb.append(birthDateWidget.generateHtml(context));</span>
+<span class="nc bnc" id="L247" title="All 2 branches missed.">			if (context.getMode() != Mode.VIEW)</span>
+<span class="nc" id="L248">				sb.append(birthDateErrorWidget.generateHtml(context));</span>
+		}
+
+<span class="pc bpc" id="L251" title="1 of 2 branches missed.">		if (ageWidget != null) {</span>
+<span class="nc bnc" id="L252" title="All 2 branches missed.">			if (birthDateWidget != null) {</span>
+<span class="nc" id="L253">				sb.append(&quot; &quot;).append(mss.getMessage(&quot;Person.age.or&quot;)).append(&quot; &quot;);</span>
+			}
+<span class="nc" id="L255">			sb.append(ageWidget.generateHtml(context));</span>
+<span class="nc bnc" id="L256" title="All 2 branches missed.">			if (context.getMode() != Mode.VIEW)</span>
+<span class="nc" id="L257">				sb.append(ageErrorWidget.generateHtml(context));</span>
+		}
+
+
+
+<span class="pc bpc" id="L262" title="1 of 2 branches missed.">		if (identifierTypeValueWidget != null) {</span>
+<span class="fc" id="L263">			sb.append(identifierTypeValueWidget.generateHtml(context));</span>
+<span class="pc bpc" id="L264" title="1 of 2 branches missed.">			if (context.getMode() != Mode.VIEW) {</span>
+				// if value is required
+<span class="pc bpc" id="L266" title="1 of 2 branches missed.">				if (required) {</span>
+<span class="fc" id="L267">					sb.append(&quot;&lt;span class='required'&gt;*&lt;/span&gt;&quot;);</span>
+				}
+
+<span class="fc" id="L270">				sb.append(&quot; &quot;);</span>
+<span class="fc" id="L271">				sb.append(identifierTypeValueErrorWidget.generateHtml(context));</span>
+			}
+		}
+
+<span class="pc bpc" id="L275" title="1 of 2 branches missed.">		if (identifierTypeWidget != null) {</span>
+<span class="pc bpc" id="L276" title="1 of 2 branches missed.">			if (identifierTypeValueWidget instanceof DropdownWidget){</span>
+<span class="nc" id="L277">				sb.append(&quot; &quot;).append(mss.getMessage(&quot;PatientIdentifier.identifierType&quot;)).append(&quot; &quot;);</span>
+			}
+<span class="fc" id="L279">			sb.append(identifierTypeWidget.generateHtml(context)).append(&quot; &quot;);</span>
+		}
+
+<span class="pc bpc" id="L282" title="1 of 2 branches missed.">		if (identifierLocationWidget != null) {</span>
+<span class="nc" id="L283">			sb.append(identifierLocationWidget.generateHtml(context));</span>
+<span class="nc bnc" id="L284" title="All 2 branches missed.">			if (context.getMode() != Mode.VIEW)</span>
+<span class="nc" id="L285">				sb.append(identifierLocationErrorWidget.generateHtml(context));</span>
+		}
+
+<span class="pc bpc" id="L288" title="1 of 2 branches missed.">		if (addressWidget != null) {</span>
+<span class="nc" id="L289">			sb.append(addressWidget.generateHtml(context));</span>
+		}
+
+<span class="fc" id="L292">		return sb.toString();</span>
+	}
+
+	@Override
+	public void handleSubmission(FormEntrySession session, HttpServletRequest request) {
+
+<span class="nc" id="L298">		Patient patient = (Patient) session.getSubmissionActions().getCurrentPerson();</span>
+
+<span class="nc bnc" id="L300" title="All 2 branches missed.">		if (patient == null) {</span>
+<span class="nc" id="L301">			throw new RuntimeException(&quot;Programming exception: person shouldn't be null&quot;);</span>
+		}
+
+<span class="nc" id="L304">		FormEntryContext context = session.getContext();</span>
+
+<span class="nc bnc" id="L306" title="All 2 branches missed.">		if (nameWidget != null) {</span>
+<span class="nc" id="L307">			PersonName name = (PersonName) nameWidget.getValue(context, request);</span>
+
+<span class="nc bnc" id="L309" title="All 2 branches missed.">			if (patient != null) {</span>
+<span class="nc bnc" id="L310" title="All 2 branches missed.">				if (!name.isPreferred()) {</span>
+<span class="nc" id="L311">					PersonName currentPreferredName = context.getExistingPatient().getPersonName();</span>
+<span class="nc bnc" id="L312" title="All 2 branches missed.">					if (currentPreferredName != null){</span>
+<span class="nc" id="L313">						currentPreferredName.setPreferred(false);</span>
+<span class="nc" id="L314">						currentPreferredName.setVoided(true);</span>
+					}
+				}
+			}
+
+			// HACK: we need to set the date created and uuid here as a hack around a hibernate flushing issue (see saving the Patient in FormEntrySession applyActions())
+<span class="nc bnc" id="L320" title="All 2 branches missed.">			if (name.getDateCreated() == null) {</span>
+<span class="nc" id="L321">				name.setDateCreated(new Date());</span>
+			}
+<span class="nc bnc" id="L323" title="All 2 branches missed.">			if (name.getUuid() == null) {</span>
+<span class="nc" id="L324">				name.setUuid(UUID.randomUUID().toString());</span>
+			}
+
+
+<span class="nc" id="L328">			name.setPreferred(true);</span>
+<span class="nc" id="L329">			patient.addName(name);</span>
+		}
+
+<span class="nc bnc" id="L332" title="All 2 branches missed.">		if (genderWidget != null) {</span>
+<span class="nc" id="L333">			String value = (String) genderWidget.getValue(context, request);</span>
+<span class="nc" id="L334">			patient.setGender(value);</span>
+		}
+
+<span class="nc bnc" id="L337" title="All 2 branches missed.">		if (ageWidget != null) {</span>
+<span class="nc" id="L338">			Double value = (Double) ageWidget.getValue(context, request);</span>
+<span class="nc bnc" id="L339" title="All 2 branches missed.">			if (value != null)</span>
+<span class="nc" id="L340">				calculateBirthDate(patient, null, value);</span>
+		}
+
+<span class="nc bnc" id="L343" title="All 2 branches missed.">		if (birthDateWidget != null) {</span>
+<span class="nc" id="L344">			Date value = (Date) birthDateWidget.getValue(context, request);</span>
+<span class="nc bnc" id="L345" title="All 2 branches missed.">			if (value != null) {</span>
+<span class="nc" id="L346">				calculateBirthDate(patient, value, null);</span>
+			}
+		}
+
+<span class="nc bnc" id="L350" title="All 4 branches missed.">		if (identifierTypeValueWidget != null &amp;&amp; identifierTypeWidget != null) {</span>
+<span class="nc" id="L351">			String identifier = (String) identifierTypeValueWidget.getValue(context, request);</span>
+<span class="nc" id="L352">			String identifierTypeString = (String) identifierTypeWidget.getValue(context, request);</span>
+
+			// if not required, no identifier type string may be specified, then do nothing
+<span class="nc bnc" id="L355" title="All 2 branches missed.">			if (StringUtils.hasText(identifierTypeString)) {</span>
+<span class="nc" id="L356">				PatientIdentifierType identifierType = getIdentifierType(identifierTypeString);</span>
+				// Look for an existing identifier of this type
+<span class="nc" id="L358">				PatientIdentifier patientIdentifier = patient.getPatientIdentifier(identifierType);</span>
+
+<span class="nc bnc" id="L360" title="All 2 branches missed.">				if (StringUtils.hasText(identifier)) {</span>
+					// No existing identifier of this type, so create new
+<span class="nc bnc" id="L362" title="All 2 branches missed.">					if (patientIdentifier == null) {</span>
+<span class="nc" id="L363">						patientIdentifier = new PatientIdentifier();</span>
+<span class="nc" id="L364">						patientIdentifier.setIdentifierType(identifierType);</span>
+
+						// HACK: we need to set the date created  and uuid here as a hack around a hibernate flushing issue (see saving the Patient in FormEntrySession applyActions())
+<span class="nc" id="L367">						patientIdentifier.setDateChanged(new Date());</span>
+<span class="nc" id="L368">						patientIdentifier.setUuid(UUID.randomUUID().toString());</span>
+
+						// For 1.9+ onwards patients require a preferred identifier
+<span class="nc bnc" id="L371" title="All 2 branches missed.">						if (patient.getPatientId() == null) {</span>
+<span class="nc" id="L372">							patientIdentifier.setPreferred(true);</span>
+						}
+
+<span class="nc" id="L375">						patient.addIdentifier(patientIdentifier);</span>
+					}
+
+<span class="nc bnc" id="L378" title="All 4 branches missed.">					if (!identifier.equals(patientIdentifier.getIdentifier()) || !identifierType.equals(patientIdentifier.getIdentifierType())) {</span>
+<span class="nc" id="L379">						validateIdentifier(identifierType.getId(), identifier, patient);</span>
+					}
+
+<span class="nc" id="L382">					patientIdentifier.setIdentifier(identifier);</span>
+<span class="nc bnc" id="L383" title="All 2 branches missed.">				} else if (patientIdentifier != null) {</span>
+					// If this field is not required, then we interpret a blank value as a request to avoid any existing identifier
+<span class="nc" id="L385">					session.getSubmissionActions().getIdentifiersToVoid().add(patientIdentifier);</span>
+				}
+			}
+		}
+
+		//
+		// TODO current behavior always updates location of the preferred identifier rather than
+		// a specific identifier type being edited by the identifier widget. But identifier location
+		// widget isn't aware of the identifier type widget
+		//
+<span class="nc bnc" id="L395" title="All 2 branches missed.">		if (identifierLocationWidget != null) {</span>
+<span class="nc" id="L396">			PatientIdentifier patientIdentifier = patient.getPatientIdentifier();</span>
+<span class="nc bnc" id="L397" title="All 2 branches missed.">			if (patientIdentifier == null) {</span>
+<span class="nc" id="L398">				patientIdentifier = new PatientIdentifier();</span>
+<span class="nc" id="L399">				patient.addIdentifier(patientIdentifier);</span>
+			}
+
+<span class="nc" id="L402">			Object locationString = identifierLocationWidget.getValue(context, request);</span>
+<span class="nc" id="L403">			Location location = (Location) HtmlFormEntryUtil.convertToType(locationString.toString().trim(), Location.class);</span>
+<span class="nc" id="L404">			patientIdentifier.setLocation(location);</span>
+<span class="nc" id="L405">			patientIdentifier.setPreferred(true);</span>
+
+		}
+
+<span class="nc bnc" id="L409" title="All 2 branches missed.">		if (addressWidget != null) {</span>
+<span class="nc" id="L410">			PersonAddress personAddress = (PersonAddress) addressWidget.getValue(context, request);</span>
+<span class="nc bnc" id="L411" title="All 2 branches missed.">			if (context.getMode() == Mode.EDIT) {</span>
+<span class="nc bnc" id="L412" title="All 2 branches missed.">				if (!personAddress.isPreferred()) {</span>
+<span class="nc" id="L413">					PersonAddress currentPreferredAddress = context.getExistingPatient().getPersonAddress();</span>
+<span class="nc" id="L414">					currentPreferredAddress.setPreferred(false);</span>
+<span class="nc" id="L415">					currentPreferredAddress.setVoided(true);</span>
+				}
+			}
+<span class="nc" id="L418">			personAddress.setPreferred(true);</span>
+<span class="nc" id="L419">			patient.addAddress(personAddress);</span>
+		}
+
+<span class="nc" id="L422">        session.getSubmissionActions().setPatientUpdateRequired(true);</span>
+<span class="nc" id="L423">	}</span>
+
+	private void validateIdentifier(Integer identifierType, String identifier, Patient patient) {
+<span class="pc bpc" id="L426" title="2 of 4 branches missed.">		if (identifierType != null &amp;&amp; identifier != null) {</span>
+			try {
+<span class="fc" id="L428">				PatientIdentifier pi = new PatientIdentifier();</span>
+
+<span class="fc" id="L430">				pi.setPatient(patient);</span>
+<span class="fc" id="L431">				pi.setIdentifier(identifier);</span>
+<span class="fc" id="L432">				pi.setIdentifierType(getIdentifierType(identifierType.toString()));</span>
+
+				// note that this is a bit of a hack; we can't call the PatientIdentifierValidator.validateIdentifier(identifier) method
+				// because it (as of 1.8) also tests to make sure that an identifier has a location associated with it; when validating an
+				// individual identifier widget, there will be no location because the location is collected in another widget
+<span class="fc" id="L437">				PatientIdentifierValidator.validateIdentifier(pi.getIdentifier(), pi.getIdentifierType());</span>
+
+<span class="pc bpc" id="L439" title="1 of 2 branches missed.">				if (Context.getPatientService().isIdentifierInUseByAnotherPatient(pi)) {</span>
+<span class="nc" id="L440">					throw new IdentifierNotUniqueException(Context.getMessageSourceService().getMessage(</span>
+<span class="nc" id="L441">					    &quot;PatientIdentifier.error.notUniqueWithParameter&quot;, new Object[] { pi.getIdentifier() },</span>
+<span class="nc" id="L442">					    Context.getLocale()));</span>
+				}
+			}
+<span class="fc" id="L445">			catch (Exception e) {</span>
+<span class="fc" id="L446">				throw new ValidationException(e.getMessage());</span>
+<span class="fc" id="L447">			}</span>
+		}
+<span class="fc" id="L449">	}</span>
+
+	private PatientIdentifierType getIdentifierType(String id) {
+<span class="fc" id="L452">		PatientIdentifierType patientIdentifierType = Context.getPatientService().getPatientIdentifierType(new Integer(id));</span>
+<span class="pc bpc" id="L453" title="1 of 2 branches missed.">		if (patientIdentifierType == null) {</span>
+<span class="nc" id="L454">			throw new RuntimeException(&quot;Invalid identifierTypeId given &quot; + id);</span>
+		}
+<span class="fc" id="L456">		return patientIdentifierType;</span>
+	}
+
+	@SuppressWarnings(&quot;unused&quot;)
+    @Override
+	public Collection&lt;FormSubmissionError&gt; validateSubmission(FormEntryContext context, HttpServletRequest request) {
+<span class="fc" id="L462">		List&lt;FormSubmissionError&gt; ret = new ArrayList&lt;FormSubmissionError&gt;();</span>
+
+<span class="fc" id="L464">		List&lt;FormSubmissionError&gt; ageOrBirthdDateErrorMessage = new ArrayList&lt;FormSubmissionError&gt;();</span>
+
+<span class="fc" id="L466">		validateMandatoryField(context, request, genderWidget, genderErrorWidget, ret);</span>
+
+<span class="pc bpc" id="L468" title="1 of 2 branches missed.">		if (required) {</span>
+<span class="fc" id="L469">			validateMandatoryField(context, request, identifierTypeValueWidget, identifierTypeValueErrorWidget, ret);</span>
+		}
+
+<span class="fc" id="L472">		validateMandatoryField(context, request, identifierLocationWidget, identifierLocationErrorWidget, ret);</span>
+
+<span class="pc bpc" id="L474" title="1 of 2 branches missed.">		if(nameWidget != null){</span>
+<span class="nc" id="L475">			PersonName personName = nameWidget.getValue(context, request);</span>
+<span class="nc bnc" id="L476" title="All 4 branches missed.">			if(!StringUtils.hasText(personName.getGivenName()) || !StringUtils.hasText(personName.getFamilyName())){</span>
+<span class="nc" id="L477">				ret.add(new FormSubmissionError(context.getFieldName(nameErrorWidget), Context.getMessageSourceService().getMessage(&quot;htmlformentry.error.name.required&quot;)));</span>
+			}
+		}
+
+<span class="pc bpc" id="L481" title="3 of 4 branches missed.">		if (ageWidget != null &amp;&amp; validateMandatoryField(context, request, ageWidget, ageErrorWidget, ageOrBirthdDateErrorMessage)) {</span>
+			try {
+<span class="nc" id="L483">				Number value = (Number) ageWidget.getValue(context, request);</span>
+			}
+<span class="nc" id="L485">			catch (Exception e) {</span>
+<span class="nc" id="L486">				ret.add(new FormSubmissionError(context.getFieldName(ageErrorWidget), e.getMessage()));</span>
+<span class="nc" id="L487">			}</span>
+		}
+
+<span class="pc bpc" id="L490" title="1 of 2 branches missed.">		if (birthDateWidget != null</span>
+<span class="nc bnc" id="L491" title="All 2 branches missed.">				&amp;&amp; validateMandatoryField(context, request, birthDateWidget, birthDateErrorWidget, ageOrBirthdDateErrorMessage)) {</span>
+			try {
+<span class="nc bnc" id="L493" title="All 2 branches missed.">				if (birthDateWidget.getValue(context, request) != null</span>
+<span class="nc bnc" id="L494" title="All 2 branches missed.">						&amp;&amp; OpenmrsUtil.compare((Date) birthDateWidget.getValue(context, request), new Date()) &gt; 0) {</span>
+<span class="nc" id="L495">					ret.add(new FormSubmissionError(context.getFieldName(birthDateErrorWidget), Context.getMessageSourceService().getMessage(</span>
+							&quot;htmlformentry.error.cannotBeInFuture&quot;)));
+				}
+			}
+<span class="nc" id="L499">			catch (Exception e) {</span>
+<span class="nc" id="L500">				ret.add(new FormSubmissionError(context.getFieldName(birthDateErrorWidget), e.getMessage()));</span>
+<span class="nc" id="L501">			}</span>
+		}
+
+<span class="pc bpc" id="L504" title="3 of 4 branches missed.">		if (ageWidget != null &amp;&amp; birthDateWidget != null) {</span>
+<span class="nc bnc" id="L505" title="All 2 branches missed.">			if (ageOrBirthdDateErrorMessage.size() &gt; 1) {</span>
+<span class="nc" id="L506">				ret.add(new FormSubmissionError(context.getFieldName(ageErrorWidget), Context.getMessageSourceService().getMessage(</span>
+						&quot;Person.birthdate.required&quot;)));
+			}
+		}
+		else {
+<span class="fc" id="L511">			ret.addAll(ageOrBirthdDateErrorMessage);</span>
+		}
+
+<span class="pc bpc" id="L514" title="2 of 4 branches missed.">		if (identifierTypeWidget != null &amp;&amp; identifierTypeValueWidget != null) {</span>
+<span class="fc" id="L515">			String identifierTypeId = (String) identifierTypeWidget.getValue(context, request);</span>
+<span class="fc" id="L516">			String identifierValue = (String) identifierTypeValueWidget.getValue(context, request);</span>
+<span class="pc bpc" id="L517" title="1 of 2 branches missed.">			if(StringUtils.hasText(identifierValue)){</span>
+				try {
+<span class="fc" id="L519">					validateIdentifier(Integer.valueOf(identifierTypeId), identifierValue, context.getExistingPatient());</span>
+				}
+<span class="fc" id="L521">				catch (Exception e) {</span>
+<span class="fc" id="L522">					ret.add(new FormSubmissionError(context.getFieldName(identifierTypeValueErrorWidget), e.getMessage()));</span>
+<span class="fc" id="L523">				}</span>
+			}
+		}
+
+<span class="fc" id="L527">		return ret;</span>
+	}
+
+	private boolean validateMandatoryField(FormEntryContext context, HttpServletRequest request, Widget widget, ErrorWidget errorWidget,
+			List&lt;FormSubmissionError&gt; ret) {
+
+		try {
+<span class="fc bfc" id="L534" title="All 2 branches covered.">			if (widget != null) {</span>
+<span class="fc" id="L535">				Object obj = widget.getValue(context, request);</span>
+<span class="pc bpc" id="L536" title="3 of 6 branches missed.">				if (obj == null || (obj instanceof String &amp;&amp; !StringUtils.hasText((String) obj))) {</span>
+<span class="nc" id="L537">					throw new Exception(&quot;htmlformentry.error.required&quot;);</span>
+				}
+			}
+		}
+<span class="nc" id="L541">		catch (Exception ex) {</span>
+<span class="nc" id="L542">			ret.add(new FormSubmissionError(context.getFieldName(errorWidget), Context.getMessageSourceService().getMessage(ex.getMessage())));</span>
+<span class="nc" id="L543">			return false;</span>
+<span class="fc" id="L544">		}</span>
+
+<span class="fc" id="L546">		return true;</span>
+	}
+
+	/**
+	 * If there's a birthdate specified
+	 */
+	private void calculateBirthDate(Person person, Date date, Double age) {
+<span class="nc" id="L553">		Date birthdate = null;</span>
+<span class="nc" id="L554">		boolean birthdateEstimated = false;</span>
+<span class="nc bnc" id="L555" title="All 2 branches missed.">		if (date != null) {</span>
+<span class="nc" id="L556">				birthdate = date;</span>
+				//if you have a previous date that's marked as estimated and date does not change --&gt;  keep it that way
+				//if you have a previous date that's marked as estimated but date changes --&gt; not estimated
+				//if new --&gt; not estimated
+				//if existing and not estimated --&gt; not estimated
+<span class="nc bnc" id="L561" title="All 6 branches missed.">				birthdateEstimated = person.getBirthdate() != null &amp;&amp; person.getBirthdateEstimated() != null &amp;&amp; person.getBirthdate().equals(date) ? person.getBirthdateEstimated() : false;</span>
+		}
+<span class="nc bnc" id="L563" title="All 2 branches missed.">		else if (age != null) {</span>
+			try {
+<span class="nc" id="L565">				Double ageRemainder  = BigDecimal.valueOf(age).subtract(BigDecimal.valueOf(Math.floor(age))).doubleValue();</span>
+<span class="nc bnc" id="L566" title="All 2 branches missed.">				if (ageRemainder.equals(Double.valueOf(0)))</span>
+<span class="nc" id="L567">					person.setBirthdateFromAge(age.intValue(), new Date()); //default to usual behavior from core</span>
+				else { //a decimal was entered
+<span class="nc" id="L569">					Calendar c = Calendar.getInstance();</span>
+<span class="nc" id="L570">					c.setTime(new Date());</span>
+<span class="nc" id="L571">					c.add(Calendar.DAY_OF_MONTH, - Double.valueOf((ageRemainder * 365)).intValue()); //if patient is 2.2 years old, patient was 2.0 years 2.2 - (.2*365) days ago</span>
+<span class="nc" id="L572">					c.add(Calendar.YEAR, -1 * Double.valueOf(Math.floor(age)).intValue());</span>
+<span class="nc" id="L573">					birthdate = c.getTime();</span>
+				}
+<span class="nc" id="L575">				birthdateEstimated = true;</span>
+			}
+<span class="nc" id="L577">			catch (NumberFormatException e) {</span>
+<span class="nc" id="L578">				throw new RuntimeException(&quot;Error getting date from age&quot;, e);</span>
+<span class="nc" id="L579">			}</span>
+		} else {
+<span class="nc" id="L581">			throw new IllegalArgumentException(&quot;You must provide either an age or a birthdate for this patient.&quot;);</span>
+		}
+<span class="nc bnc" id="L583" title="All 2 branches missed.">		if (birthdate != null)</span>
+<span class="nc" id="L584">			person.setBirthdate(birthdate);</span>
+<span class="nc" id="L585">		person.setBirthdateEstimated(birthdateEstimated);</span>
+<span class="nc" id="L586">	}</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.8.202204050719</span></div></body></html>

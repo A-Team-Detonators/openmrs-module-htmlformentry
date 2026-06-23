@@ -1,0 +1,241 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ProviderAndRoleElement.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">HTML Form Entry API</a> &gt; <a href="index.source.html" class="el_package">org.openmrs.module.htmlformentry.element</a> &gt; <span class="el_source">ProviderAndRoleElement.java</span></div><h1>ProviderAndRoleElement.java</h1><pre class="source lang-java linenums">/**
+ * The contents of this file are subject to the OpenMRS Public License
+ * Version 1.0 (the &quot;License&quot;); you may not use this file except in
+ * compliance with the License. You may obtain a copy of the License at
+ * http://license.openmrs.org
+ *
+ * Software distributed under the License is distributed on an &quot;AS IS&quot;
+ * basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
+ * License for the specific language governing rights and limitations
+ * under the License.
+ *
+ * Copyright (C) OpenMRS, LLC.  All Rights Reserved.
+ */
+package org.openmrs.module.htmlformentry.element;
+
+import javax.servlet.http.HttpServletRequest;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Set;
+
+import org.openmrs.EncounterRole;
+import org.openmrs.Provider;
+import org.openmrs.api.context.Context;
+import org.openmrs.module.htmlformentry.BadFormDesignException;
+import org.openmrs.module.htmlformentry.FormEntryContext;
+import org.openmrs.module.htmlformentry.FormEntryContext.Mode;
+import org.openmrs.module.htmlformentry.FormEntrySession;
+import org.openmrs.module.htmlformentry.FormSubmissionError;
+import org.openmrs.module.htmlformentry.action.FormSubmissionControllerAction;
+import org.openmrs.module.htmlformentry.tag.EncounterProviderAndRoleTag;
+import org.openmrs.module.htmlformentry.widget.EncounterRoleWidget;
+import org.openmrs.module.htmlformentry.widget.ErrorWidget;
+import org.openmrs.module.htmlformentry.widget.Widget;
+
+/**
+ * Class responsible for rendering and handling submission of an encounterAndRole tag
+ */
+public class ProviderAndRoleElement implements HtmlGeneratorElement, FormSubmissionControllerAction {
+
+	private EncounterProviderAndRoleTag tag;
+	private EncounterRoleWidget roleWidget;
+	private ErrorWidget roleErrorWidget;
+<span class="fc" id="L47">	private List&lt;Widget&gt; providerWidgets = new ArrayList&lt;Widget&gt;();</span>
+<span class="fc" id="L48">	private List&lt;ErrorWidget&gt; providerErrorWidgets = new ArrayList&lt;ErrorWidget&gt;();</span>
+
+	/**
+     * @param parameters
+	 * @throws BadFormDesignException 
+     */
+<span class="fc" id="L54">    public ProviderAndRoleElement(FormEntryContext context, Map&lt;String, String&gt; parameters) throws BadFormDesignException {</span>
+
+    	try {
+
+<span class="fc" id="L58">		    tag = new EncounterProviderAndRoleTag(parameters);</span>
+
+		    // Validate attribute combinations
+<span class="pc bpc" id="L61" title="1 of 4 branches missed.">		    if (tag.getEncounterRole() == null &amp;&amp; tag.getCount() &gt; 1) {</span>
+<span class="nc" id="L62">			    throw new BadFormDesignException(&quot;HTML Form Entry does not (yet) support multiple providers per encounter without specifying encounter roles&quot;);</span>
+		    }
+
+<span class="fc" id="L65">		    boolean initialProviderSet = false;</span>
+
+		    // If no encounter role is specified
+<span class="fc bfc" id="L68" title="All 2 branches covered.">		    if (tag.getEncounterRole() == null) {</span>
+
+			    // Add a roleWidget to select a role
+<span class="fc" id="L71">			    roleWidget = new EncounterRoleWidget();</span>
+<span class="fc" id="L72">			    roleErrorWidget = new ErrorWidget();</span>
+<span class="fc" id="L73">			    context.registerWidget(roleWidget);</span>
+<span class="fc" id="L74">			    context.registerErrorWidget(roleWidget, roleErrorWidget);</span>
+
+			    // Add a provider widget of the appropriate type
+<span class="fc" id="L77">			    Widget providerWidget = tag.instantiateProviderWidget();</span>
+<span class="fc" id="L78">			    ErrorWidget providerErrorWidget = new ErrorWidget();</span>
+<span class="fc" id="L79">			    context.registerWidget(providerWidget);</span>
+<span class="fc" id="L80">			    context.registerErrorWidget(providerWidget, providerErrorWidget);</span>
+<span class="fc" id="L81">			    providerWidgets.add(providerWidget);</span>
+<span class="fc" id="L82">			    providerErrorWidgets.add(providerErrorWidget);</span>
+
+			    // Set initial values based on existing encounter
+<span class="pc bpc" id="L85" title="1 of 2 branches missed.">			    if (context.getExistingEncounter() != null) {</span>
+<span class="nc" id="L86">				    Map&lt;EncounterRole, Set&lt;Provider&gt;&gt; byRoles = context.getExistingEncounter().getProvidersByRoles();</span>
+<span class="nc bnc" id="L87" title="All 2 branches missed.">				    if (byRoles.size() &gt; 0) {</span>
+					    // currently we only support a single provider in this mode
+<span class="nc bnc" id="L89" title="All 4 branches missed.">					    if (byRoles.size() &gt; 1 || byRoles.values().iterator().next().size() &gt; 1) {</span>
+<span class="nc" id="L90">						    throw new BadFormDesignException(&quot;HTML Form Entry does not (yet) support multiple &quot; +</span>
+								    &quot;providers per encounter without specifying encounter roles&quot;);
+					    }
+<span class="nc" id="L93">					    Entry&lt;EncounterRole, Set&lt;Provider&gt;&gt; roleAndProvider = byRoles.entrySet().iterator().next();</span>
+<span class="nc" id="L94">					    Provider p = roleAndProvider.getValue().iterator().next();</span>
+<span class="nc" id="L95">					    providerWidget.setInitialValue(p);</span>
+<span class="nc" id="L96">					    initialProviderSet = true;</span>
+<span class="nc" id="L97">					    roleWidget.setInitialValue(roleAndProvider.getKey());</span>
+				    }
+			    }
+<span class="fc" id="L100">		    }</span>
+		    // handle the case where an encounter role is specified
+		    else {
+
+			    // get any existing providers for the specified role
+<span class="fc" id="L105">			    List&lt;Provider&gt; byRole = null;</span>
+<span class="fc bfc" id="L106" title="All 2 branches covered.">			    if (context.getExistingEncounter() != null) {</span>
+<span class="fc" id="L107">				    byRole = new ArrayList&lt;Provider&gt;(</span>
+<span class="fc" id="L108">						    context.getExistingEncounter().getProvidersByRole(tag.getEncounterRole()));</span>
+			    }
+
+<span class="fc bfc" id="L111" title="All 2 branches covered.">			    for (int currentIteration = 0; currentIteration &lt; tag.getCount(); currentIteration++) {</span>
+
+<span class="fc" id="L113">				    Widget providerWidget = tag.instantiateProviderWidget();</span>
+<span class="fc" id="L114">				    ErrorWidget providerErrorWidget = new ErrorWidget();</span>
+<span class="fc" id="L115">				    context.registerWidget(providerWidget);</span>
+<span class="fc" id="L116">				    context.registerErrorWidget(providerWidget, providerErrorWidget);</span>
+<span class="fc" id="L117">				    providerWidgets.add(providerWidget);</span>
+<span class="fc" id="L118">				    providerErrorWidgets.add(providerErrorWidget);</span>
+
+<span class="fc bfc" id="L120" title="All 4 branches covered.">				    if (byRole != null &amp;&amp; byRole.size() &gt; currentIteration) {</span>
+<span class="fc" id="L121">					    providerWidget.setInitialValue(byRole.get(currentIteration));</span>
+<span class="fc" id="L122">					    initialProviderSet = true;</span>
+				    }
+			    }
+		    }
+
+		    // set the default provider if no existing provider and a default is specified
+<span class="pc bpc" id="L128" title="1 of 4 branches missed.">		    if (!initialProviderSet &amp;&amp; providerWidgets.iterator().next() != null) {</span>
+<span class="fc" id="L129">			    Provider provider = tag.getDefaultValue();</span>
+<span class="fc bfc" id="L130" title="All 2 branches covered.">			    if (provider != null) {</span>
+<span class="fc" id="L131">				    providerWidgets.iterator().next().setInitialValue(provider);</span>
+			    }
+		    }
+	    }
+<span class="nc" id="L135">    	catch (Exception e) {</span>
+<span class="nc" id="L136">    		throw new BadFormDesignException(&quot;Unable to instantiate new providerAndRole element&quot;, e);</span>
+<span class="fc" id="L137">	    }</span>
+<span class="fc" id="L138">    }</span>
+
+	/**
+     * @see org.openmrs.module.htmlformentry.element.HtmlGeneratorElement#generateHtml(org.openmrs.module.htmlformentry.FormEntryContext)
+     */
+    @Override
+    public String generateHtml(FormEntryContext context) {
+<span class="fc" id="L145">    	StringBuilder ret = new StringBuilder();</span>
+<span class="fc bfc" id="L146" title="All 2 branches covered.">    	if (roleWidget != null) {</span>
+<span class="fc" id="L147">    		ret.append(roleWidget.generateHtml(context));</span>
+<span class="pc bpc" id="L148" title="1 of 2 branches missed.">    		if (context.getMode() != Mode.VIEW) {</span>
+<span class="fc" id="L149">			    ret.append(roleErrorWidget.generateHtml(context));</span>
+		    }
+<span class="fc" id="L151">    		ret.append(&quot;: &quot;);</span>
+    	}
+<span class="fc" id="L153">        Iterator&lt;ErrorWidget&gt; errorWidgetIterator = providerErrorWidgets.iterator();</span>
+<span class="fc" id="L154">    	int providerWidgetNum = 0;</span>
+<span class="pc bpc" id="L155" title="1 of 2 branches missed.">    	String separator = (tag.getProviderWidgetSeparator() == null ? &quot;, &quot; : tag.getProviderWidgetSeparator());</span>
+<span class="fc bfc" id="L156" title="All 2 branches covered.">        for (Widget providerWidget : providerWidgets) {</span>
+<span class="fc bfc" id="L157" title="All 2 branches covered.">        	if (providerWidgetNum++ &gt; 0) {</span>
+<span class="fc" id="L158">        		ret.append(separator);</span>
+	        }
+<span class="fc" id="L160">			ret.append(providerWidget.generateHtml(context));</span>
+<span class="fc bfc" id="L161" title="All 2 branches covered.">			if (context.getMode() != Mode.VIEW) {</span>
+<span class="fc" id="L162">				ret.append(errorWidgetIterator.next().generateHtml(context));</span>
+            }
+<span class="fc" id="L164">		}</span>
+<span class="fc" id="L165">	    return ret.toString();</span>
+    }
+    
+    /**
+     * @see org.openmrs.module.htmlformentry.action.FormSubmissionControllerAction#validateSubmission(org.openmrs.module.htmlformentry.FormEntryContext, javax.servlet.http.HttpServletRequest)
+     */
+    @Override
+    public Collection&lt;FormSubmissionError&gt; validateSubmission(FormEntryContext context, HttpServletRequest submission) {
+
+<span class="fc bfc" id="L174" title="All 2 branches covered.">    	if (!tag.isRequired()) {</span>
+<span class="fc" id="L175">    		return null;</span>
+        }
+
+<span class="fc" id="L178">    	List&lt;FormSubmissionError&gt; ret = new ArrayList&lt;FormSubmissionError&gt;();</span>
+<span class="pc bpc" id="L179" title="1 of 2 branches missed.">    	if (roleWidget != null) {</span>
+<span class="fc" id="L180">    		EncounterRole role = (EncounterRole) roleWidget.getValue(context, submission);</span>
+<span class="pc bpc" id="L181" title="1 of 2 branches missed.">    		if (role == null) {</span>
+<span class="nc" id="L182">			    ret.add(new FormSubmissionError(roleWidget,</span>
+<span class="nc" id="L183">					    Context.getMessageSourceService().getMessage(&quot;htmlformentry.error.required&quot;)));</span>
+		    }
+    	}
+
+<span class="fc" id="L187">        boolean atLeastOneProviderSpecified = false;</span>
+
+<span class="fc bfc" id="L189" title="All 2 branches covered.">        for (Widget providerWidget : providerWidgets) {</span>
+<span class="pc bpc" id="L190" title="1 of 2 branches missed.">            if (providerWidget != null) {</span>
+<span class="fc" id="L191">                Provider provider = (Provider) providerWidget.getValue(context, submission);</span>
+<span class="fc bfc" id="L192" title="All 2 branches covered.">                if (provider != null) {</span>
+<span class="fc" id="L193">                    atLeastOneProviderSpecified = true;</span>
+                }
+            }
+<span class="fc" id="L196">        }</span>
+
+<span class="fc bfc" id="L198" title="All 2 branches covered.">    	if (!atLeastOneProviderSpecified) {</span>
+<span class="fc" id="L199">            ret.add(new FormSubmissionError(providerWidgets.get(0), Context.getMessageSourceService().getMessage(&quot;htmlformentry.error.required&quot;)));</span>
+    	}
+<span class="fc" id="L201">    	return ret;</span>
+    }
+
+	/**
+     * @see org.openmrs.module.htmlformentry.action.FormSubmissionControllerAction#handleSubmission(org.openmrs.module.htmlformentry.FormEntrySession, javax.servlet.http.HttpServletRequest)
+     */
+    @Override
+    public void handleSubmission(FormEntrySession session, HttpServletRequest submission) {
+
+<span class="fc" id="L210">        EncounterRole role = tag.getEncounterRole();</span>
+
+<span class="fc bfc" id="L212" title="All 2 branches covered.">        if (roleWidget != null) {</span>
+<span class="fc" id="L213">    		role = (EncounterRole) roleWidget.getValue(session.getContext(), submission);</span>
+    	}
+
+<span class="fc" id="L216">        Set&lt;Provider&gt; currentProvidersForRole = session.getSubmissionActions().getCurrentEncounter().getProvidersByRole(role);</span>
+
+<span class="fc bfc" id="L218" title="All 2 branches covered.">        for (Widget providerWidget : providerWidgets) {</span>
+<span class="fc" id="L219">    		Provider provider = (Provider) providerWidget.getValue(session.getContext(), submission);</span>
+
+<span class="fc bfc" id="L221" title="All 2 branches covered.">            if (provider != null) {</span>
+                // if this provider it not currently one of the provider, add her
+<span class="pc bpc" id="L223" title="3 of 4 branches missed.">                if (currentProvidersForRole != null || !currentProvidersForRole.contains(provider)) {</span>
+<span class="fc" id="L224">                    session.getSubmissionActions().getCurrentEncounter().addProvider(role, provider);</span>
+                }
+                // we remove this provider so that we end up with a list of providers to void
+<span class="fc" id="L227">                currentProvidersForRole.remove(provider);</span>
+            }
+<span class="fc" id="L229">        }</span>
+
+        // now remove any current providers that we haven't found in the provider list
+<span class="fc bfc" id="L232" title="All 2 branches covered.">        for (Provider providerToRemove : currentProvidersForRole) {</span>
+<span class="fc" id="L233">            session.getSubmissionActions().getCurrentEncounter().removeProvider(role, providerToRemove);</span>
+<span class="fc" id="L234">        }</span>
+<span class="fc" id="L235">    }</span>
+
+	public EncounterProviderAndRoleTag getTag() {
+<span class="nc" id="L238">		return tag;</span>
+	}
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.8.202204050719</span></div></body></html>

@@ -1,0 +1,136 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ObsGroupTagHandler.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">HTML Form Entry API</a> &gt; <a href="index.source.html" class="el_package">org.openmrs.module.htmlformentry.handler</a> &gt; <span class="el_source">ObsGroupTagHandler.java</span></div><h1>ObsGroupTagHandler.java</h1><pre class="source lang-java linenums">package org.openmrs.module.htmlformentry.handler;
+
+import org.openmrs.Concept;
+import org.openmrs.Obs;
+import org.openmrs.api.context.Context;
+import org.openmrs.module.htmlformentry.FormEntryContext.Mode;
+import org.openmrs.module.htmlformentry.FormEntrySession;
+import org.openmrs.module.htmlformentry.HtmlFormEntryUtil;
+import org.openmrs.module.htmlformentry.ObsGroupComponent;
+import org.openmrs.module.htmlformentry.action.ObsGroupAction;
+import org.openmrs.module.htmlformentry.matching.ObsGroupEntity;
+import org.openmrs.module.htmlformentry.schema.ObsGroup;
+import org.w3c.dom.Node;
+
+import java.io.PrintWriter;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+
+/**
+ * Handles the {@code &lt;obsGroup&gt;} tag
+ */
+<span class="fc" id="L24">public class ObsGroupTagHandler extends AbstractTagHandler {</span>
+   
+<span class="fc" id="L26">	boolean unmatchedInd = false;</span>
+	
+	@Override
+    protected List&lt;AttributeDescriptor&gt; createAttributeDescriptors() {
+<span class="fc" id="L30">		List&lt;AttributeDescriptor&gt; attributeDescriptors = new ArrayList&lt;AttributeDescriptor&gt;();	</span>
+<span class="fc" id="L31">		attributeDescriptors.add(new AttributeDescriptor(&quot;groupingConceptId&quot;, Concept.class));</span>
+<span class="fc" id="L32">		return Collections.unmodifiableList(attributeDescriptors);</span>
+	}
+	
+    /**
+     * @see org.openmrs.module.htmlformentry.handler.TagHandler#doStartTag(org.openmrs.module.htmlformentry.FormEntrySession, java.io.PrintWriter, org.w3c.dom.Node, org.w3c.dom.Node)
+     */
+    @Override
+    public boolean doStartTag(FormEntrySession session, PrintWriter out,
+            Node parent, Node node) {
+
+<span class="nc" id="L42">        Map&lt;String, String&gt; attributes = getAttributes(node);</span>
+<span class="nc bnc" id="L43" title="All 2 branches missed.">        if (attributes.get(&quot;groupingConceptId&quot;) == null) {</span>
+<span class="nc" id="L44">            throw new NullPointerException(&quot;obsgroup tag requires a groupingConceptId attribute&quot;);</span>
+        }
+<span class="nc" id="L46">        Concept groupingConcept = HtmlFormEntryUtil.getConcept(attributes.get(&quot;groupingConceptId&quot;));</span>
+<span class="nc bnc" id="L47" title="All 2 branches missed.">        if (groupingConcept == null) {</span>
+<span class="nc" id="L48">            throw new NullPointerException(&quot;could not find concept &quot; + attributes.get(&quot;groupingConceptId&quot;) + &quot; as grouping obs for an obsgroup tag&quot;);</span>
+        }
+<span class="nc bnc" id="L50" title="All 4 branches missed.">        boolean ignoreIfEmpty = session.getContext().getMode() == Mode.VIEW &amp;&amp; &quot;false&quot;.equals(attributes.get(&quot;showIfEmpty&quot;));</span>
+                    
+        // avoid lazy init exception
+<span class="nc" id="L53">        groupingConcept.getDatatype().getHl7Abbreviation();</span>
+               
+<span class="nc" id="L55">        String name = attributes.get(&quot;label&quot;);</span>
+        // find relevant obs group to display for this element
+<span class="nc" id="L57">        Obs thisGroup = findObsGroup(session, node, attributes.get(&quot;groupingConceptId&quot;));</span>
+        
+<span class="nc" id="L59">        boolean digDeeper = true;</span>
+        
+<span class="nc bnc" id="L61" title="All 6 branches missed.">        if (thisGroup == null &amp;&amp; (session.getContext().getMode() == Mode.EDIT || session.getContext().getMode() == Mode.VIEW)) {</span>
+<span class="nc bnc" id="L62" title="All 2 branches missed.">        	if (!session.getContext().isUnmatchedMode()) {</span>
+<span class="nc" id="L63">            	unmatchedInd = true;</span>
+
+<span class="nc" id="L65">            	ObsGroupEntity obsGroupEntity = new ObsGroupEntity();</span>
+<span class="nc" id="L66">            	obsGroupEntity.setPath(ObsGroupComponent.getObsGroupPath(node));</span>
+<span class="nc" id="L67">            	obsGroupEntity.setQuestionsAndAnswers(ObsGroupComponent.findQuestionsAndAnswersForGroup(attributes.get(&quot;groupingConceptId&quot;), node));</span>
+<span class="nc" id="L68">            	obsGroupEntity.setXmlObsGroupConcept(attributes.get(&quot;groupingConceptId&quot;));</span>
+<span class="nc" id="L69">            	obsGroupEntity.setGroupingConcept(groupingConcept);</span>
+<span class="nc" id="L70">            	obsGroupEntity.setNode(node);</span>
+<span class="nc" id="L71">            	int unmatchedObsGroupId = session.getContext().addUnmatchedObsGroupEntities(obsGroupEntity);</span>
+<span class="nc" id="L72">                out.print(String.format(&quot;&lt;unmatched id=\&quot;%s\&quot; /&gt;&quot;, unmatchedObsGroupId));        	</span>
+<span class="nc" id="L73">                digDeeper = false;</span>
+<span class="nc" id="L74">        	}</span>
+        } else {
+<span class="nc" id="L76">        	unmatchedInd = false;</span>
+        }
+
+<span class="nc bnc" id="L79" title="All 4 branches missed.">        if (ignoreIfEmpty &amp;&amp; thisGroup == null) {</span>
+<span class="nc" id="L80">            digDeeper = false;</span>
+        }
+
+        // sets up the obs group stack, sets current obs group to this one
+<span class="nc" id="L84">        ObsGroup ogSchemaObj = new ObsGroup(groupingConcept, name);</span>
+<span class="nc" id="L85">        session.getContext().beginObsGroup(groupingConcept, thisGroup, ogSchemaObj);</span>
+        //adds the obsgroup action to the controller stack
+<span class="nc" id="L87">        session.getSubmissionController().addAction(ObsGroupAction.start(groupingConcept, thisGroup, ogSchemaObj));</span>
+<span class="nc" id="L88">        return digDeeper;</span>
+    }
+
+    private Obs findObsGroup(FormEntrySession session, Node node, String parentGroupingConceptId) {
+<span class="nc" id="L92">        String path = ObsGroupComponent.getObsGroupPath(node);</span>
+    	
+<span class="nc bnc" id="L94" title="All 2 branches missed.">        if (session.getContext().isUnmatchedMode()) {</span>
+<span class="nc" id="L95">            return session.getContext().getNextUnmatchedObsGroup(path);</span>
+        } else {
+<span class="nc" id="L97">            List&lt;ObsGroupComponent&gt; questionsAndAnswers = ObsGroupComponent.findQuestionsAndAnswersForGroup(parentGroupingConceptId, node);</span>
+<span class="nc" id="L98">            return session.getContext().findBestMatchingObsGroup(questionsAndAnswers, parentGroupingConceptId, path);</span>
+        }
+
+    }
+
+    @Override
+    public void doEndTag(FormEntrySession session, PrintWriter out, Node parent, Node node) {
+//                Concept question = null;
+//                if (parent != null){
+//                    NamedNodeMap attrs = parent.getAttributes();
+//                    try {
+//                        question = HtmlFormEntryUtil.getConcept(attrs.getNamedItem(&quot;groupingConceptId&quot;).getNodeValue());
+//                    } catch (Exception ex){}    
+//                }
+<span class="nc" id="L112">                 session.getContext().endObsGroup();</span>
+<span class="nc" id="L113">                 session.getSubmissionController().addAction(ObsGroupAction.end());</span>
+<span class="nc" id="L114">    }</span>
+	
+    @Override
+    public TagAnalysis validate(Node node) {
+<span class="nc" id="L118">        TagAnalysis analysis = new TagAnalysis();</span>
+<span class="nc" id="L119">        String groupingConceptId = HtmlFormEntryUtil.getNodeAttribute(node, &quot;groupingConceptId&quot;, null);</span>
+<span class="nc bnc" id="L120" title="All 2 branches missed.">        if (groupingConceptId == null) {</span>
+<span class="nc" id="L121">            analysis.addError(Context.getMessageSourceService().getMessage(&quot;htmlformentry.error.groupingConceptIdMissing&quot;));</span>
+        }
+<span class="nc" id="L123">        Concept groupingConcept = HtmlFormEntryUtil.getConcept(groupingConceptId);</span>
+<span class="nc bnc" id="L124" title="All 4 branches missed.">        if (analysis.getErrors().size() == 0 &amp;&amp; groupingConcept == null) {</span>
+<span class="nc" id="L125">            analysis.addError(Context.getMessageSourceService().getMessage(&quot;htmlformentry.error.invalidConcept&quot;,</span>
+                new Object[] { groupingConceptId }, null));
+        }
+<span class="nc bnc" id="L128" title="All 4 branches missed.">        if (groupingConcept != null &amp;&amp; !groupingConcept.isSet()) {</span>
+<span class="nc" id="L129">            analysis.addWarning(Context.getMessageSourceService().getMessage(&quot;htmlformentry.warning.groupingConcept&quot;,</span>
+                new Object[] { groupingConceptId }, null));
+        }
+<span class="nc" id="L132">        return analysis;</span>
+    }
+    
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.8.202204050719</span></div></body></html>

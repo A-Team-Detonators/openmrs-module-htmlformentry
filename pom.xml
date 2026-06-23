@@ -5,7 +5,7 @@
 	<artifactId>htmlformentry</artifactId>
 	<version>3.10.0</version>
 	<packaging>pom</packaging>
-	<name>HTML Form Entry 1</name>
+	<name>HTML Form Entry</name>
 	<description>Parent project for HTML Form Entry</description>
 
 	<url>http://openmrs.org</url>
@@ -21,12 +21,12 @@
 		<repository>
 			<id>openmrs-repo-modules</id>
 			<name>Modules</name>
-			<url>http://mavenrepo.openmrs.org/nexus/content/repositories/modules/</url>
+			<url>https://mavenrepo.openmrs.org/nexus/content/repositories/modules/</url>
 		</repository>
         <snapshotRepository>
             <id>openmrs-repo-snapshots</id>
             <name>OpenMRS Snapshots</name>
-            <url>http://mavenrepo.openmrs.org/nexus/content/repositories/snapshots</url>
+            <url>https://mavenrepo.openmrs.org/nexus/content/repositories/snapshots</url>
         </snapshotRepository>
 	</distributionManagement>
 
@@ -215,8 +215,8 @@
 					<groupId>org.apache.maven.plugins</groupId>
 					<artifactId>maven-compiler-plugin</artifactId>
 					<configuration>
-						<target>1.6</target>
-						<source>1.6</source>
+						<target>1.8</target>
+						<source>1.8</source>
                         <encoding>UTF-8</encoding>
 					</configuration>
 				</plugin>
@@ -226,14 +226,21 @@
 					<version>1.0.1</version>
 				</plugin>
 				<plugin>
-					<groupId>org.apache.maven.plugins</groupId>
-					<artifactId>maven-surefire-plugin</artifactId>
-					<version>2.11</version>
-					<configuration>
-						<failIfNoTests>false</failIfNoTests>
-						<forkMode>never</forkMode>
-						<argLine>-Djdk.net.URLClassPath.disableClassPathURLCheck=true</argLine>
-					</configuration>
+					<groupId>org.jacoco</groupId>
+					<artifactId>jacoco-maven-plugin</artifactId>
+					<version>0.8.8</version>
+					<executions>
+						<execution>
+							<id>jacoco-prepare-agent</id>
+							<phase>initialize</phase>
+							<goals><goal>prepare-agent</goal></goals>
+						</execution>
+						<execution>
+							<id>jacoco-report</id>
+							<phase>test</phase>
+							<goals><goal>report</goal></goals>
+						</execution>
+					</executions>
 				</plugin>
 				<plugin>
 					<groupId>org.apache.maven.plugins</groupId>
@@ -287,13 +294,19 @@
 				</plugin>
 			</plugins>
 		</pluginManagement>
+		<plugins>
+			<plugin>
+				<groupId>org.jacoco</groupId>
+				<artifactId>jacoco-maven-plugin</artifactId>
+			</plugin>
+		</plugins>
 	</build>
 
 	<repositories>
 		<repository>
 			<id>openmrs-repo</id>
 			<name>OpenMRS Nexus Repository</name>
-			<url>http://mavenrepo.openmrs.org/nexus/content/repositories/public</url>
+			<url>https://mavenrepo.openmrs.org/public</url>
 		</repository>
 	</repositories>
 
@@ -301,7 +314,7 @@
 		<pluginRepository>
 			<id>openmrs-repo</id>
 			<name>OpenMRS Nexus Repository</name>
-			<url>http://mavenrepo.openmrs.org/nexus/content/repositories/public</url>
+			<url>https://mavenrepo.openmrs.org/public</url>
 			<snapshots>
 				<enabled>false</enabled>
 			</snapshots>
@@ -336,7 +349,37 @@
 				<module>release-tests</module>
 			</modules>
 		</profile>
-
+		<profile>
+			<id>ci</id>
+			<build>
+				<plugins>
+					<plugin>
+						<groupId>org.jacoco</groupId>
+						<artifactId>jacoco-maven-plugin</artifactId>
+						<executions>
+							<execution>
+								<id>jacoco-check</id>
+								<phase>verify</phase>
+								<goals><goal>check</goal></goals>
+								<configuration>
+									<rules>
+										<rule>
+											<element>BUNDLE</element>
+											<limits>
+												<limit>
+													<counter>INSTRUCTION</counter>
+													<value>COVEREDRATIO</value>
+													<minimum>0.00</minimum>
+												</limit>
+											</limits>
+										</rule>
+									</rules>
+								</configuration>
+							</execution>
+						</executions>
+					</plugin>
+				</plugins>
+			</build>
+		</profile>
 	</profiles>
-
 </project>

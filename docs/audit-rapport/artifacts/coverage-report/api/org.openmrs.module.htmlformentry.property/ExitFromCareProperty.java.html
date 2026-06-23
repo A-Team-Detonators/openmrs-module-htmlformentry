@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ExitFromCareProperty.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">HTML Form Entry API</a> &gt; <a href="index.source.html" class="el_package">org.openmrs.module.htmlformentry.property</a> &gt; <span class="el_source">ExitFromCareProperty.java</span></div><h1>ExitFromCareProperty.java</h1><pre class="source lang-java linenums">package org.openmrs.module.htmlformentry.property;
+
+
+import java.util.Date;
+
+import org.openmrs.Concept;
+
+/**
+ * The property instance which keeps the details needed to exit a person from care center such as
+ * date to exit the center, reason to exit the care center etc.
+ */
+public class ExitFromCareProperty {
+
+    private Date dateOfExit;
+    private Concept reasonExitConcept;
+    private Concept causeOfDeathConcept;
+    private String otherReason;
+
+<span class="nc" id="L19">    public ExitFromCareProperty(Date dateOfExit, Concept reasonExitConcept, Concept causeOfDeathConcept, String otherReason) {</span>
+
+<span class="nc" id="L21">        this.dateOfExit = dateOfExit;</span>
+<span class="nc" id="L22">        this.reasonExitConcept = reasonExitConcept;</span>
+<span class="nc" id="L23">        this.causeOfDeathConcept = causeOfDeathConcept;</span>
+<span class="nc" id="L24">        this.otherReason = otherReason;</span>
+<span class="nc" id="L25">    }</span>
+
+    public Date getDateOfExit() {
+<span class="nc" id="L28">        return dateOfExit;</span>
+    }
+
+    public Concept getReasonExitConcept() {
+<span class="nc" id="L32">        return reasonExitConcept;</span>
+    }
+
+    public Concept getCauseOfDeathConcept() {
+<span class="nc" id="L36">        return causeOfDeathConcept;</span>
+    }
+
+    public String getOtherReason() {
+<span class="nc" id="L40">        return otherReason;</span>
+    }
+
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.8.202204050719</span></div></body></html>

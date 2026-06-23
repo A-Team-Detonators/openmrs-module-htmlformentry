@@ -1,0 +1,840 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>EncounterDetailSubmissionElement.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">HTML Form Entry API</a> &gt; <a href="index.source.html" class="el_package">org.openmrs.module.htmlformentry.element</a> &gt; <span class="el_source">EncounterDetailSubmissionElement.java</span></div><h1>EncounterDetailSubmissionElement.java</h1><pre class="source lang-java linenums">package org.openmrs.module.htmlformentry.element;
+
+import org.apache.commons.beanutils.PropertyUtils;
+import org.apache.commons.lang.StringEscapeUtils;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+import org.joda.time.DateMidnight;
+import org.openmrs.Encounter;
+import org.openmrs.EncounterType;
+import org.openmrs.Location;
+import org.openmrs.LocationTag;
+import org.openmrs.Person;
+import org.openmrs.Role;
+import org.openmrs.api.context.Context;
+import org.openmrs.module.htmlformentry.FormEntryContext;
+import org.openmrs.module.htmlformentry.FormEntryContext.Mode;
+import org.openmrs.module.htmlformentry.FormEntrySession;
+import org.openmrs.module.htmlformentry.FormSubmissionError;
+import org.openmrs.module.htmlformentry.HtmlFormEntryService;
+import org.openmrs.module.htmlformentry.HtmlFormEntryUtil;
+import org.openmrs.module.htmlformentry.MetadataMappingResolver;
+import org.openmrs.module.htmlformentry.action.FormSubmissionControllerAction;
+import org.openmrs.module.htmlformentry.comparator.OptionComparator;
+import org.openmrs.module.htmlformentry.compatibility.EncounterCompatibility;
+import org.openmrs.module.htmlformentry.widget.AutocompleteWidget;
+import org.openmrs.module.htmlformentry.widget.CheckboxWidget;
+import org.openmrs.module.htmlformentry.widget.DateWidget;
+import org.openmrs.module.htmlformentry.widget.DropdownWidget;
+import org.openmrs.module.htmlformentry.widget.EncounterTypeWidget;
+import org.openmrs.module.htmlformentry.widget.ErrorWidget;
+import org.openmrs.module.htmlformentry.widget.Option;
+import org.openmrs.module.htmlformentry.widget.SingleOptionWidget;
+import org.openmrs.module.htmlformentry.widget.TimeWidget;
+import org.openmrs.module.htmlformentry.widget.ToggleWidget;
+import org.openmrs.module.htmlformentry.widget.Widget;
+import org.openmrs.util.OpenmrsConstants;
+import org.openmrs.util.OpenmrsUtil;
+import org.openmrs.util.RoleConstants;
+import org.springframework.util.StringUtils;
+
+import javax.servlet.http.HttpServletRequest;
+import java.lang.reflect.Method;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Date;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
+/**
+ * Holds the widgets used to represent an Encounter details, and serves as both the
+ * HtmlGeneratorElement and the FormSubmissionControllerAction for Encounter details.
+ */
+public class EncounterDetailSubmissionElement implements HtmlGeneratorElement, FormSubmissionControllerAction {
+
+<span class="fc" id="L59">    protected final Log log = LogFactory.getLog(getClass());</span>
+
+    private String id;
+
+    private DateWidget dateWidget;
+
+    private ErrorWidget dateErrorWidget;
+
+    private TimeWidget timeWidget;
+
+    private ErrorWidget timeErrorWidget;
+
+    private SingleOptionWidget providerWidget;
+
+    private ErrorWidget providerErrorWidget;
+
+    private SingleOptionWidget locationWidget;
+
+    private ErrorWidget locationErrorWidget;
+    
+    private ToggleWidget toggleWidget;
+
+    private CheckboxWidget voidWidget;
+
+    private ErrorWidget voidErrorWidget;
+
+    private EncounterTypeWidget encounterTypeWidget;
+
+    private ErrorWidget encounterTypeErrorWidget;
+    
+<span class="fc" id="L89">    boolean locationRequired = true;</span>
+    
+<span class="fc" id="L91">    boolean providerRequired = true;</span>
+    
+    private MetadataMappingResolver getMetadataMappingResolver(){
+<span class="nc" id="L94">        return Context.getRegisteredComponent(&quot;metadataMappingResolver&quot;, MetadataMappingResolver.class);</span>
+    }
+
+    /**
+     * Construct a new EncounterDetailSubmissionElement
+     *
+     * @param context
+     * @param parameters
+     * &lt;strong&gt;Should&lt;/strong&gt; display 'Enter' option if 'type' is set to Autocomplete
+     */
+<span class="fc" id="L104">    public EncounterDetailSubmissionElement(FormEntryContext context, Map&lt;String, Object&gt; parameters) {</span>
+
+        // Register Date and Time widgets, if appropriate
+<span class="fc bfc" id="L107" title="All 2 branches covered.">        if (Boolean.TRUE.equals(parameters.get(&quot;date&quot;))) {</span>
+
+<span class="fc" id="L109">            dateWidget = new DateWidget();</span>
+<span class="fc" id="L110">            dateErrorWidget = new ErrorWidget();</span>
+
+<span class="fc bfc" id="L112" title="All 2 branches covered.">            if (context.getExistingEncounter() != null) {</span>
+<span class="fc" id="L113">                dateWidget.setInitialValue(context.getExistingEncounter().getEncounterDatetime());</span>
+<span class="pc bpc" id="L114" title="1 of 2 branches missed.">            } else if (context.getDefaultEncounterDate() != null) {</span>
+<span class="nc" id="L115">                dateWidget.setInitialValue(context.getDefaultEncounterDate());</span>
+<span class="pc bpc" id="L116" title="1 of 2 branches missed.">            } else if (parameters.get(&quot;defaultDate&quot;) != null) {</span>
+<span class="nc" id="L117">                dateWidget.setInitialValue(parameters.get(&quot;defaultDate&quot;));</span>
+            }
+
+<span class="pc bpc" id="L120" title="1 of 2 branches missed.">            if (parameters.get(&quot;disallowMultipleEncountersOnDate&quot;) != null</span>
+<span class="nc bnc" id="L121" title="All 2 branches missed.">                    &amp;&amp; StringUtils.hasText((String) parameters.get(&quot;disallowMultipleEncountersOnDate&quot;))) {</span>
+<span class="nc" id="L122">                dateWidget.setOnChangeFunction(&quot;existingEncounterOnDate(this, '&quot;</span>
+<span class="nc" id="L123">                        + parameters.get(&quot;disallowMultipleEncountersOnDate&quot;) + &quot;') &quot;);</span>
+            }
+
+<span class="pc bpc" id="L126" title="1 of 2 branches missed.">            if (&quot;true&quot;.equals(parameters.get(&quot;showTime&quot;))) {</span>
+<span class="nc" id="L127">                timeWidget = new TimeWidget();</span>
+<span class="nc" id="L128">                timeErrorWidget = new ErrorWidget();</span>
+<span class="nc bnc" id="L129" title="All 2 branches missed.">                if (context.getExistingEncounter() != null) {</span>
+<span class="nc" id="L130">                    timeWidget.setInitialValue(context.getExistingEncounter().getEncounterDatetime());</span>
+<span class="nc bnc" id="L131" title="All 2 branches missed.">                } else if (parameters.get(&quot;defaultDate&quot;) != null) {</span>
+<span class="nc" id="L132">                    timeWidget.setInitialValue(parameters.get(&quot;defaultDate&quot;));</span>
+                }
+<span class="nc bnc" id="L134" title="All 2 branches missed.">                if(&quot;true&quot;.equals((parameters.get(&quot;hideSeconds&quot;)))){</span>
+<span class="nc" id="L135">                	timeWidget.setHideSeconds(true);</span>
+                }
+<span class="nc" id="L137">                context.registerWidget(timeWidget);</span>
+<span class="nc" id="L138">                context.registerErrorWidget(timeWidget, timeErrorWidget);</span>
+            }
+<span class="fc" id="L140">            context.registerWidget(dateWidget);</span>
+<span class="fc" id="L141">            context.registerErrorWidget(dateWidget, dateErrorWidget);</span>
+
+<span class="pc bpc" id="L143" title="1 of 2 branches missed.">            if (&quot;hidden&quot;.equals(parameters.get(&quot;widget&quot;))) {</span>
+<span class="nc" id="L144">                dateWidget.setHidden(true);</span>
+<span class="nc bnc" id="L145" title="All 2 branches missed.">                if (timeWidget != null) {</span>
+<span class="nc" id="L146">                    timeWidget.setHidden(true);</span>
+                }
+            }
+        }
+
+        // Register Provider widgets, if appropriate
+<span class="pc bpc" id="L152" title="1 of 2 branches missed.">        if (Boolean.TRUE.equals(parameters.get(&quot;provider&quot;))) {</span>
+
+<span class="nc bnc" id="L154" title="All 2 branches missed.">            if (&quot;autocomplete&quot;.equals(parameters.get(&quot;type&quot;))) {</span>
+<span class="nc" id="L155">                providerWidget = new AutocompleteWidget(Person.class);</span>
+            }else{
+<span class="nc" id="L157">                providerWidget = new DropdownWidget();</span>
+            }
+<span class="nc" id="L159">            providerErrorWidget = new ErrorWidget();</span>
+
+<span class="nc" id="L161">            List&lt;Option&gt; providerOptions = new ArrayList&lt;Option&gt;();</span>
+            // If specific persons are specified, display only those persons in order
+<span class="nc" id="L163">            String personsParam = (String) parameters.get(&quot;persons&quot;);</span>
+<span class="nc bnc" id="L164" title="All 2 branches missed.">            if (personsParam != null) {</span>
+<span class="nc bnc" id="L165" title="All 2 branches missed.">                for (String s : personsParam.split(&quot;,&quot;)) {</span>
+<span class="nc" id="L166">                    Person p = HtmlFormEntryUtil.getPerson(s);</span>
+<span class="nc bnc" id="L167" title="All 2 branches missed.">                    if (p == null) {</span>
+<span class="nc" id="L168">                        throw new RuntimeException(&quot;Cannot find Person: &quot; + s);</span>
+                    }
+<span class="nc" id="L170">                    String label = StringEscapeUtils.escapeHtml(p.getPersonName().getFullName());</span>
+<span class="nc" id="L171">                    providerOptions.add(new Option(label, p.getId().toString(), false));</span>
+                }
+<span class="nc" id="L173">                removeNonProviders(providerOptions);</span>
+            }
+
+            // Only if specific person ids are not passed in do we get by user Role
+<span class="nc bnc" id="L177" title="All 2 branches missed.">            if (providerOptions.isEmpty()) {</span>
+
+<span class="nc" id="L179">                List&lt;PersonStub&gt; users = new ArrayList&lt;PersonStub&gt;();</span>
+<span class="nc" id="L180">                List&lt;Option&gt; providerUsers = new ArrayList&lt;Option&gt;();</span>
+
+                // If the &quot;role&quot; attribute is passed in, limit to users with this role
+<span class="nc" id="L183">                Object roleParam = parameters.get(&quot;role&quot;);</span>
+<span class="nc bnc" id="L184" title="All 2 branches missed.">                if (roleParam != null) {</span>
+<span class="nc" id="L185">                    Role role = null;</span>
+<span class="nc" id="L186">                    MetadataMappingResolver metadataMappingResolver = getMetadataMappingResolver();</span>
+<span class="nc" id="L187">                    role = metadataMappingResolver.getMetadataItem(Role.class, roleParam.toString());</span>
+<span class="nc bnc" id="L188" title="All 2 branches missed.">                    if (role == null) {</span>
+<span class="nc" id="L189">                        role = Context.getUserService().getRole((String) roleParam);</span>
+                    }
+
+<span class="nc bnc" id="L192" title="All 2 branches missed.">                    if (role == null) {</span>
+<span class="nc" id="L193">                        throw new RuntimeException(&quot;Cannot find role: &quot; + roleParam);</span>
+                    } else {
+<span class="nc" id="L195">                        users = Context.getService(HtmlFormEntryService.class).getUsersAsPersonStubs(role.getRole());</span>
+                    }
+<span class="nc" id="L197">                }</span>
+
+                // Otherwise, use default options appropriate to the underlying OpenMRS version
+                else {
+<span class="nc bnc" id="L201" title="All 2 branches missed.">                    if (openmrsVersionDoesNotSupportProviders()) {</span>
+                        // limit to users with the default OpenMRS PROVIDER role,
+<span class="nc" id="L203">                        String defaultRole = RoleConstants.PROVIDER;</span>
+<span class="nc" id="L204">                        Role role = Context.getUserService().getRole(defaultRole);</span>
+<span class="nc bnc" id="L205" title="All 2 branches missed.">                        if (role != null) {</span>
+<span class="nc" id="L206">                            users = Context.getService(HtmlFormEntryService.class).getUsersAsPersonStubs(role.getRole());</span>
+                        }
+                        // If this role isn't used, default to all Users
+<span class="nc bnc" id="L209" title="All 2 branches missed.">                        if (users.isEmpty()) {</span>
+<span class="nc" id="L210">                            users = Context.getService(HtmlFormEntryService.class).getUsersAsPersonStubs(null);</span>
+                        }
+<span class="nc" id="L212">                    } else {</span>
+                        // in OpenMRS 1.9+, get all suitable providers
+<span class="nc" id="L214">                        users = getAllProvidersThatArePersonsAsPersonStubs();</span>
+                    }
+                }
+
+<span class="nc bnc" id="L218" title="All 2 branches missed.">                for (PersonStub personStub : users) {</span>
+
+<span class="nc" id="L220">                    Option option = new Option(StringEscapeUtils.escapeHtml(personStub.toString()), personStub.getId().toString(), false);</span>
+<span class="nc" id="L221">                    providerUsers.add(option);</span>
+<span class="nc" id="L222">                }</span>
+<span class="nc" id="L223">                providerOptions.addAll(providerUsers);</span>
+
+            }
+
+            // Set default values as appropriate
+<span class="nc" id="L228">            Person defaultProvider = null;</span>
+            Option defProviderOption;
+<span class="nc bnc" id="L230" title="All 2 branches missed.">            if (context.getExistingEncounter() != null) {</span>
+<span class="nc" id="L231">                defaultProvider = EncounterCompatibility.getProvider(context.getExistingEncounter());</span>
+                // this is done to avoid default provider being added twice due to that it can be added from the
+                // users = getAllProvidersThatArePersonsAsPersonStubs(); section with selected=&quot;false&quot;, therefore this can't be caught when
+                // searching whether the options list contains the 'defaultProvider'
+<span class="nc" id="L235">            boolean defaultOptionPresent = false;</span>
+<span class="nc bnc" id="L236" title="All 2 branches missed.">              if(defaultProvider != null){</span>
+<span class="nc bnc" id="L237" title="All 2 branches missed.">                for(Option option: providerOptions){</span>
+<span class="nc bnc" id="L238" title="All 2 branches missed.">                  if(option.getValue().equals(defaultProvider.getId().toString())){</span>
+<span class="nc" id="L239">                      defaultOptionPresent = true;</span>
+<span class="nc" id="L240">                      providerOptions.remove(option);</span>
+<span class="nc" id="L241">                      break;</span>
+                  }
+<span class="nc" id="L243">                }</span>
+              }
+<span class="nc bnc" id="L245" title="All 2 branches missed.">              if(defaultOptionPresent)  {</span>
+<span class="nc" id="L246">                  defProviderOption</span>
+<span class="nc" id="L247">                     = new Option(StringEscapeUtils.escapeHtml(defaultProvider.getPersonName().getFullName()), defaultProvider.getId().toString(), true);</span>
+<span class="nc" id="L248">                   providerOptions.add(defProviderOption);</span>
+              }
+
+<span class="nc" id="L251">            } else {</span>
+<span class="nc" id="L252">                String defParam = (String) parameters.get(&quot;default&quot;);</span>
+<span class="nc bnc" id="L253" title="All 2 branches missed.">                if (StringUtils.hasText(defParam)) {</span>
+<span class="nc bnc" id="L254" title="All 2 branches missed.">                    if (&quot;currentuser&quot;.equalsIgnoreCase(defParam)) {</span>
+<span class="nc" id="L255">                        defaultProvider = Context.getAuthenticatedUser().getPerson();</span>
+                    } else {
+<span class="nc" id="L257">                        defaultProvider = HtmlFormEntryUtil.getPerson(defParam);</span>
+                    }
+<span class="nc bnc" id="L259" title="All 2 branches missed.">                    if (defaultProvider == null) {</span>
+<span class="nc" id="L260">                        throw new IllegalArgumentException(&quot;Invalid default provider specified for encounter: &quot; + defParam);</span>
+                    } else {
+<span class="nc" id="L262">                        defProviderOption</span>
+<span class="nc" id="L263">                                = new Option(StringEscapeUtils.escapeHtml(defaultProvider.getPersonName().getFullName()), defaultProvider.getId().toString(), true);</span>
+<span class="nc bnc" id="L264" title="All 2 branches missed.">                        for (Option option : providerOptions) {</span>
+<span class="nc bnc" id="L265" title="All 2 branches missed.">                            if (option.getValue().equals(defProviderOption.getValue())) {</span>
+<span class="nc" id="L266">                                providerOptions.remove(option);</span>
+<span class="nc" id="L267">                                break;</span>
+                            }
+<span class="nc" id="L269">                        }</span>
+<span class="nc" id="L270">                        providerOptions.add(defProviderOption);</span>
+                    }
+
+                }
+            }
+<span class="nc bnc" id="L275" title="All 2 branches missed.">            if (defaultProvider != null) {</span>
+<span class="nc" id="L276">                providerWidget.setInitialValue(new PersonStub(defaultProvider));</span>
+            }
+<span class="nc" id="L278">            Collections.sort(providerOptions,new OptionComparator());</span>
+
+<span class="nc bnc" id="L280" title="All 2 branches missed.">            if ((&quot;autocomplete&quot;).equals(parameters.get(&quot;type&quot;))) {</span>
+<span class="nc" id="L281">                providerWidget.addOption(new Option());</span>
+<span class="nc bnc" id="L282" title="All 2 branches missed.">                if (!providerOptions.isEmpty()) {</span>
+<span class="nc" id="L283">                    providerWidget.setOptions(providerOptions);</span>
+                }
+
+            } else {
+                // if initialValueIsSet=false, no initial/default provider, hence this shows the 'select input' field as first option
+<span class="nc bnc" id="L288" title="All 2 branches missed.">                boolean initialValueIsSet = !(providerWidget.getInitialValue() == null);</span>
+<span class="nc" id="L289">                providerWidget.addOption(new Option</span>
+<span class="nc bnc" id="L290" title="All 2 branches missed.">                        (Context.getMessageSourceService().getMessage(&quot;htmlformentry.chooseAProvider&quot;), &quot;&quot;, !initialValueIsSet)); // if no initial or default value</span>
+
+<span class="nc bnc" id="L292" title="All 2 branches missed.">                if (!providerOptions.isEmpty()) {</span>
+<span class="nc bnc" id="L293" title="All 2 branches missed.">                    for (Option option : providerOptions) {</span>
+<span class="nc" id="L294">                        providerWidget.addOption(option);</span>
+<span class="nc" id="L295">                    }</span>
+
+                }
+            }
+    
+<span class="nc bnc" id="L300" title="All 2 branches missed.">            if (parameters.containsKey(&quot;required&quot;)) {</span>
+<span class="nc" id="L301">                providerRequired = Boolean.valueOf((String) parameters.get(&quot;required&quot;));</span>
+            }
+<span class="nc" id="L303">            context.registerWidget(providerWidget);</span>
+<span class="nc" id="L304">            context.registerErrorWidget(providerWidget, providerErrorWidget);</span>
+        }
+
+<span class="pc bpc" id="L307" title="1 of 2 branches missed.">        if (Boolean.TRUE.equals(parameters.get(&quot;encounterType&quot;))) {</span>
+<span class="nc" id="L308">            encounterTypeWidget = new EncounterTypeWidget();</span>
+<span class="nc" id="L309">            encounterTypeErrorWidget = new ErrorWidget();</span>
+<span class="nc bnc" id="L310" title="All 2 branches missed.">            if (parameters.get(&quot;types&quot;) != null) {</span>
+<span class="nc" id="L311">                List&lt;EncounterType&gt; encounterTypes = new ArrayList&lt;EncounterType&gt;();</span>
+<span class="nc" id="L312">                String[] temp = ((String) parameters.get(&quot;types&quot;)).split(&quot;,&quot;);</span>
+<span class="nc bnc" id="L313" title="All 2 branches missed.">                for (String s : temp) {</span>
+<span class="nc" id="L314">                    EncounterType type = HtmlFormEntryUtil.getEncounterType(s);</span>
+<span class="nc bnc" id="L315" title="All 2 branches missed.">                    if (type == null) {</span>
+<span class="nc" id="L316">                        throw new RuntimeException(&quot;Cannot find encounter type: &quot; + s);</span>
+                    }
+<span class="nc" id="L318">                    encounterTypes.add(type);</span>
+                }
+
+<span class="nc" id="L321">               encounterTypeWidget.setOptions(encounterTypes);</span>
+            }
+            // Set default values
+
+<span class="nc" id="L325">            EncounterType defaultEncounterType = null;</span>
+<span class="nc bnc" id="L326" title="All 2 branches missed.">            if (context.getExistingEncounter() != null) {</span>
+<span class="nc" id="L327">                defaultEncounterType = context.getExistingEncounter().getEncounterType();</span>
+            } else {
+<span class="nc" id="L329">                String defaultTypeId = (String) parameters.get(&quot;default&quot;);</span>
+<span class="nc bnc" id="L330" title="All 2 branches missed.">                if (StringUtils.hasText(defaultTypeId)) {</span>
+<span class="nc" id="L331">                    defaultEncounterType = HtmlFormEntryUtil.getEncounterType(defaultTypeId);</span>
+                }
+            }
+
+<span class="nc" id="L335">            encounterTypeWidget.setInitialValue(defaultEncounterType);</span>
+<span class="nc" id="L336">            context.registerWidget(encounterTypeWidget);</span>
+<span class="nc" id="L337">            context.registerErrorWidget(encounterTypeWidget, encounterTypeErrorWidget);</span>
+        }
+
+        // Register Location widgets, if appropriate
+<span class="fc bfc" id="L341" title="All 2 branches covered.">        if (Boolean.TRUE.equals(parameters.get(&quot;location&quot;))) {</span>
+
+<span class="fc" id="L343">                locationErrorWidget = new ErrorWidget();</span>
+<span class="fc" id="L344">            List&lt;Location&gt; locations = new ArrayList&lt;Location&gt;();</span>
+<span class="fc" id="L345">            List&lt;Option&gt; locationOptions = new ArrayList&lt;Option&gt;();</span>
+
+<span class="pc bpc" id="L347" title="1 of 2 branches missed.">            if (&quot;autocomplete&quot;.equals(parameters.get(&quot;type&quot;))) {</span>
+<span class="nc" id="L348">                locationWidget = new AutocompleteWidget(Location.class);</span>
+            } else {
+<span class="fc" id="L350">                locationWidget = new DropdownWidget();</span>
+            }
+
+<span class="pc bpc" id="L353" title="3 of 4 branches missed.">            if (parameters.get(&quot;tags&quot;) != null &amp;&amp; parameters.get(&quot;orders&quot;) != null) {</span>
+<span class="nc" id="L354">                throw new RuntimeException(&quot;Using both \&quot;order\&quot; and \&quot;tags\&quot; attribute in an encounterLocation tag is not currently supported&quot;);</span>
+            }
+
+            // if the &quot;tags&quot; attribute has been specified, load all the locations referenced by tag
+<span class="pc bpc" id="L358" title="1 of 2 branches missed.">            if (parameters.get(&quot;tags&quot;) != null) {</span>
+
+<span class="nc" id="L360">                List&lt;LocationTag&gt; tags = new ArrayList&lt;LocationTag&gt;();</span>
+<span class="nc" id="L361">                String temp[] = ((String) parameters.get(&quot;tags&quot;)).split(&quot;,&quot;);</span>
+<span class="nc bnc" id="L362" title="All 2 branches missed.">                for (String s : temp) {</span>
+
+<span class="nc" id="L364">                    LocationTag tag = HtmlFormEntryUtil.getLocationTag(s);</span>
+<span class="nc bnc" id="L365" title="All 2 branches missed.">                    if (tag == null) {</span>
+<span class="nc" id="L366">                        throw new RuntimeException(&quot;Cannot find tag: &quot; + tag);</span>
+                    }
+<span class="nc" id="L368">                    tags.add(tag);</span>
+                }
+<span class="nc" id="L370">                locations.addAll(Context.getLocationService().getLocationsHavingAnyTag(tags));</span>
+<span class="nc" id="L371">            }</span>
+            // If the &quot;order&quot; attribute is passed in, limit to the specified locations in order
+<span class="pc bpc" id="L373" title="1 of 2 branches missed.">            else if (parameters.get(&quot;order&quot;) != null) {</span>
+
+<span class="nc" id="L375">                String[] temp = ((String) parameters.get(&quot;order&quot;)).split(&quot;,&quot;);</span>
+<span class="nc bnc" id="L376" title="All 2 branches missed.">                for (String s : temp) {</span>
+<span class="nc" id="L377">                    Location loc = HtmlFormEntryUtil.getLocation(s, context);</span>
+<span class="nc bnc" id="L378" title="All 2 branches missed.">                    if (loc == null) {</span>
+<span class="nc" id="L379">                        throw new RuntimeException(&quot;Cannot find location: &quot; + loc);</span>
+                    }
+<span class="nc" id="L381">                    locations.add(loc);</span>
+                }
+
+            }
+
+            // if no locations have been specified by the order attribute, use all non-retired locations
+<span class="pc bpc" id="L387" title="1 of 2 branches missed.">            if (locations.isEmpty()) {</span>
+<span class="fc" id="L388">                locations = Context.getLocationService().getAllLocations(false);</span>
+            }
+
+            // Set default values
+<span class="fc" id="L392">            Location defaultLocation = null;</span>
+<span class="fc bfc" id="L393" title="All 2 branches covered.">            if (context.getExistingEncounter() != null) {</span>
+<span class="fc" id="L394">                defaultLocation = context.getExistingEncounter().getLocation();</span>
+            } else {
+<span class="fc" id="L396">                String defaultLocId = (String) parameters.get(&quot;default&quot;);</span>
+<span class="pc bpc" id="L397" title="1 of 2 branches missed.">                if (StringUtils.hasText(defaultLocId)) {</span>
+<span class="nc" id="L398">                    defaultLocation = HtmlFormEntryUtil.getLocation(defaultLocId, context);</span>
+                }
+            }
+<span class="fc bfc" id="L401" title="All 2 branches covered.">            defaultLocation = defaultLocation == null ? context.getDefaultLocation() : defaultLocation;</span>
+<span class="fc" id="L402">            locationWidget.setInitialValue(defaultLocation);</span>
+
+            // if in EDIT mode, make sure that the default/selected location is one of the location options, so we don't accidentally lose it
+<span class="fc bfc" id="L405" title="All 4 branches covered.">            if (defaultLocation != null &amp;&amp; context.getMode().equals(Mode.EDIT)) {</span>
+<span class="pc bpc" id="L406" title="1 of 2 branches missed.">               if (!locations.contains(defaultLocation)) {</span>
+<span class="nc" id="L407">                   locations.add(defaultLocation);</span>
+               }
+            }
+
+            // now create the actual location options
+<span class="fc bfc" id="L412" title="All 2 branches covered.">            for (Location location : locations) {</span>
+<span class="fc" id="L413">                String label = HtmlFormEntryUtil.format(location);</span>
+<span class="fc" id="L414">                Option option = new Option(label, location.getId().toString(), location.equals(defaultLocation));</span>
+<span class="fc" id="L415">                locationOptions.add(option);</span>
+<span class="fc" id="L416">            }</span>
+
+            // sort options (if a specific order hasn't been specified
+<span class="pc bpc" id="L419" title="1 of 2 branches missed.">            if (parameters.get(&quot;order&quot;) == null) {</span>
+<span class="fc" id="L420">                Collections.sort(locationOptions, new OptionComparator());</span>
+            }
+
+<span class="pc bpc" id="L423" title="1 of 2 branches missed.">            if (&quot;autocomplete&quot;.equals(parameters.get(&quot;type&quot;))) {</span>
+<span class="nc" id="L424">                locationWidget.addOption(new Option());</span>
+<span class="nc bnc" id="L425" title="All 2 branches missed.">                if (!locationOptions.isEmpty()) {</span>
+<span class="nc" id="L426">                    locationWidget.setOptions(locationOptions);</span>
+                }
+            } else {
+<span class="fc bfc" id="L429" title="All 2 branches covered.">                boolean initialValueIsSet = !(locationWidget.getInitialValue() == null);</span>
+<span class="fc" id="L430">                locationWidget.addOption(new Option</span>
+<span class="fc bfc" id="L431" title="All 2 branches covered.">                        (Context.getMessageSourceService().getMessage(&quot;htmlformentry.chooseALocation&quot;), &quot;&quot;, !initialValueIsSet));</span>
+<span class="pc bpc" id="L432" title="1 of 2 branches missed.">                if (!locationOptions.isEmpty()) {</span>
+<span class="fc bfc" id="L433" title="All 2 branches covered.">                    for (Option option : locationOptions)</span>
+<span class="fc" id="L434">                        locationWidget.addOption(option);</span>
+                }
+            }
+    
+    
+<span class="pc bpc" id="L439" title="1 of 2 branches missed.">            if (parameters.containsKey(&quot;required&quot;)) {</span>
+<span class="nc" id="L440">                locationRequired = Boolean.valueOf((String) parameters.get(&quot;required&quot;));</span>
+            }
+<span class="fc" id="L442">            context.registerWidget(locationWidget);</span>
+<span class="fc" id="L443">            context.registerErrorWidget(locationWidget, locationErrorWidget);</span>
+        }
+
+
+<span class="pc bpc" id="L447" title="3 of 4 branches missed.">        if (Boolean.TRUE.equals(parameters.get(&quot;showVoidEncounter&quot;)) &amp;&amp; context.getMode() == Mode.EDIT) { //only show void option if the encounter already exists.  And VIEW implies not voided.</span>
+<span class="nc bnc" id="L448" title="All 2 branches missed.">			if (parameters.get(&quot;toggle&quot;) != null) {</span>
+<span class="nc" id="L449">				ToggleWidget toggleWidget = new ToggleWidget((String) parameters.get(&quot;toggle&quot;));</span>
+<span class="nc bnc" id="L450" title="All 4 branches missed.">				voidWidget = new CheckboxWidget(&quot; &quot; + Context.getMessageSourceService().getMessage(&quot;general.voided&quot;), (context.getExistingEncounter() != null &amp;&amp; context.getExistingEncounter().isVoided().equals(true)) ? &quot;true&quot; : &quot;false&quot;, toggleWidget.getTargetId(), toggleWidget.isToggleDim());</span>
+<span class="nc" id="L451">			} else {</span>
+<span class="nc" id="L452">				voidWidget = new CheckboxWidget();</span>
+			}
+<span class="nc" id="L454">            voidWidget.setLabel(&quot; &quot; + Context.getMessageSourceService().getMessage(&quot;general.voided&quot;));</span>
+<span class="nc" id="L455">            voidErrorWidget = new ErrorWidget();</span>
+<span class="nc bnc" id="L456" title="All 4 branches missed.">            if (context.getExistingEncounter() != null &amp;&amp; context.getExistingEncounter().isVoided().equals(true))</span>
+<span class="nc" id="L457">                voidWidget.setInitialValue(&quot;true&quot;);</span>
+<span class="nc" id="L458">            context.registerWidget(voidWidget);</span>
+<span class="nc" id="L459">            context.registerErrorWidget(voidWidget, voidErrorWidget);</span>
+        }
+
+        // set the id, if it has been specified
+<span class="pc bpc" id="L463" title="1 of 2 branches missed.">        if (parameters.get(&quot;id&quot;) != null) {</span>
+<span class="nc" id="L464">            id = (String) parameters.get(&quot;id&quot;);</span>
+        }
+
+<span class="fc" id="L467">    }</span>
+
+    /**
+     * This method exists to allow us to quickly support providers as introduce in OpenMRS 1.9.x,
+     * without having to branch the module. We should remove this method when do a proper
+     * implementation.
+     *
+     * @return
+     */
+    private boolean openmrsVersionDoesNotSupportProviders() {
+<span class="nc bnc" id="L477" title="All 2 branches missed.">        return OpenmrsConstants.OPENMRS_VERSION_SHORT.startsWith(&quot;1.6&quot;)</span>
+<span class="nc bnc" id="L478" title="All 2 branches missed.">                || OpenmrsConstants.OPENMRS_VERSION_SHORT.startsWith(&quot;1.7&quot;)</span>
+<span class="nc bnc" id="L479" title="All 2 branches missed.">                || OpenmrsConstants.OPENMRS_VERSION_SHORT.startsWith(&quot;1.8&quot;);</span>
+    }
+
+    /**
+     * This method exists to allow us to quickly support providers as introduce in OpenMRS 1.9.x,
+     * without having to branch the module. We should remove this method when do a proper
+     * implementation.
+     *
+     * @param persons
+     */
+    private void removeNonProviders(List&lt;Option&gt; persons) {
+<span class="nc bnc" id="L490" title="All 2 branches missed.">        if (openmrsVersionDoesNotSupportProviders())</span>
+<span class="nc" id="L491">            return;</span>
+<span class="nc" id="L492">        Set&lt;Integer&gt; legalPersonIds = getAllProviderPersonIds();</span>
+<span class="nc bnc" id="L493" title="All 2 branches missed.">        for (Iterator&lt;Option&gt; i = persons.iterator(); i.hasNext(); ) {</span>
+<span class="nc" id="L494">            Option candidate = i.next();</span>
+<span class="nc bnc" id="L495" title="All 2 branches missed.">            if (!legalPersonIds.contains(Integer.parseInt(candidate.getValue())))</span>
+<span class="nc" id="L496">                i.remove();</span>
+<span class="nc" id="L497">        }</span>
+<span class="nc" id="L498">    }</span>
+
+    /**
+     * This method exists to allow us to quickly support providers as introduce in OpenMRS 1.9.x,
+     * without having to branch the module. We should remove this method when do a proper
+     * implementation.
+     *
+     * @return all providers that are attached to persons
+     */
+    private List&lt;Object&gt; getAllProvidersThatArePersons() {
+<span class="nc bnc" id="L508" title="All 2 branches missed.">        if (openmrsVersionDoesNotSupportProviders())</span>
+<span class="nc" id="L509">            throw new RuntimeException(</span>
+                    &quot;Programming error in HTML Form Entry module. This method should not be called before OpenMRS 1.9.&quot;);
+        try {
+<span class="nc" id="L512">            Object providerService = Context.getService(Context.loadClass(&quot;org.openmrs.api.ProviderService&quot;));</span>
+<span class="nc" id="L513">            Method getProvidersMethod = providerService.getClass().getMethod(&quot;getAllProviders&quot;);</span>
+            @SuppressWarnings(&quot;rawtypes&quot;)
+<span class="nc" id="L515">            List allProviders = (List) getProvidersMethod.invoke(providerService);</span>
+<span class="nc" id="L516">            List&lt;Object&gt; ret = new ArrayList&lt;Object&gt;();</span>
+<span class="nc bnc" id="L517" title="All 2 branches missed.">            for (Object provider : allProviders) {</span>
+<span class="nc" id="L518">                Person person = (Person) PropertyUtils.getProperty(provider, &quot;person&quot;);</span>
+<span class="nc bnc" id="L519" title="All 2 branches missed.">                if (person != null)</span>
+<span class="nc" id="L520">                    ret.add(provider);</span>
+<span class="nc" id="L521">            }</span>
+<span class="nc" id="L522">            return ret;</span>
+<span class="nc" id="L523">        } catch (Exception ex) {</span>
+<span class="nc" id="L524">            throw new RuntimeException(&quot;Programming error in HTML Form Entry module. This method should be safe!&quot;, ex);</span>
+        }
+    }
+
+    /**
+     * This method exists to allow us to quickly support providers as introduce in OpenMRS 1.9.x,
+     * without having to branch the module. We should remove this method when do a proper
+     * implementation.
+     *
+     * @return person stubs for all providers that are attached to persons
+     */
+    private List&lt;PersonStub&gt; getAllProvidersThatArePersonsAsPersonStubs() {
+        try {
+<span class="nc" id="L537">            List&lt;PersonStub&gt; ret = new ArrayList&lt;PersonStub&gt;();</span>
+<span class="nc bnc" id="L538" title="All 2 branches missed.">            for (Object provider : getAllProvidersThatArePersons()) {</span>
+<span class="nc" id="L539">                Person person = (Person) PropertyUtils.getProperty(provider, &quot;person&quot;);</span>
+<span class="nc" id="L540">                ret.add(new PersonStub(person));</span>
+<span class="nc" id="L541">            }</span>
+<span class="nc" id="L542">            return ret;</span>
+<span class="nc" id="L543">        } catch (Exception ex) {</span>
+<span class="nc" id="L544">            throw new RuntimeException(&quot;Programming error in HTML Form Entry module. This method should be safe!&quot;, ex);</span>
+        }
+    }
+
+    /**
+     * This method exists to allow us to quickly support providers as introduce in OpenMRS 1.9.x,
+     * without having to branch the module. We should remove this method when do a proper
+     * implementation.
+     *
+     * @return personIds of all providers that are attached to persons
+     */
+    private Set&lt;Integer&gt; getAllProviderPersonIds() {
+        try {
+<span class="nc" id="L557">            Set&lt;Integer&gt; ret = new HashSet&lt;Integer&gt;();</span>
+<span class="nc bnc" id="L558" title="All 2 branches missed.">            for (Object candidate : getAllProvidersThatArePersons()) {</span>
+<span class="nc" id="L559">                Person person = (Person) PropertyUtils.getProperty(candidate, &quot;person&quot;);</span>
+<span class="nc bnc" id="L560" title="All 2 branches missed.">                if (person != null)</span>
+<span class="nc" id="L561">                    ret.add(person.getPersonId());</span>
+<span class="nc" id="L562">            }</span>
+<span class="nc" id="L563">            return ret;</span>
+<span class="nc" id="L564">        } catch (Exception ex) {</span>
+<span class="nc" id="L565">            throw new RuntimeException(&quot;Programming error in HTML Form Entry module. This method should be safe!&quot;, ex);</span>
+        }
+    }
+
+    /**
+     * @see HtmlGeneratorElement#generateHtml(FormEntryContext)
+     */
+    @Override
+    public String generateHtml(FormEntryContext context) {
+<span class="fc" id="L574">        StringBuilder ret = new StringBuilder();</span>
+
+<span class="pc bpc" id="L576" title="1 of 4 branches missed.">        if (id != null || !context.getMode().equals(Mode.VIEW)) {</span>
+            // wrap the whole encounter element in a span tag so that we access property values via javascript
+            // note that if this element ever handles multiple widgets, the names of the provider and location accessors will need unique names
+<span class="fc bfc" id="L579" title="All 2 branches covered.">            if (dateWidget != null) {</span>
+<span class="pc bpc" id="L580" title="1 of 2 branches missed.">                id = id != null ? id : &quot;encounterDate&quot;;</span>
+<span class="fc" id="L581">                context.registerPropertyAccessorInfo(id + &quot;.value&quot;, context.getFieldNameIfRegistered(dateWidget),</span>
+                        &quot;dateFieldGetterFunction&quot;, null, &quot;dateSetterFunction&quot;);
+<span class="fc" id="L583">                context.registerPropertyAccessorInfo(id + &quot;.error&quot;, context.getFieldNameIfRegistered(dateErrorWidget), null,</span>
+                        null, null);
+<span class="pc bpc" id="L585" title="1 of 2 branches missed.">            } else if (providerWidget != null) {</span>
+<span class="nc bnc" id="L586" title="All 2 branches missed.">                id = id != null ? id : &quot;encounterProvider&quot;;</span>
+<span class="nc" id="L587">                context.registerPropertyAccessorInfo(id + &quot;.value&quot;, context.getFieldNameIfRegistered(providerWidget), null,</span>
+<span class="nc" id="L588">                        getGetterFunction(providerWidget), getSetterFunction(providerWidget));</span>
+<span class="nc" id="L589">                context.registerPropertyAccessorInfo(id + &quot;.error&quot;, context.getFieldNameIfRegistered(providerErrorWidget),</span>
+                        null, null, null);
+<span class="pc bpc" id="L591" title="1 of 2 branches missed.">            } else if (locationWidget != null) {</span>
+<span class="pc bpc" id="L592" title="1 of 2 branches missed.">                id = id != null ? id : &quot;encounterLocation&quot;;</span>
+<span class="fc" id="L593">                context.registerPropertyAccessorInfo(id + &quot;.value&quot;, context.getFieldNameIfRegistered(locationWidget), null,</span>
+<span class="fc" id="L594">                        getGetterFunction(locationWidget), getSetterFunction(locationWidget));</span>
+<span class="fc" id="L595">                context.registerPropertyAccessorInfo(id + &quot;.error&quot;, context.getFieldNameIfRegistered(locationErrorWidget),</span>
+                        null, null, null);
+<span class="nc bnc" id="L597" title="All 2 branches missed.">            } else if (encounterTypeWidget != null) {</span>
+<span class="nc bnc" id="L598" title="All 2 branches missed.">                id = id != null ? id : &quot;encounterType&quot;;</span>
+<span class="nc" id="L599">                context.registerPropertyAccessorInfo(id + &quot;.value&quot;, context.getFieldNameIfRegistered(encounterTypeWidget),</span>
+                        null, null, null);
+<span class="nc" id="L601">                context.registerPropertyAccessorInfo(id + &quot;.error&quot;,</span>
+<span class="nc" id="L602">                        context.getFieldNameIfRegistered(encounterTypeErrorWidget), null, null, null);</span>
+            }
+<span class="fc" id="L604">            ret.append(&quot;&lt;span id='&quot; + id + &quot;'&gt;&quot;);</span>
+        }
+
+<span class="fc bfc" id="L607" title="All 2 branches covered.">        if (dateWidget != null) {</span>
+<span class="fc" id="L608">            ret.append(dateWidget.generateHtml(context));</span>
+<span class="fc bfc" id="L609" title="All 2 branches covered.">            if (context.getMode() != Mode.VIEW)</span>
+<span class="fc" id="L610">                ret.append(dateErrorWidget.generateHtml(context));</span>
+        }
+<span class="pc bpc" id="L612" title="1 of 2 branches missed.">        if (timeWidget != null) {</span>
+<span class="nc bnc" id="L613" title="All 4 branches missed.">            if (!timeWidget.isHidden() || (context.getMode() == Mode.VIEW)) {</span>
+<span class="nc" id="L614">                ret.append(&quot;&amp;#160;&quot;);</span>
+            }
+<span class="nc" id="L616">            ret.append(timeWidget.generateHtml(context));</span>
+<span class="nc bnc" id="L617" title="All 2 branches missed.">            if (context.getMode() != Mode.VIEW)</span>
+<span class="nc" id="L618">                ret.append(timeErrorWidget.generateHtml(context));</span>
+        }
+<span class="pc bpc" id="L620" title="1 of 2 branches missed.">        if (providerWidget != null) {</span>
+<span class="nc" id="L621">            ret.append(providerWidget.generateHtml(context));</span>
+<span class="nc bnc" id="L622" title="All 2 branches missed.">            if (context.getMode() != Mode.VIEW)</span>
+<span class="nc" id="L623">                ret.append(providerErrorWidget.generateHtml(context));</span>
+        }
+<span class="fc bfc" id="L625" title="All 2 branches covered.">        if (locationWidget != null) {</span>
+<span class="fc" id="L626">            ret.append(locationWidget.generateHtml(context));</span>
+<span class="fc bfc" id="L627" title="All 2 branches covered.">            if (context.getMode() != Mode.VIEW)</span>
+<span class="fc" id="L628">                ret.append(locationErrorWidget.generateHtml(context));</span>
+        }
+<span class="pc bpc" id="L630" title="1 of 2 branches missed.">        if (encounterTypeWidget != null) {</span>
+<span class="nc" id="L631">            ret.append(encounterTypeWidget.generateHtml(context));</span>
+<span class="nc bnc" id="L632" title="All 2 branches missed.">            if (context.getMode() != Mode.VIEW)</span>
+<span class="nc" id="L633">                ret.append(encounterTypeErrorWidget.generateHtml(context));</span>
+        }
+<span class="pc bpc" id="L635" title="1 of 2 branches missed.">        if (voidWidget != null) {</span>
+<span class="nc bnc" id="L636" title="All 2 branches missed.">            if (context.getMode() == Mode.EDIT) //only show void option if the encounter already exists.</span>
+<span class="nc" id="L637">                ret.append(voidWidget.generateHtml(context));</span>
+        }
+
+        // close out the span if we have an id tag
+<span class="fc bfc" id="L641" title="All 2 branches covered.">        if (id != null) {</span>
+<span class="fc" id="L642">            ret.append(&quot;&lt;/span&gt;&quot;);</span>
+        }
+
+<span class="fc" id="L645">        return ret.toString();</span>
+    }
+
+    /**
+     * selects the correct setter function for provider/location widgets according to its type
+     * @param widget- dropdown or autocomplete
+     * @return
+     */
+    private String getGetterFunction(Widget widget) {
+<span class="pc bpc" id="L654" title="1 of 2 branches missed.">		if (widget == null) {</span>
+<span class="nc" id="L655">            return null;</span>
+        }
+<span class="pc bpc" id="L657" title="1 of 2 branches missed.">		if (widget instanceof AutocompleteWidget) {</span>
+<span class="nc" id="L658">			return &quot;autocompleteGetterFunction&quot;;</span>
+        }
+<span class="fc" id="L660">		return null;</span>
+	}
+
+    /**
+     * selects the correct getter function for provider/location widgets according to its type
+     * @param widget - dropdown or autocomplete
+     * @return
+     */
+    private String getSetterFunction(Widget widget) {
+<span class="pc bpc" id="L669" title="1 of 2 branches missed.">		if (widget == null) {</span>
+<span class="nc" id="L670">			return null;</span>
+        }
+<span class="pc bpc" id="L672" title="1 of 2 branches missed.">		if (widget instanceof AutocompleteWidget) {</span>
+<span class="nc" id="L673">			return &quot;autocompleteSetterFunction&quot;;</span>
+        }
+<span class="fc" id="L675">		return null;</span>
+	}
+
+    /**
+     * @see FormSubmissionControllerAction#validateSubmission(FormEntryContext, HttpServletRequest)
+     */
+    @Override
+    public Collection&lt;FormSubmissionError&gt; validateSubmission(FormEntryContext context, HttpServletRequest submission) {
+<span class="fc" id="L683">        List&lt;FormSubmissionError&gt; ret = new ArrayList&lt;FormSubmissionError&gt;();</span>
+        
+        try {
+<span class="fc bfc" id="L686" title="All 2 branches covered.">            if (dateWidget != null) {</span>
+<span class="fc" id="L687">                Date date = (Date) dateWidget.getValue(context, submission);</span>
+<span class="pc bpc" id="L688" title="1 of 2 branches missed.">                if (timeWidget != null) {</span>
+<span class="nc" id="L689">                    Date time = (Date) timeWidget.getValue(context, submission);</span>
+<span class="nc" id="L690">                    date = HtmlFormEntryUtil.combineDateAndTime(date, time);</span>
+                }
+<span class="pc bpc" id="L692" title="1 of 2 branches missed.">                if (date == null)</span>
+<span class="nc" id="L693">                        throw new Exception(&quot;htmlformentry.error.required&quot;);</span>
+<span class="pc bpc" id="L694" title="1 of 2 branches missed.">                if (OpenmrsUtil.compare((Date) date, new Date()) &gt; 0)</span>
+<span class="nc" id="L695">                    throw new Exception(&quot;htmlformentry.error.cannotBeInFuture&quot;);</span>
+            }
+<span class="nc" id="L697">        } catch (Exception ex) {</span>
+<span class="nc" id="L698">            ret.add(new FormSubmissionError(context.getFieldName(dateErrorWidget), Context.getMessageSourceService()</span>
+<span class="nc" id="L699">                    .getMessage(ex.getMessage())));</span>
+<span class="fc" id="L700">        }</span>
+
+        try {
+<span class="pc bpc" id="L703" title="1 of 2 branches missed.">            if (providerWidget != null) {</span>
+<span class="nc" id="L704">                Object value = providerWidget.getValue(context, submission);</span>
+<span class="nc bnc" id="L705" title="All 2 branches missed.">                if (value == null) {</span>
+<span class="nc bnc" id="L706" title="All 2 branches missed.">                    if (providerRequired) {</span>
+<span class="nc" id="L707">                        throw new Exception(&quot;required&quot;);</span>
+                    }
+                } else {
+<span class="nc" id="L710">                    Person provider = (Person) convertValueToProvider(value);</span>
+<span class="nc bnc" id="L711" title="All 2 branches missed.">                    if (provider == null) {</span>
+<span class="nc bnc" id="L712" title="All 2 branches missed.">                        if (providerRequired) {</span>
+<span class="nc" id="L713">                            throw new Exception(&quot;required&quot;);</span>
+                        }
+                    }
+                }
+            }
+<span class="nc" id="L718">        } catch (Exception ex) {</span>
+<span class="nc" id="L719">            ret.add(new FormSubmissionError(context.getFieldName(providerErrorWidget), Context.getMessageSourceService()</span>
+<span class="nc" id="L720">                    .getMessage(ex.getMessage())));</span>
+<span class="fc" id="L721">        }</span>
+
+        try {
+<span class="fc bfc" id="L724" title="All 2 branches covered.">            if (locationWidget != null) {</span>
+<span class="fc" id="L725">                Object value = locationWidget.getValue(context, submission);</span>
+<span class="pc bpc" id="L726" title="1 of 2 branches missed.">                if (value == null) {</span>
+<span class="nc bnc" id="L727" title="All 2 branches missed.">                    if (locationRequired) {</span>
+<span class="nc" id="L728">                        throw new Exception(&quot;required&quot;);</span>
+                    }
+                } else {
+<span class="fc" id="L731">                    Location location = (Location) HtmlFormEntryUtil.convertToType(value.toString().trim(), Location.class);</span>
+<span class="pc bpc" id="L732" title="1 of 2 branches missed.">                    if (location == null) {</span>
+<span class="nc" id="L733">                        log.debug(&quot;Location Required &quot; + locationRequired);</span>
+<span class="nc bnc" id="L734" title="All 2 branches missed.">                        if (locationRequired) {</span>
+
+<span class="nc" id="L736">                            throw new Exception(&quot;required&quot;);</span>
+                        }
+                    }
+                }
+            }
+<span class="nc" id="L741">        } catch (Exception ex) {</span>
+<span class="nc" id="L742">            ret.add(new FormSubmissionError(context.getFieldName(locationErrorWidget), Context.getMessageSourceService()</span>
+<span class="nc" id="L743">                    .getMessage(ex.getMessage())));</span>
+<span class="fc" id="L744">        }</span>
+        try {
+<span class="pc bpc" id="L746" title="1 of 2 branches missed.">            if (encounterTypeWidget != null) {</span>
+<span class="nc" id="L747">                Object encounterType = encounterTypeWidget.getValue(context, submission);</span>
+<span class="nc" id="L748">                System.out.println(&quot;the location widget initial value &quot; + encounterTypeWidget.getClass() + &quot; actual value &quot; + encounterType);</span>
+<span class="nc bnc" id="L749" title="All 2 branches missed.">                if (encounterType == null)</span>
+<span class="nc" id="L750">                    throw new Exception(&quot;required&quot;);</span>
+            }
+<span class="nc" id="L752">        } catch (Exception ex) {</span>
+<span class="nc" id="L753">            ret.add(new FormSubmissionError(context.getFieldName(encounterTypeErrorWidget), Context</span>
+<span class="nc" id="L754">                        .getMessageSourceService().getMessage(ex.getMessage())));</span>
+<span class="fc" id="L755">        }</span>
+<span class="fc" id="L756">        return ret;</span>
+    }
+
+
+    /**
+     * Gets provider id and obtains the Provider from it
+     *
+     * @param value - provider id
+     * @return the Provider object of corresponding id
+     */
+    private Object convertValueToProvider(Object value) {
+<span class="nc" id="L767">        String val = (String) value;</span>
+<span class="nc bnc" id="L768" title="All 2 branches missed.">        if (StringUtils.hasText(val)) {</span>
+<span class="nc" id="L769">            return HtmlFormEntryUtil.convertToType(val.trim(), Person.class);</span>
+        }
+<span class="nc" id="L771">        return null;</span>
+    }
+
+    /**
+     * @see FormSubmissionControllerAction#handleSubmission(FormEntrySession, HttpServletRequest)
+     */
+    @Override
+    public void handleSubmission(FormEntrySession session, HttpServletRequest submission) {
+<span class="fc bfc" id="L779" title="All 2 branches covered.">        if (dateWidget != null) {</span>
+<span class="fc" id="L780">            Date date = (Date) dateWidget.getValue(session.getContext(), submission);</span>
+<span class="fc" id="L781">            Date previousDate = session.getSubmissionActions().getCurrentEncounter().getEncounterDatetime();</span>
+
+<span class="fc bfc" id="L783" title="All 2 branches covered.">            if (previousDate == null) {</span>
+<span class="fc" id="L784">                session.getSubmissionActions().getCurrentEncounter().setEncounterDatetime(date);</span>
+            }
+
+            else {
+                // we don't want to lose any time information just because we edited it with a form that only collects date,
+                // so we only update the date if the date has a time component or the actual date has changed
+<span class="pc bpc" id="L790" title="2 of 4 branches missed.">                if (hasTimeComponent(date) || !stripTimeComponent(date).equals(stripTimeComponent(previousDate))) {</span>
+<span class="nc" id="L791">                    session.getContext().setPreviousEncounterDate(</span>
+<span class="nc" id="L792">                            new Date(session.getSubmissionActions().getCurrentEncounter().getEncounterDatetime().getTime()));</span>
+<span class="nc" id="L793">                    session.getSubmissionActions().getCurrentEncounter().setEncounterDatetime(date);</span>
+                }
+            }
+        }
+<span class="pc bpc" id="L797" title="1 of 2 branches missed.">        if (timeWidget != null) {</span>
+<span class="nc" id="L798">            Date time = (Date) timeWidget.getValue(session.getContext(), submission);</span>
+<span class="nc" id="L799">            Encounter e = session.getSubmissionActions().getCurrentEncounter();</span>
+<span class="nc" id="L800">            Date dateAndTime = HtmlFormEntryUtil.combineDateAndTime(e.getEncounterDatetime(), time);</span>
+<span class="nc" id="L801">            e.setEncounterDatetime(dateAndTime);</span>
+        }
+<span class="pc bpc" id="L803" title="1 of 2 branches missed.">        if (providerWidget != null) {</span>
+<span class="nc" id="L804">            Object value = providerWidget.getValue(session.getContext(), submission);</span>
+<span class="nc bnc" id="L805" title="All 2 branches missed.">            if (value != null) {</span>
+<span class="nc" id="L806">                Person person = (Person) convertValueToProvider(value);</span>
+<span class="nc" id="L807">                EncounterCompatibility.setProvider(session.getSubmissionActions().getCurrentEncounter(), person);</span>
+            }
+        }
+<span class="fc bfc" id="L810" title="All 2 branches covered.">        if (locationWidget != null) {</span>
+<span class="fc" id="L811">            Object value = locationWidget.getValue(session.getContext(), submission);</span>
+<span class="pc bpc" id="L812" title="1 of 2 branches missed.">            if (value != null) {</span>
+<span class="fc" id="L813">                Location location = (Location) HtmlFormEntryUtil.convertToType(value.toString().trim(), Location.class);</span>
+<span class="fc" id="L814">                session.getSubmissionActions().getCurrentEncounter().setLocation(location);</span>
+            }
+        }
+<span class="pc bpc" id="L817" title="1 of 2 branches missed.">        if (encounterTypeWidget != null) {</span>
+<span class="nc" id="L818">            EncounterType encounterType = (EncounterType) encounterTypeWidget.getValue(session.getContext(), submission);</span>
+<span class="nc" id="L819">            session.getSubmissionActions().getCurrentEncounter().setEncounterType(encounterType);</span>
+        }
+<span class="pc bpc" id="L821" title="1 of 2 branches missed.">        if (voidWidget != null) {</span>
+<span class="nc bnc" id="L822" title="All 2 branches missed.">            if (&quot;true&quot;.equals(voidWidget.getValue(session.getContext(), submission))) {</span>
+<span class="nc" id="L823">                session.setVoidEncounter(true);</span>
+<span class="nc bnc" id="L824" title="All 2 branches missed.">            } else if (&quot;false&quot;.equals(voidWidget.getValue(session.getContext(), submission))) {</span>
+                //nothing..  the session.voidEncounter property will be false, and the encounter will be un-voided if already voided
+                //otherwise, nothing will happen.  99% of the time the encounter won't be voided to begin with.
+            }
+        }
+<span class="fc" id="L829">    }</span>
+
+    private boolean hasTimeComponent(Date date) {
+<span class="pc bpc" id="L832" title="1 of 2 branches missed.">        return !(new DateMidnight(date).toDate().equals(date));</span>
+    }
+
+    private DateMidnight stripTimeComponent(Date date) {
+<span class="fc" id="L836">        return new DateMidnight(date);</span>
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.8.202204050719</span></div></body></html>

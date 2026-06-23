@@ -1,0 +1,1503 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ObsSubmissionElement.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">HTML Form Entry API</a> &gt; <a href="index.source.html" class="el_package">org.openmrs.module.htmlformentry.element</a> &gt; <span class="el_source">ObsSubmissionElement.java</span></div><h1>ObsSubmissionElement.java</h1><pre class="source lang-java linenums">package org.openmrs.module.htmlformentry.element;
+
+import org.apache.commons.lang.StringUtils;
+import org.openmrs.Concept;
+import org.openmrs.ConceptAnswer;
+import org.openmrs.ConceptClass;
+import org.openmrs.ConceptDatatype;
+import org.openmrs.ConceptNumeric;
+import org.openmrs.Drug;
+import org.openmrs.Location;
+import org.openmrs.Obs;
+import org.openmrs.Person;
+import org.openmrs.Role;
+import org.openmrs.api.context.Context;
+import org.openmrs.module.htmlformentry.FormEntryContext;
+import org.openmrs.module.htmlformentry.FormEntryContext.Mode;
+import org.openmrs.module.htmlformentry.FormEntrySession;
+import org.openmrs.module.htmlformentry.FormSubmissionError;
+import org.openmrs.module.htmlformentry.HtmlFormEntryConstants;
+import org.openmrs.module.htmlformentry.HtmlFormEntryService;
+import org.openmrs.module.htmlformentry.HtmlFormEntryUtil;
+import org.openmrs.module.htmlformentry.action.FormSubmissionControllerAction;
+import org.openmrs.module.htmlformentry.comparator.OptionComparator;
+import org.openmrs.module.htmlformentry.compatibility.ConceptCompatibility;
+import org.openmrs.module.htmlformentry.schema.ObsField;
+import org.openmrs.module.htmlformentry.schema.ObsFieldAnswer;
+import org.openmrs.module.htmlformentry.widget.CheckboxWidget;
+import org.openmrs.module.htmlformentry.widget.ConceptSearchAutocompleteWidget;
+import org.openmrs.module.htmlformentry.widget.DateTimeWidget;
+import org.openmrs.module.htmlformentry.widget.DateWidget;
+import org.openmrs.module.htmlformentry.widget.DropdownWidget;
+import org.openmrs.module.htmlformentry.widget.DynamicAutocompleteWidget;
+import org.openmrs.module.htmlformentry.widget.ErrorWidget;
+import org.openmrs.module.htmlformentry.widget.NumberFieldWidget;
+import org.openmrs.module.htmlformentry.widget.Option;
+import org.openmrs.module.htmlformentry.widget.PersonStubWidget;
+import org.openmrs.module.htmlformentry.widget.RadioButtonsWidget;
+import org.openmrs.module.htmlformentry.widget.RemoteJsonAutocompleteWidget;
+import org.openmrs.module.htmlformentry.widget.SingleOptionWidget;
+import org.openmrs.module.htmlformentry.widget.TextFieldWidget;
+import org.openmrs.module.htmlformentry.widget.TimeWidget;
+import org.openmrs.module.htmlformentry.widget.ToggleWidget;
+import org.openmrs.module.htmlformentry.widget.UploadWidget;
+import org.openmrs.module.htmlformentry.widget.Widget;
+import org.openmrs.obs.ComplexData;
+import org.openmrs.util.LocaleUtility;
+import org.openmrs.util.OpenmrsUtil;
+import org.openmrs.util.RoleConstants;
+import org.openmrs.web.WebConstants;
+
+import javax.servlet.http.HttpServletRequest;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.Date;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.StringTokenizer;
+import java.util.Vector;
+
+/**
+ * Holds the widgets used to represent a specific Observation, and serves as both the
+ * HtmlGeneratorElement and the FormSubmissionControllerAction for the Observation.
+ */
+public class ObsSubmissionElement implements HtmlGeneratorElement, FormSubmissionControllerAction {
+
+<span class="nc" id="L71">    private Locale locale = Context.getLocale();</span>
+
+	private String id;
+
+    private String clazz;
+
+	private Concept concept;
+	
+	private String valueLabel;
+
+	// i've changed some of these to be protected so they can be used by the sub-class &quot;ObsReferenceSubmissionElement&quot;
+	// (we could probably change most of these properties to protected)
+
+	protected Widget valueWidget;
+	
+	private String defaultValue;
+	
+<span class="nc" id="L88">	protected boolean showUnits = false;</span>
+
+    private String unitsCode;
+
+<span class="nc" id="L92">    protected String unitsCssClass = &quot;units&quot;;</span>
+	
+	private String dateLabel;
+	
+	private DateWidget dateWidget;
+	
+	private String accessionNumberLabel;
+	
+	private TextFieldWidget accessionNumberWidget;
+
+	private String commentFieldLabel;
+
+	private TextFieldWidget commentFieldWidget;
+
+	private ErrorWidget errorWidget;
+	
+<span class="nc" id="L108">	private boolean allowFutureDates = false;</span>
+	
+	private Concept answerConcept;
+
+	private Drug answerDrug;
+	
+<span class="nc" id="L114">	private List&lt;Concept&gt; conceptAnswers = new ArrayList&lt;Concept&gt;();</span>
+	
+<span class="nc" id="L116">	private List&lt;Number&gt; numericAnswers = new ArrayList&lt;Number&gt;();</span>
+	
+<span class="nc" id="L118">	private List&lt;String&gt; textAnswers = new ArrayList&lt;String&gt;();</span>
+	
+<span class="nc" id="L120">	private List&lt;String&gt; answerLabels = new ArrayList&lt;String&gt;();</span>
+	
+	private String answerLabel;
+	
+	private Obs existingObs; // in edit mode, this allows submission to check whether the obs has been modified or not
+	
+	private List&lt;Obs&gt; existingObsList;  // used by the dynamic autocomplete which allows the selection of multiple answers
+	
+	private boolean required;
+	
+	//these are for conceptSelects:
+<span class="nc" id="L131">	private List&lt;Concept&gt; concepts = null; //possible concepts</span>
+	
+<span class="nc" id="L133">	private List&lt;String&gt; conceptLabels = null; //the text to show for possible concepts</span>
+	
+<span class="nc" id="L135">	private String answerSeparator = null;</span>
+
+    // these are for location and provider options
+
+<span class="nc" id="L139">    private List&lt;Option&gt; locationOptions = new ArrayList&lt;Option&gt;();</span>
+
+<span class="nc" id="L141">    private Map&lt;Object, String&gt; whenValueThenDisplaySection = new LinkedHashMap&lt;Object, String&gt;();</span>
+
+<span class="nc" id="L143">    private Map&lt;Object, String&gt; whenValueThenJavascript = new LinkedHashMap&lt;Object, String&gt;();</span>
+
+<span class="nc" id="L145">    private Map&lt;Object, String&gt; whenValueElseJavascript = new LinkedHashMap&lt;Object, String&gt;();</span>
+
+    private Boolean isLocationObs; // determines whether the valueText for this obs should be a location_id;
+
+	private Double absoluteMaximum;
+
+	private Double absoluteMinimum;
+
+<span class="nc" id="L153">	public ObsSubmissionElement(FormEntryContext context, Map&lt;String, String&gt; parameters) {</span>
+<span class="nc bnc" id="L154" title="All 2 branches missed.">        if (parameters.get(&quot;locale&quot;) != null) {</span>
+<span class="nc" id="L155">            this.locale = LocaleUtility.fromSpecification(parameters.get(&quot;locale&quot;));</span>
+        }
+<span class="nc" id="L157">		String conceptId = parameters.get(&quot;conceptId&quot;);</span>
+<span class="nc" id="L158">		String conceptIds = parameters.get(&quot;conceptIds&quot;);</span>
+<span class="nc" id="L159">		defaultValue = parameters.get(&quot;defaultValue&quot;);</span>
+<span class="nc bnc" id="L160" title="All 2 branches missed.">		if (parameters.get(&quot;answerSeparator&quot;) != null) {</span>
+<span class="nc" id="L161">			answerSeparator = parameters.get(&quot;answerSeparator&quot;);</span>
+        }
+
+<span class="nc bnc" id="L164" title="All 4 branches missed.">		if (conceptId != null &amp;&amp; conceptIds != null)</span>
+<span class="nc" id="L165">			throw new RuntimeException(&quot;You can't use conceptId and conceptIds in the same tag!&quot;);</span>
+<span class="nc bnc" id="L166" title="All 4 branches missed.">		else if (conceptId == null &amp;&amp; conceptIds == null)</span>
+<span class="nc" id="L167">			throw new RuntimeException(&quot;You must include either conceptId or conceptIds in an obs tag&quot;);</span>
+
+<span class="nc bnc" id="L169" title="All 2 branches missed.">		if (conceptId != null) {</span>
+<span class="nc" id="L170">			concept = HtmlFormEntryUtil.getConcept(conceptId);</span>
+<span class="nc bnc" id="L171" title="All 2 branches missed.">			if (concept == null)</span>
+<span class="nc" id="L172">				throw new IllegalArgumentException(&quot;Cannot find concept for value &quot; + conceptId</span>
+				        + &quot; in conceptId attribute value. Parameters: &quot; + parameters);
+		} else {
+<span class="nc" id="L175">			concepts = new ArrayList&lt;Concept&gt;();</span>
+<span class="nc bnc" id="L176" title="All 2 branches missed.">			for (StringTokenizer st = new StringTokenizer(conceptIds, &quot;,&quot;); st.hasMoreTokens();) {</span>
+<span class="nc" id="L177">				String s = st.nextToken().trim();</span>
+<span class="nc" id="L178">				Concept concept = HtmlFormEntryUtil.getConcept(s);</span>
+<span class="nc bnc" id="L179" title="All 2 branches missed.">				if (concept == null)</span>
+<span class="nc" id="L180">					throw new IllegalArgumentException(&quot;Cannot find concept for value &quot; + s</span>
+					        + &quot; in conceptIds attribute value. Parameters: &quot; + parameters);
+<span class="nc" id="L182">				concepts.add(concept);</span>
+<span class="nc" id="L183">			}</span>
+<span class="nc bnc" id="L184" title="All 2 branches missed.">			if (concepts.size() == 0)</span>
+<span class="nc" id="L185">				throw new IllegalArgumentException(</span>
+				        &quot;You must provide some valid conceptIds for the conceptIds attribute. Parameters: &quot; + parameters);
+		}
+
+		// test to make sure the answerConceptId, if it exists, is valid
+<span class="nc" id="L190">		String answerConceptId = parameters.get(&quot;answerConceptId&quot;);</span>
+<span class="nc bnc" id="L191" title="All 2 branches missed.">		if (StringUtils.isNotBlank(answerConceptId)) {</span>
+<span class="nc bnc" id="L192" title="All 2 branches missed.">			if (HtmlFormEntryUtil.getConcept(answerConceptId) == null)</span>
+<span class="nc" id="L193">				throw new IllegalArgumentException(&quot;Cannot find concept for value &quot; + answerConceptId</span>
+				        + &quot; in answerConceptId attribute value. Parameters: &quot; + parameters);
+		}
+
+		// test to make sure the answerConceptIds, if they exist, are valid
+<span class="nc" id="L198">		String answerConceptIds = parameters.get(&quot;answerConceptIds&quot;);</span>
+<span class="nc bnc" id="L199" title="All 2 branches missed.">		if (StringUtils.isNotBlank(answerConceptIds)) {</span>
+<span class="nc bnc" id="L200" title="All 2 branches missed.">			for (StringTokenizer st = new StringTokenizer(answerConceptIds, &quot;,&quot;); st.hasMoreTokens();) {</span>
+<span class="nc" id="L201">				String s = st.nextToken().trim();</span>
+<span class="nc" id="L202">				Concept concept = HtmlFormEntryUtil.getConcept(s);</span>
+<span class="nc bnc" id="L203" title="All 2 branches missed.">				if (concept == null)</span>
+<span class="nc" id="L204">					throw new IllegalArgumentException(&quot;Cannot find concept for value &quot; + s</span>
+					        + &quot; in answerConceptIds attribute value. Parameters: &quot; + parameters);
+<span class="nc" id="L206">			}</span>
+		}
+
+<span class="nc bnc" id="L209" title="All 2 branches missed.">		if (&quot;true&quot;.equals(parameters.get(&quot;allowFutureDates&quot;)))</span>
+<span class="nc" id="L210">			allowFutureDates = true;</span>
+<span class="nc bnc" id="L211" title="All 2 branches missed.">		if (&quot;true&quot;.equals(parameters.get(&quot;required&quot;))) {</span>
+<span class="nc" id="L212">			required = true;</span>
+		}
+<span class="nc bnc" id="L214" title="All 2 branches missed.">		if (parameters.get(&quot;id&quot;) != null) {</span>
+<span class="nc" id="L215">			id = parameters.get(&quot;id&quot;);</span>
+        }
+<span class="nc bnc" id="L217" title="All 2 branches missed.">        if (parameters.get(&quot;class&quot;) !=null) {</span>
+<span class="nc" id="L218">            clazz = parameters.get(&quot;class&quot;);</span>
+        }
+
+<span class="nc" id="L221">        isLocationObs = &quot;location&quot;.equals(parameters.get(&quot;style&quot;));</span>
+
+<span class="nc bnc" id="L223" title="All 2 branches missed.">		if (StringUtils.isNotEmpty(parameters.get(&quot;absoluteMaximum&quot;))) {</span>
+<span class="nc" id="L224">			absoluteMaximum = Double.parseDouble(parameters.get(&quot;absoluteMaximum&quot;));</span>
+		}
+
+<span class="nc bnc" id="L227" title="All 2 branches missed.">		if (StringUtils.isNotEmpty(parameters.get(&quot;absoluteMinimum&quot;))) {</span>
+<span class="nc" id="L228">			absoluteMinimum = Double.parseDouble(parameters.get(&quot;absoluteMinimum&quot;));</span>
+		}
+
+<span class="nc" id="L231">		prepareWidgets(context, parameters);</span>
+<span class="nc" id="L232">	}</span>
+
+
+    private Widget buildDropdownWidget(Integer size){
+<span class="nc" id="L236">        Widget dropdownWidget = new DropdownWidget(size);</span>
+<span class="nc bnc" id="L237" title="All 4 branches missed.">        if(size==1 || !required){</span>
+            // show an empty option when size =1, even if required =true
+<span class="nc" id="L239">            ((DropdownWidget) dropdownWidget).addOption(new Option());</span>
+        }
+<span class="nc" id="L241">        return dropdownWidget;</span>
+    }
+	private void prepareWidgets(FormEntryContext context, Map&lt;String, String&gt; parameters) {
+<span class="nc" id="L244">		String userLocaleStr = locale.toString();</span>
+		try {
+<span class="nc bnc" id="L246" title="All 2 branches missed.">			if (answerConcept == null)</span>
+<span class="nc" id="L247">				answerConcept = HtmlFormEntryUtil.getConcept(parameters.get(&quot;answerConceptId&quot;));</span>
+		}
+<span class="nc" id="L249">		catch (Exception ex) {}</span>
+
+		try {
+<span class="nc bnc" id="L252" title="All 2 branches missed.">			if (answerDrug == null)</span>
+<span class="nc" id="L253">				answerDrug = HtmlFormEntryUtil.getDrug(parameters.get(&quot;answerDrugId&quot;));</span>
+		}
+<span class="nc" id="L255">		catch (Exception ex) {}</span>
+
+<span class="nc" id="L257">        Integer size = 1;</span>
+        try {
+<span class="nc" id="L259">            size = Integer.valueOf(parameters.get(&quot;size&quot;));</span>
+<span class="nc" id="L260">        }catch (Exception ex) {}</span>
+
+<span class="nc" id="L262">		String answerConceptSetIds = parameters.get(&quot;answerConceptSetIds&quot;);</span>
+<span class="nc" id="L263">        boolean isAutocomplete = &quot;autocomplete&quot;.equals(parameters.get(&quot;style&quot;));</span>
+
+<span class="nc bnc" id="L265" title="All 4 branches missed.">		if (context.getCurrentObsGroupConcepts() != null &amp;&amp; context.getCurrentObsGroupConcepts().size() &gt; 0) {</span>
+<span class="nc bnc" id="L266" title="All 2 branches missed.">        	if (answerDrug == null) {</span>
+<span class="nc" id="L267">				existingObs = context.getObsFromCurrentGroup(concept, answerConcept);</span>
+			} else {
+<span class="nc" id="L269">				existingObs = context.getObsFromCurrentGroup(concept, answerDrug);</span>
+			}
+<span class="nc bnc" id="L271" title="All 2 branches missed.">		} else if (concept != null) {</span>
+<span class="nc bnc" id="L272" title="All 4 branches missed.">			if (concept.getDatatype().isBoolean() &amp;&amp; &quot;checkbox&quot;.equals(parameters.get(&quot;style&quot;))) {</span>
+				// since a checkbox has one value we need to look for an exact
+				// match for that value
+<span class="nc bnc" id="L275" title="All 2 branches missed.">				if (&quot;false&quot;.equals(parameters.get(&quot;value&quot;))) {</span>
+<span class="nc" id="L276">					existingObs = context.removeExistingObs(concept, false);</span>
+				} else {
+					// if not 'false' we treat as 'true'
+<span class="nc" id="L279">					existingObs = context.removeExistingObs(concept, true);</span>
+				}
+            // if we use 'checkbox' with numeric values, first find existing obs for each answer
+<span class="nc bnc" id="L282" title="All 4 branches missed.">			}else if (concept.getDatatype().isNumeric() &amp;&amp; &quot;checkbox&quot;.equals(parameters.get(&quot;style&quot;))){</span>
+<span class="nc" id="L283">                String numericAns = parameters.get(&quot;answer&quot;);</span>
+<span class="nc" id="L284">                existingObs = context.removeExistingObs(concept, numericAns);</span>
+                //for dynamicAutocomplete if selectMulti is true
+<span class="nc bnc" id="L286" title="All 4 branches missed.">			} else if (isAutocomplete &amp;&amp; &quot;true&quot;.equals(parameters.get(&quot;selectMulti&quot;))) {</span>
+<span class="nc" id="L287">				existingObsList = context.removeExistingObs(concept);</span>
+			} else {
+<span class="nc bnc" id="L289" title="All 2 branches missed.">				if (answerDrug == null) {</span>
+<span class="nc" id="L290">					existingObs = context.removeExistingObs(concept, answerConcept);</span>
+				} else {
+<span class="nc" id="L292">					existingObs = context.removeExistingObs(concept, answerDrug);</span>
+				}
+			}
+		} else {
+<span class="nc" id="L296">			existingObs = context.removeExistingObs(concepts, answerConcept);</span>
+		}
+		
+<span class="nc" id="L299">		errorWidget = new ErrorWidget();</span>
+<span class="nc" id="L300">		context.registerWidget(errorWidget);</span>
+		
+<span class="nc bnc" id="L302" title="All 2 branches missed.">		if (parameters.containsKey(&quot;labelNameTag&quot;)) {</span>
+<span class="nc bnc" id="L303" title="All 2 branches missed.">			if (parameters.get(&quot;labelNameTag&quot;).equals(&quot;default&quot;))</span>
+<span class="nc bnc" id="L304" title="All 2 branches missed.">				if (concepts != null)</span>
+<span class="nc" id="L305">					valueLabel = answerConcept.getName(locale, false).getName();</span>
+				else
+<span class="nc" id="L307">					valueLabel = concept.getName(locale, false).getName();</span>
+			else
+<span class="nc" id="L309">				throw new IllegalArgumentException(&quot;Name tags other than 'default' not yet implemented&quot;);</span>
+<span class="nc bnc" id="L310" title="All 2 branches missed.">		} else if (parameters.containsKey(&quot;labelText&quot;)) {</span>
+<span class="nc" id="L311">			valueLabel = parameters.get(&quot;labelText&quot;);</span>
+<span class="nc bnc" id="L312" title="All 2 branches missed.">		} else if (parameters.containsKey(&quot;labelCode&quot;)) {</span>
+<span class="nc" id="L313">			valueLabel = context.getTranslator().translate(userLocaleStr, parameters.get(&quot;labelCode&quot;));</span>
+		} else {
+<span class="nc bnc" id="L315" title="All 2 branches missed.">			if (concepts != null)</span>
+<span class="nc" id="L316">				valueLabel = answerConcept.getName(locale, false).getName();</span>
+			else
+<span class="nc" id="L318">				valueLabel = &quot;&quot;;</span>
+		}
+<span class="nc bnc" id="L320" title="All 2 branches missed.">		if (parameters.get(&quot;answerLabels&quot;) != null) {</span>
+<span class="nc" id="L321">			answerLabels = Arrays.asList(parameters.get(&quot;answerLabels&quot;).split(&quot;,&quot;));</span>
+		}
+<span class="nc bnc" id="L323" title="All 2 branches missed.">		if (parameters.get(&quot;answerCodes&quot;) != null) {</span>
+<span class="nc" id="L324">			String[] split = parameters.get(&quot;answerCodes&quot;).split(&quot;,&quot;);</span>
+<span class="nc bnc" id="L325" title="All 2 branches missed.">			for (String s : split) {</span>
+<span class="nc" id="L326">				answerLabels.add(context.getTranslator().translate(userLocaleStr, s));</span>
+			}
+		}
+<span class="nc bnc" id="L329" title="All 2 branches missed.">		if (concepts != null) {</span>
+<span class="nc" id="L330">			conceptLabels = new ArrayList&lt;String&gt;();</span>
+<span class="nc bnc" id="L331" title="All 2 branches missed.">			if (parameters.get(&quot;conceptLabels&quot;) != null)</span>
+<span class="nc" id="L332">				conceptLabels = Arrays.asList(parameters.get(&quot;conceptLabels&quot;).split(&quot;,&quot;));</span>
+<span class="nc bnc" id="L333" title="All 4 branches missed.">			if (conceptLabels.size() != 0 &amp;&amp; (conceptLabels.size() != concepts.size()))</span>
+<span class="nc" id="L334">				throw new IllegalArgumentException(</span>
+				        &quot;If you want to use the conceptLabels attribute, you must to provide the same number of conceptLabels as there are conceptIds.  Parameters: &quot;
+				                + parameters);
+<span class="nc bnc" id="L337" title="All 2 branches missed.">			if (&quot;radio&quot;.equals(parameters.get(&quot;style&quot;))) {</span>
+<span class="nc" id="L338">				valueWidget = new RadioButtonsWidget();</span>
+<span class="nc bnc" id="L339" title="All 2 branches missed.">				if (answerSeparator != null) {</span>
+<span class="nc" id="L340">					((RadioButtonsWidget) valueWidget).setAnswerSeparator(answerSeparator);</span>
+                }
+			} else { // dropdown
+<span class="nc" id="L343">				valueWidget =buildDropdownWidget(size);</span>
+			}
+<span class="nc bnc" id="L345" title="All 2 branches missed.">			for (int i = 0; i &lt; concepts.size(); ++i) {</span>
+<span class="nc" id="L346">				Concept c = concepts.get(i);</span>
+<span class="nc" id="L347">				String label = null;</span>
+<span class="nc bnc" id="L348" title="All 4 branches missed.">				if (conceptLabels != null &amp;&amp; i &lt; conceptLabels.size()) {</span>
+<span class="nc" id="L349">					label = conceptLabels.get(i);</span>
+				} else {
+<span class="nc" id="L351">					label = c.getName(locale, false).getName();</span>
+				}
+<span class="nc" id="L353">				((SingleOptionWidget) valueWidget).addOption(new Option(label, c.getConceptId().toString(), false));</span>
+			}
+<span class="nc bnc" id="L355" title="All 2 branches missed.">			if (existingObs != null) {</span>
+<span class="nc" id="L356">				valueWidget.setInitialValue(existingObs.getConcept());</span>
+<span class="nc bnc" id="L357" title="All 4 branches missed.">			} else if (defaultValue != null &amp;&amp; Mode.ENTER.equals(context.getMode())) {</span>
+<span class="nc" id="L358">				Concept initialValue = HtmlFormEntryUtil.getConcept(defaultValue);</span>
+<span class="nc bnc" id="L359" title="All 2 branches missed.">				if (initialValue == null) {</span>
+<span class="nc" id="L360">					throw new IllegalArgumentException(&quot;Invalid default value. Cannot find concept: &quot; + defaultValue);</span>
+				}
+<span class="nc" id="L362">				valueWidget.setInitialValue(initialValue);</span>
+			}
+<span class="nc" id="L364">			answerLabel = getValueLabel();</span>
+		} else {
+
+			// Obs of datatypes date, time, and datetime support the attributes
+			// defaultDatetime. Make sure this date format string matches the
+			// format documented at
+			// https://wiki.openmrs.org/display/docs/HTML+Form+Entry+Module+HTML+Reference#HTMLFormEntryModuleHTMLReference-%3Cobs%3E
+			// See &lt;obs&gt; section, attributes defaultDatetime and
+			// defaultObsDatetime
+<span class="nc" id="L373">			String defaultDatetimeFormat = &quot;yyyy-MM-dd-HH-mm&quot;;</span>
+
+<span class="nc bnc" id="L375" title="All 2 branches missed.">			if (concept.getDatatype().isNumeric()) {</span>
+
+                ConceptNumeric cn;
+<span class="nc bnc" id="L378" title="All 2 branches missed.">                if (concept instanceof ConceptNumeric) {</span>
+<span class="nc" id="L379">                    cn = (ConceptNumeric) concept;</span>
+                } else {
+<span class="nc" id="L381">                    cn = Context.getConceptService().getConceptNumeric(concept.getConceptId());</span>
+                }
+
+<span class="nc" id="L384">                ConceptCompatibility conceptCompatibility = Context.getRegisteredComponent(&quot;htmlformentry.ConceptCompatibility&quot;, ConceptCompatibility.class);</span>
+<span class="nc bnc" id="L385" title="All 2 branches missed.">                boolean isPrecise = cn != null ? conceptCompatibility.isAllowDecimal(cn) : true;</span>
+
+<span class="nc bnc" id="L387" title="All 2 branches missed.">				if (parameters.get(&quot;answers&quot;) != null) {</span>
+					try {
+<span class="nc bnc" id="L389" title="All 2 branches missed.">						for (StringTokenizer st = new StringTokenizer(parameters.get(&quot;answers&quot;), &quot;, &quot;); st.hasMoreTokens();) {</span>
+<span class="nc" id="L390">							Number answer = Double.valueOf(st.nextToken());</span>
+<span class="nc" id="L391">							numericAnswers.add(answer);</span>
+<span class="nc" id="L392">						}</span>
+					}
+<span class="nc" id="L394">					catch (Exception ex) {</span>
+<span class="nc" id="L395">						throw new RuntimeException(&quot;Error in answer list for concept &quot; + concept.getConceptId() + &quot; (&quot;</span>
+<span class="nc" id="L396">						        + ex.toString() + &quot;): &quot; + conceptAnswers);</span>
+<span class="nc" id="L397">					}</span>
+				}
+
+				// added to avoid creating this widget when a checkbox is needed
+<span class="nc bnc" id="L401" title="All 2 branches missed.">                if (numericAnswers.size() == 0) {</span>
+<span class="nc bnc" id="L402" title="All 2 branches missed.">                    if (!&quot;checkbox&quot;.equals(parameters.get(&quot;style&quot;))) {</span>
+<span class="nc" id="L403">                        valueWidget = new NumberFieldWidget(cn, parameters.get(&quot;size&quot;), absoluteMinimum, absoluteMaximum);</span>
+                    } else {
+                        // render CheckboxWidgets for &lt;obs&gt; tag with numeric datatype;
+                        // i.e. &lt;obs conceptId=&quot;1234&quot; answer=&quot;8&quot; answerLabel=&quot;Eight&quot; style=&quot;checkbox&quot;/&gt;
+<span class="nc bnc" id="L407" title="All 2 branches missed.">                        if (parameters.get(&quot;answer&quot;) != null) {</span>
+                            try {
+<span class="nc" id="L409">                                Number number = Double.valueOf(parameters.get(&quot;answer&quot;));</span>
+<span class="nc" id="L410">                                numericAnswers.add(number);</span>
+<span class="nc" id="L411">                                answerLabel = parameters.get(&quot;answerLabel&quot;);</span>
+<span class="nc bnc" id="L412" title="All 2 branches missed.">                                if (number != null) {</span>
+<span class="nc bnc" id="L413" title="All 2 branches missed.">                                    valueWidget = createCheckboxWidget(answerLabel, isPrecise ? number.toString() : Integer.valueOf(number.intValue()).toString(), parameters.get(&quot;toggle&quot;));</span>
+                                }
+
+<span class="nc" id="L416">                            } catch (Exception ex) {</span>
+<span class="nc" id="L417">                                throw new RuntimeException(&quot;Error in answer for concept &quot; + concept.getConceptId() + &quot; (&quot;</span>
+<span class="nc" id="L418">                                        + ex.toString() + &quot;): &quot;);</span>
+<span class="nc" id="L419">                            }</span>
+                        }
+                    }
+                } else {
+<span class="nc bnc" id="L423" title="All 2 branches missed.">					if (&quot;radio&quot;.equals(parameters.get(&quot;style&quot;))) {</span>
+<span class="nc" id="L424">						valueWidget = new RadioButtonsWidget();</span>
+<span class="nc bnc" id="L425" title="All 2 branches missed.">						if (answerSeparator != null) {</span>
+<span class="nc" id="L426">							((RadioButtonsWidget) valueWidget).setAnswerSeparator(answerSeparator);</span>
+                        }
+					} else { // dropdown
+<span class="nc" id="L429">                        valueWidget = buildDropdownWidget(size);</span>
+					}
+					// need to make sure we have the initialValue too
+<span class="nc bnc" id="L432" title="All 2 branches missed.">					Number lookFor = existingObs == null ? null : existingObs.getValueNumeric();</span>
+<span class="nc bnc" id="L433" title="All 2 branches missed.">					for (int i = 0; i &lt; numericAnswers.size(); ++i) {</span>
+<span class="nc" id="L434">						Number n = numericAnswers.get(i);</span>
+<span class="nc bnc" id="L435" title="All 4 branches missed.">						if (lookFor != null &amp;&amp; lookFor.equals(n))</span>
+<span class="nc" id="L436">							lookFor = null;</span>
+<span class="nc" id="L437">						String label = null;</span>
+<span class="nc bnc" id="L438" title="All 4 branches missed.">						if (answerLabels != null &amp;&amp; i &lt; answerLabels.size()) {</span>
+<span class="nc" id="L439">							label = answerLabels.get(i);</span>
+						} else {
+<span class="nc" id="L441">							label = n.toString();</span>
+						}
+<span class="nc bnc" id="L443" title="All 2 branches missed.">						((SingleOptionWidget) valueWidget).addOption(new Option(label, isPrecise ?  n.toString() : Integer.valueOf(n.intValue()).toString(), false));</span>
+					}
+					// if lookFor is still non-null, we need to add it directly as
+					// an option:
+<span class="nc bnc" id="L447" title="All 2 branches missed.">					if (lookFor != null)</span>
+<span class="nc" id="L448">						((SingleOptionWidget) valueWidget)</span>
+<span class="nc bnc" id="L449" title="All 2 branches missed.">						        .addOption(new Option(lookFor.toString(), isPrecise ?  lookFor.toString() : Integer.valueOf(lookFor.intValue()).toString(), true));</span>
+				}
+
+<span class="nc bnc" id="L452" title="All 2 branches missed.">				if (valueWidget != null) {</span>
+<span class="nc" id="L453">					Number initialValue = null;</span>
+
+<span class="nc bnc" id="L455" title="All 4 branches missed.">					if (existingObs != null &amp;&amp; existingObs.getValueNumeric() != null) {</span>
+						// for non-precise numeric obs, initial value should be rendered as an integer
+<span class="nc bnc" id="L457" title="All 2 branches missed.">						initialValue = isPrecise ? ((Number) existingObs.getValueNumeric()) : existingObs.getValueNumeric().intValue();</span>
+<span class="nc bnc" id="L458" title="All 4 branches missed.">					} else if (defaultValue != null &amp;&amp; Mode.ENTER.equals(context.getMode())) {</span>
+						try {
+<span class="nc bnc" id="L460" title="All 2 branches missed.">							initialValue = isPrecise ? ((Number) Double.valueOf(defaultValue)) : Integer.valueOf(defaultValue);</span>
+<span class="nc" id="L461">						} catch (NumberFormatException e) {</span>
+<span class="nc bnc" id="L462" title="All 2 branches missed.">							throw new IllegalArgumentException(&quot;Default value &quot; + defaultValue + &quot; is not a valid &quot; + (isPrecise ? &quot;double&quot; : &quot;integer&quot;), e);</span>
+<span class="nc" id="L463">						}</span>
+					}
+<span class="nc" id="L465">					valueWidget.setInitialValue(initialValue);</span>
+				}
+
+<span class="nc bnc" id="L468" title="All 2 branches missed.">			} else if (concept.isComplex()) {</span>
+<span class="nc" id="L469">				valueWidget = new UploadWidget();</span>
+<span class="nc bnc" id="L470" title="All 2 branches missed.">				String lookFor = existingObs == null ? null : existingObs.getValueComplex();</span>
+<span class="nc" id="L471">				Obs initialValue = null;</span>
+<span class="nc bnc" id="L472" title="All 2 branches missed.">				if (lookFor != null) {</span>
+<span class="nc" id="L473">					initialValue = existingObs;</span>
+				}
+<span class="nc" id="L475">				valueWidget.setInitialValue(initialValue);</span>
+<span class="nc bnc" id="L476" title="All 2 branches missed.">			} else if (concept.getDatatype().isText()) {</span>
+
+<span class="nc" id="L478">				String initialValue = null;</span>
+<span class="nc bnc" id="L479" title="All 4 branches missed.">				if (defaultValue != null &amp;&amp; Mode.ENTER.equals(context.getMode())) {</span>
+<span class="nc" id="L480">					initialValue = defaultValue;</span>
+				}
+<span class="nc bnc" id="L482" title="All 2 branches missed.">				if (existingObs != null) {</span>
+<span class="nc" id="L483">					initialValue = existingObs.getValueText();</span>
+				}
+
+<span class="nc bnc" id="L486" title="All 2 branches missed.">				if (parameters.get(&quot;answers&quot;) != null) {</span>
+					try {
+<span class="nc bnc" id="L488" title="All 2 branches missed.">						for (StringTokenizer st = new StringTokenizer(parameters.get(&quot;answers&quot;), &quot;,&quot;); st.hasMoreTokens();) {</span>
+<span class="nc" id="L489">							textAnswers.add(st.nextToken());</span>
+						}
+					}
+<span class="nc" id="L492">					catch (Exception ex) {</span>
+<span class="nc" id="L493">						throw new RuntimeException(&quot;Error in answer list for concept &quot; + concept.getConceptId() + &quot; (&quot;</span>
+<span class="nc" id="L494">						        + ex.toString() + &quot;): &quot; + conceptAnswers);</span>
+<span class="nc" id="L495">					}</span>
+				}
+
+                // configure the special obs type that allows selection of a location (the location_id PK is stored as the valueText)
+<span class="nc bnc" id="L499" title="All 2 branches missed.">				if (isLocationObs) {</span>
+
+<span class="nc" id="L501">                    valueWidget = new DropdownWidget();</span>
+                    // if &quot;answerLocationTags&quot; attribute is present try to get locations by tags
+<span class="nc" id="L503">                    List&lt;Location&gt; locationList = HtmlFormEntryUtil.getLocationsByTags(HtmlFormEntryConstants.ANSWER_LOCATION_TAGS, parameters);</span>
+<span class="nc bnc" id="L504" title="All 4 branches missed.">                    if ((locationList == null) ||</span>
+<span class="nc bnc" id="L505" title="All 2 branches missed.">                            (locationList != null &amp;&amp; locationList.size()&lt;1)){</span>
+                        // if no locations by tags are found then get all locations
+<span class="nc" id="L507">                        locationList = Context.getLocationService().getAllLocations();</span>
+                    }
+
+<span class="nc bnc" id="L510" title="All 2 branches missed.">                    for (Location location : locationList) {</span>
+<span class="nc" id="L511">                            String label = HtmlFormEntryUtil.format(location);</span>
+<span class="nc" id="L512">                            Option option = new Option(label, location.getId().toString(), location.getId().toString().equals(initialValue));</span>
+<span class="nc" id="L513">                            locationOptions.add(option);</span>
+<span class="nc" id="L514">                       }</span>
+<span class="nc" id="L515">                    Collections.sort(locationOptions, new OptionComparator());</span>
+
+                    // if initialValueIsSet=false, no initial/default location, hence this shows the 'select input' field as first option
+<span class="nc bnc" id="L518" title="All 2 branches missed.">                    boolean initialValueIsSet = !(initialValue == null);</span>
+<span class="nc bnc" id="L519" title="All 2 branches missed.">                    ((DropdownWidget)valueWidget).addOption(new Option(Context.getMessageSourceService().getMessage(&quot;htmlformentry.chooseALocation&quot;),&quot;&quot;,!initialValueIsSet));</span>
+<span class="nc bnc" id="L520" title="All 2 branches missed.">                    if (!locationOptions.isEmpty()) {</span>
+<span class="nc bnc" id="L521" title="All 2 branches missed.">                        for(Option option: locationOptions)</span>
+<span class="nc" id="L522">                            ((DropdownWidget)valueWidget).addOption(option);</span>
+                    }
+
+<span class="nc bnc" id="L525" title="All 2 branches missed.">				} else if (&quot;person&quot;.equals(parameters.get(&quot;style&quot;))) {</span>
+					
+<span class="nc" id="L527">					List&lt;PersonStub&gt; options = new ArrayList&lt;PersonStub&gt;();</span>
+<span class="nc" id="L528">                    List&lt;Option&gt; personOptions = new ArrayList&lt;Option&gt;();</span>
+					
+					// If specific persons are specified, display only those persons in order
+<span class="nc" id="L531">					String personsParam = (String) parameters.get(&quot;persons&quot;);</span>
+<span class="nc bnc" id="L532" title="All 2 branches missed.">					if (personsParam != null) {</span>
+<span class="nc bnc" id="L533" title="All 2 branches missed.">						for (String s : personsParam.split(&quot;,&quot;)) {</span>
+<span class="nc" id="L534">							Person p = HtmlFormEntryUtil.getPerson(s);</span>
+<span class="nc bnc" id="L535" title="All 2 branches missed.">							if (p == null) {</span>
+<span class="nc" id="L536">								throw new RuntimeException(&quot;Cannot find Person: &quot; + s);</span>
+							}
+<span class="nc" id="L538">							options.add(new PersonStub(p));</span>
+						}
+					}
+					
+					// Only if specific person ids are not passed in do we get by user Role
+<span class="nc bnc" id="L543" title="All 2 branches missed.">					if (options.isEmpty()) {</span>
+						
+<span class="nc" id="L545">						List&lt;PersonStub&gt; users = new ArrayList&lt;PersonStub&gt;();</span>
+						
+						// If the &quot;role&quot; attribute is passed in, limit to users with this role
+<span class="nc bnc" id="L548" title="All 2 branches missed.">						if (parameters.get(&quot;role&quot;) != null) {</span>
+<span class="nc" id="L549">							Role role = Context.getUserService().getRole((String) parameters.get(&quot;role&quot;));</span>
+<span class="nc bnc" id="L550" title="All 2 branches missed.">							if (role == null) {</span>
+<span class="nc" id="L551">								throw new RuntimeException(&quot;Cannot find role: &quot; + parameters.get(&quot;role&quot;));</span>
+							} else {
+<span class="nc" id="L553">								users = Context.getService(HtmlFormEntryService.class).getUsersAsPersonStubs(role.getRole());</span>
+							}
+<span class="nc" id="L555">						}</span>
+
+						// Otherwise, limit to users with the default OpenMRS PROVIDER role, 
+						else {
+<span class="nc" id="L559">							String defaultRole = RoleConstants.PROVIDER;</span>
+<span class="nc" id="L560">							Role role = Context.getUserService().getRole(defaultRole);</span>
+<span class="nc bnc" id="L561" title="All 2 branches missed.">							if (role != null) {</span>
+<span class="nc" id="L562">								users = Context.getService(HtmlFormEntryService.class).getUsersAsPersonStubs(role.getRole());</span>
+							}
+							// If this role isn't used, default to all Users
+<span class="nc bnc" id="L565" title="All 2 branches missed.">							if (users.isEmpty()) {</span>
+<span class="nc" id="L566">								users = Context.getService(HtmlFormEntryService.class).getUsersAsPersonStubs(null);</span>
+							}
+						}
+<span class="nc" id="L569">						options.addAll(users);</span>
+						//    					sortOptions = true;
+					}
+
+<span class="nc" id="L573">					valueWidget = new PersonStubWidget(options);</span>
+
+<span class="nc" id="L575">				} else {</span>
+<span class="nc bnc" id="L576" title="All 2 branches missed.">					if (textAnswers.size() == 0) {</span>
+<span class="nc" id="L577">						Integer rows = null;</span>
+<span class="nc" id="L578">						Integer cols = null;</span>
+
+						try {
+<span class="nc" id="L581">							rows = Integer.valueOf(parameters.get(&quot;rows&quot;));</span>
+						}
+<span class="nc" id="L583">						catch (Exception ex) {}</span>
+						try {
+<span class="nc" id="L585">							cols = Integer.valueOf(parameters.get(&quot;cols&quot;));</span>
+						}
+<span class="nc" id="L587">						catch (Exception ex) {}</span>
+
+<span class="nc bnc" id="L589" title="All 6 branches missed.">						if (rows != null || cols != null || &quot;textarea&quot;.equals(parameters.get(&quot;style&quot;))) {</span>
+<span class="nc" id="L590">							valueWidget = new TextFieldWidget(rows, cols);</span>
+						} else {
+<span class="nc" id="L592">							Integer textFieldSize = null;</span>
+							try {
+<span class="nc" id="L594">                                textFieldSize = Integer.valueOf(parameters.get(&quot;size&quot;));</span>
+							}
+<span class="nc" id="L596">							catch (Exception ex) {}</span>
+<span class="nc" id="L597">							valueWidget = new TextFieldWidget(textFieldSize);</span>
+						}
+<span class="nc" id="L599">                        ((TextFieldWidget) valueWidget).setPlaceholder(parameters.get(&quot;placeholder&quot;));</span>
+
+						try {
+<span class="nc" id="L602">							Integer maxlength = Integer.valueOf(parameters.get(&quot;maxlength&quot;));</span>
+<span class="nc" id="L603">							((TextFieldWidget) valueWidget).setTextFieldMaxLength(maxlength);</span>
+						}
+<span class="nc" id="L605">						catch (Exception ex) {}</span>
+<span class="nc" id="L606">                    }</span>
+					else {
+<span class="nc bnc" id="L608" title="All 2 branches missed.">						if (&quot;radio&quot;.equals(parameters.get(&quot;style&quot;))) {</span>
+<span class="nc" id="L609">							valueWidget = new RadioButtonsWidget();</span>
+<span class="nc bnc" id="L610" title="All 2 branches missed.">							if (answerSeparator != null) {</span>
+<span class="nc" id="L611">								((RadioButtonsWidget) valueWidget).setAnswerSeparator(answerSeparator);</span>
+                            }
+						} else { // dropdown
+<span class="nc" id="L614">							valueWidget =buildDropdownWidget(size);</span>
+						}
+						// need to make sure we have the initialValue too
+<span class="nc bnc" id="L617" title="All 2 branches missed.">						String lookFor = existingObs == null ? null : existingObs.getValueText();</span>
+<span class="nc bnc" id="L618" title="All 2 branches missed.">						for (int i = 0; i &lt; textAnswers.size(); ++i) {</span>
+<span class="nc" id="L619">							String s = textAnswers.get(i);</span>
+<span class="nc bnc" id="L620" title="All 4 branches missed.">							if (lookFor != null &amp;&amp; lookFor.equals(s))</span>
+<span class="nc" id="L621">								lookFor = null;</span>
+<span class="nc" id="L622">							String label = null;</span>
+<span class="nc bnc" id="L623" title="All 4 branches missed.">							if (answerLabels != null &amp;&amp; i &lt; answerLabels.size()) {</span>
+<span class="nc" id="L624">								label = answerLabels.get(i);</span>
+							} else {
+<span class="nc" id="L626">								label = s;</span>
+							}
+<span class="nc" id="L628">							((SingleOptionWidget) valueWidget).addOption(new Option(label, s, false));</span>
+						}
+						// if lookFor is still non-null, we need to add it directly
+						// as an option:
+<span class="nc bnc" id="L632" title="All 2 branches missed.">						if (lookFor != null)</span>
+<span class="nc" id="L633">							((SingleOptionWidget) valueWidget).addOption(new Option(lookFor, lookFor, true));</span>
+					}
+				}
+
+<span class="nc bnc" id="L637" title="All 2 branches missed.">				if (initialValue != null) {</span>
+<span class="nc bnc" id="L638" title="All 2 branches missed.">					if (isLocationObs) {</span>
+<span class="nc" id="L639">						Location l = HtmlFormEntryUtil.getLocation(initialValue, context);</span>
+<span class="nc bnc" id="L640" title="All 2 branches missed.">						if (l == null) {</span>
+<span class="nc" id="L641">							throw new RuntimeException(&quot;Cannot find Location: &quot; + initialValue);</span>
+						}
+<span class="nc" id="L643">						valueWidget.setInitialValue(l);</span>
+<span class="nc bnc" id="L644" title="All 2 branches missed.">					} else if (&quot;person&quot;.equals(parameters.get(&quot;style&quot;))) {</span>
+<span class="nc" id="L645">						Person p = HtmlFormEntryUtil.getPerson(initialValue);</span>
+<span class="nc bnc" id="L646" title="All 2 branches missed.">						if (p == null) {</span>
+<span class="nc" id="L647">							throw new RuntimeException(&quot;Cannot find Person: &quot; + initialValue);</span>
+						}
+<span class="nc" id="L649">						valueWidget.setInitialValue(new PersonStub(p));</span>
+<span class="nc" id="L650">					} else {</span>
+<span class="nc" id="L651">						valueWidget.setInitialValue(initialValue);</span>
+					}
+				}
+<span class="nc bnc" id="L654" title="All 2 branches missed.">			} else if (concept.getDatatype().isCoded()) {</span>
+<span class="nc bnc" id="L655" title="All 2 branches missed.">				if (parameters.get(&quot;answerConceptIds&quot;) != null) {</span>
+					try {
+<span class="nc" id="L657">						for (StringTokenizer st = new StringTokenizer(parameters.get(&quot;answerConceptIds&quot;), &quot;,&quot;); st</span>
+<span class="nc bnc" id="L658" title="All 2 branches missed.">						        .hasMoreTokens();) {</span>
+<span class="nc" id="L659">							Concept c = HtmlFormEntryUtil.getConcept(st.nextToken());</span>
+<span class="nc bnc" id="L660" title="All 2 branches missed.">							if (c == null)</span>
+<span class="nc" id="L661">								throw new RuntimeException(&quot;Cannot find concept &quot; + st.nextToken());</span>
+<span class="nc" id="L662">							conceptAnswers.add(c);</span>
+<span class="nc" id="L663">						}</span>
+					}
+<span class="nc" id="L665">					catch (Exception ex) {</span>
+<span class="nc" id="L666">						throw new RuntimeException(&quot;Error in answer list for concept &quot; + concept.getConceptId() + &quot; (&quot;</span>
+<span class="nc" id="L667">						        + ex.toString() + &quot;): &quot; + conceptAnswers);</span>
+<span class="nc" id="L668">					}</span>
+				}
+<span class="nc bnc" id="L670" title="All 4 branches missed.">                else if (answerConceptSetIds != null &amp;&amp; !isAutocomplete) {</span>
+                    try {
+<span class="nc bnc" id="L672" title="All 2 branches missed.">						for (StringTokenizer st = new StringTokenizer(answerConceptSetIds, &quot;,&quot;); st.hasMoreTokens();) {</span>
+<span class="nc" id="L673">							Concept answerConceptSet = HtmlFormEntryUtil.getConcept(st.nextToken());</span>
+<span class="nc" id="L674">							conceptAnswers.addAll(Context.getConceptService().getConceptsByConceptSet(answerConceptSet));</span>
+<span class="nc" id="L675">						}</span>
+                    }
+<span class="nc" id="L677">                    catch (Exception ex) {</span>
+<span class="nc" id="L678">                        throw new RuntimeException(&quot;Error loading answer concepts from answerConceptSet &quot; + answerConceptSetIds, ex);</span>
+<span class="nc" id="L679">                    }</span>
+                }
+<span class="nc bnc" id="L681" title="All 4 branches missed.">                else if (parameters.get(&quot;answerClasses&quot;) != null &amp;&amp; !isAutocomplete) {</span>
+					try {
+<span class="nc" id="L683">						for (StringTokenizer st = new StringTokenizer(parameters.get(&quot;answerClasses&quot;), &quot;,&quot;); st</span>
+<span class="nc bnc" id="L684" title="All 2 branches missed.">						        .hasMoreTokens();) {</span>
+<span class="nc" id="L685">							String className = st.nextToken().trim();</span>
+<span class="nc" id="L686">							ConceptClass cc = Context.getConceptService().getConceptClassByName(className);</span>
+<span class="nc bnc" id="L687" title="All 2 branches missed.">							if (cc == null) {</span>
+<span class="nc" id="L688">								throw new RuntimeException(&quot;Cannot find concept class &quot; + className);</span>
+							}
+<span class="nc" id="L690">							conceptAnswers.addAll(Context.getConceptService().getConceptsByClass(cc));</span>
+<span class="nc" id="L691">						}</span>
+<span class="nc" id="L692">						Collections.sort(conceptAnswers, conceptNameComparator);</span>
+					}
+<span class="nc" id="L694">					catch (Exception ex) {</span>
+<span class="nc" id="L695">						throw new RuntimeException(&quot;Error in answer class list for concept &quot; + concept.getConceptId() + &quot; (&quot;</span>
+<span class="nc" id="L696">						        + ex.toString() + &quot;): &quot; + conceptAnswers);</span>
+<span class="nc" id="L697">					}</span>
+				}
+				
+<span class="nc bnc" id="L700" title="All 2 branches missed.">				if (answerConcept != null) {</span>
+					// if there's also an answer concept specified, this is a single
+					// checkbox
+<span class="nc" id="L703">					answerLabel = parameters.get(&quot;answerLabel&quot;);</span>
+<span class="nc bnc" id="L704" title="All 2 branches missed.">					if (answerLabel == null) {</span>
+<span class="nc" id="L705">						String answerCode = parameters.get(&quot;answerCode&quot;);</span>
+<span class="nc bnc" id="L706" title="All 2 branches missed.">						if (answerCode != null) {</span>
+<span class="nc" id="L707">							answerLabel = context.getTranslator().translate(userLocaleStr, answerCode);</span>
+						} else {
+<span class="nc" id="L709">							answerLabel = answerConcept.getName(locale, false).getName();</span>
+						}
+					}
+<span class="nc" id="L712">					valueWidget = createCheckboxWidget(answerLabel, answerConcept.getConceptId().toString(), parameters.get(&quot;toggle&quot;));</span>
+<span class="nc bnc" id="L713" title="All 4 branches missed.">					if (existingObsList != null &amp;&amp; !existingObsList.isEmpty()) {</span>
+<span class="nc bnc" id="L714" title="All 2 branches missed.">						for (int i = 0; i &lt; existingObsList.size(); i++) {</span>
+<span class="nc" id="L715">							((DynamicAutocompleteWidget)valueWidget).addInitialValue(existingObsList.get(i).getValueCoded());</span>
+						}
+<span class="nc bnc" id="L717" title="All 2 branches missed.">					} else if (existingObs != null) {</span>
+<span class="nc" id="L718">						valueWidget.setInitialValue(existingObs.getValueCoded());</span>
+<span class="nc bnc" id="L719" title="All 4 branches missed.">					} else if (defaultValue != null &amp;&amp; Mode.ENTER.equals(context.getMode())) {</span>
+<span class="nc" id="L720">						Concept initialValue = HtmlFormEntryUtil.getConcept(defaultValue);</span>
+<span class="nc bnc" id="L721" title="All 2 branches missed.">						if (initialValue == null) {</span>
+<span class="nc" id="L722">							throw new IllegalArgumentException(&quot;Invalid default value. Cannot find concept: &quot; + defaultValue);</span>
+						}
+<span class="nc bnc" id="L724" title="All 2 branches missed.">						if (!answerConcept.equals(initialValue)) {</span>
+<span class="nc" id="L725">							throw new IllegalArgumentException(&quot;Invalid default value: &quot; + defaultValue</span>
+<span class="nc" id="L726">							        + &quot;. The only allowed answer is: &quot; + answerConcept.getId());</span>
+						}
+<span class="nc" id="L728">						valueWidget.setInitialValue(initialValue);</span>
+<span class="nc" id="L729">					}</span>
+<span class="nc bnc" id="L730" title="All 2 branches missed.">				} else if (&quot;true&quot;.equals(parameters.get(&quot;multiple&quot;))) {</span>
+					// if this is a select-multi, we need a group of checkboxes
+<span class="nc" id="L732">					throw new RuntimeException(&quot;Multi-select coded questions are not yet implemented&quot;);</span>
+				} else {
+					// allow selecting one of multiple possible coded values
+					
+					// if no answers are specified explicitly (by conceptAnswers or conceptClasses), get them from concept.answers.
+<span class="nc bnc" id="L737" title="All 4 branches missed.">					if (!parameters.containsKey(&quot;answerConceptIds&quot;) &amp;&amp; !parameters.containsKey(&quot;answerClasses&quot;)</span>
+<span class="nc bnc" id="L738" title="All 6 branches missed.">							&amp;&amp; !parameters.containsKey(&quot;answerDrugs&quot;) &amp;&amp; !parameters.containsKey(&quot;answerDrugId&quot;) &amp;&amp; !parameters.containsKey(&quot;answerConceptSetIds&quot;)) {</span>
+<span class="nc" id="L739">						conceptAnswers = new ArrayList&lt;Concept&gt;();</span>
+<span class="nc bnc" id="L740" title="All 2 branches missed.">						for (ConceptAnswer ca : concept.getAnswers(false)) {</span>
+<span class="nc" id="L741">							conceptAnswers.add(ca.getAnswerConcept());</span>
+<span class="nc" id="L742">						}</span>
+<span class="nc" id="L743">						Collections.sort(conceptAnswers, conceptNameComparator);</span>
+					}
+					
+<span class="nc bnc" id="L746" title="All 2 branches missed.">					if (isAutocomplete) {</span>
+<span class="nc" id="L747">						List&lt;ConceptClass&gt; cptClasses = new ArrayList&lt;ConceptClass&gt;();</span>
+<span class="nc bnc" id="L748" title="All 2 branches missed.">						if (parameters.get(&quot;answerClasses&quot;) != null) {</span>
+<span class="nc" id="L749">							for (StringTokenizer st = new StringTokenizer(parameters.get(&quot;answerClasses&quot;), &quot;,&quot;); st</span>
+<span class="nc bnc" id="L750" title="All 2 branches missed.">							        .hasMoreTokens();) {</span>
+<span class="nc" id="L751">								String className = st.nextToken().trim();</span>
+<span class="nc" id="L752">								ConceptClass cc = Context.getConceptService().getConceptClassByName(className);</span>
+<span class="nc" id="L753">								cptClasses.add(cc);</span>
+<span class="nc" id="L754">							}</span>
+						}
+<span class="nc bnc" id="L756" title="All 6 branches missed.">						if ((conceptAnswers == null || conceptAnswers.isEmpty())</span>
+<span class="nc bnc" id="L757" title="All 4 branches missed.">						        &amp;&amp; (cptClasses == null || cptClasses.isEmpty()) &amp;&amp; answerConceptSetIds == null) {</span>
+<span class="nc" id="L758">							throw new RuntimeException(</span>
+							        &quot;style \&quot;autocomplete\&quot; but there are no possible answers. Looked for answerConcepts and &quot;
+									        + &quot;answerClasses attributes, answerConceptSetIds, and answers for concept &quot;
+<span class="nc" id="L761">							                + concept.getConceptId());</span>
+						}
+<span class="nc bnc" id="L763" title="All 2 branches missed.">						if (&quot;true&quot;.equals(parameters.get(&quot;selectMulti&quot;))) {</span>
+<span class="nc" id="L764">							DynamicAutocompleteWidget dacw = new DynamicAutocompleteWidget(conceptAnswers, cptClasses);</span>
+<span class="nc" id="L765">							dacw.setAllowedConceptSetIds(answerConceptSetIds);</span>
+<span class="nc" id="L766">							valueWidget = dacw;</span>
+<span class="nc" id="L767">                        }</span>
+                        else {
+<span class="nc" id="L769">                        	ConceptSearchAutocompleteWidget csaw = new ConceptSearchAutocompleteWidget(conceptAnswers, cptClasses);</span>
+<span class="nc" id="L770">                        	csaw.setAllowedConceptSetIds(answerConceptSetIds);</span>
+<span class="nc" id="L771">						    valueWidget = csaw;</span>
+                        }
+<span class="nc bnc" id="L773" title="All 2 branches missed.">                    } else if (parameters.get(&quot;answerDrugs&quot;) != null) {</span>
+                        // we support searching through all drugs via AJAX
+<span class="nc" id="L775">                        RemoteJsonAutocompleteWidget widget = new RemoteJsonAutocompleteWidget(&quot;/&quot; + WebConstants.WEBAPP_NAME + &quot;/module/htmlformentry/drugSearch.form&quot;);</span>
+<span class="nc" id="L776">                        widget.setValueTemplate(&quot;Drug:{{id}}&quot;);</span>
+<span class="nc bnc" id="L777" title="All 2 branches missed.">                        if (parameters.get(&quot;displayTemplate&quot;) != null) {</span>
+<span class="nc" id="L778">                            widget.setDisplayTemplate(parameters.get(&quot;displayTemplate&quot;));</span>
+                        } else {
+<span class="nc" id="L780">                            widget.setDisplayTemplate(&quot;{{name}}&quot;);</span>
+                        }
+<span class="nc bnc" id="L782" title="All 4 branches missed.">                        if (existingObs != null &amp;&amp; existingObs.getValueDrug() != null) {</span>
+<span class="nc" id="L783">                            widget.setInitialValue(new Option(existingObs.getValueDrug().getName(), existingObs.getValueDrug().getDrugId().toString(), true));</span>
+                        }
+<span class="nc" id="L785">                        valueWidget = widget;</span>
+
+<span class="nc bnc" id="L787" title="All 2 branches missed.">                    }  else if (parameters.get(&quot;answerDrugId&quot;) != null) {</span>
+<span class="nc" id="L788">						String answerDrugId = parameters.get(&quot;answerDrugId&quot;);</span>
+<span class="nc bnc" id="L789" title="All 2 branches missed.">						if (StringUtils.isNotBlank(answerDrugId)) {</span>
+<span class="nc" id="L790">							Drug drug = HtmlFormEntryUtil.getDrug(answerDrugId);</span>
+<span class="nc bnc" id="L791" title="All 2 branches missed.">							if (drug == null) {</span>
+<span class="nc" id="L792">								throw new IllegalArgumentException(&quot;Cannot find Drug for answerDrugId: &quot; + answerDrugId</span>
+										+ &quot; in answerDrugId attribute value. Parameters: &quot; + parameters);
+							}
+<span class="nc" id="L795">							valueWidget = createCheckboxWidget(drug.getName(), &quot;Drug:&quot; + drug.getId().toString(), null);</span>
+<span class="nc bnc" id="L796" title="All 4 branches missed.">							if (existingObs != null &amp;&amp; existingObs.getValueDrug() != null) {</span>
+<span class="nc" id="L797">								valueWidget.setInitialValue(true);</span>
+							}
+						}
+<span class="nc" id="L800">					}else {</span>
+			            // Show Radio Buttons if specified, otherwise default to Drop
+						// Down 
+<span class="nc" id="L803">						boolean isRadio = &quot;radio&quot;.equals(parameters.get(&quot;style&quot;));</span>
+<span class="nc bnc" id="L804" title="All 2 branches missed.">						if (isRadio) {</span>
+<span class="nc" id="L805">							valueWidget = new RadioButtonsWidget();</span>
+<span class="nc bnc" id="L806" title="All 2 branches missed.">							if (answerSeparator != null) {</span>
+<span class="nc" id="L807">								((RadioButtonsWidget) valueWidget).setAnswerSeparator(answerSeparator);</span>
+                            }
+						} else {
+<span class="nc" id="L810">							valueWidget = buildDropdownWidget(size);</span>
+						}
+<span class="nc bnc" id="L812" title="All 2 branches missed.">						for (int i = 0; i &lt; conceptAnswers.size(); ++i) {</span>
+<span class="nc" id="L813">							Concept c = conceptAnswers.get(i);</span>
+<span class="nc" id="L814">							String label = null;</span>
+<span class="nc bnc" id="L815" title="All 4 branches missed.">							if (answerLabels != null &amp;&amp; i &lt; answerLabels.size()) {</span>
+<span class="nc" id="L816">								label = answerLabels.get(i);</span>
+							} else {
+<span class="nc" id="L818">								label = c.getName(locale, false).getName();</span>
+							}
+<span class="nc" id="L820">							((SingleOptionWidget) valueWidget).addOption(new Option(label, c.getConceptId().toString(),</span>
+							        false));
+						}
+					}
+<span class="nc bnc" id="L824" title="All 4 branches missed.">					if (existingObsList != null &amp;&amp; !existingObsList.isEmpty()) {</span>
+<span class="nc bnc" id="L825" title="All 2 branches missed.">						for (int i = 0; i &lt; existingObsList.size(); i++) {</span>
+<span class="nc" id="L826">							((DynamicAutocompleteWidget)valueWidget).addInitialValue(existingObsList.get(i).getValueCoded());</span>
+						}
+					}
+<span class="nc bnc" id="L829" title="All 2 branches missed.">					if (existingObs != null) {</span>
+<span class="nc bnc" id="L830" title="All 2 branches missed.">                        if (existingObs.getValueDrug() != null) {</span>
+<span class="nc" id="L831">                            valueWidget.setInitialValue(existingObs.getValueDrug());</span>
+                        } else {
+<span class="nc" id="L833">                            valueWidget.setInitialValue(existingObs.getValueCoded());</span>
+                        }
+<span class="nc bnc" id="L835" title="All 4 branches missed.">                    } else if (defaultValue != null &amp;&amp; Mode.ENTER.equals(context.getMode())) {</span>
+<span class="nc" id="L836">						Concept initialValue = HtmlFormEntryUtil.getConcept(defaultValue);</span>
+<span class="nc bnc" id="L837" title="All 2 branches missed.">						if (initialValue == null) {</span>
+<span class="nc" id="L838">							throw new IllegalArgumentException(&quot;Invalid default value. Cannot find concept: &quot; + defaultValue);</span>
+						}
+						
+<span class="nc bnc" id="L841" title="All 2 branches missed.">						if (!conceptAnswers.contains(initialValue)) {</span>
+<span class="nc" id="L842">							String allowedIds = &quot;&quot;;</span>
+<span class="nc bnc" id="L843" title="All 2 branches missed.">							for (Concept conceptAnswer : conceptAnswers) {</span>
+<span class="nc" id="L844">								allowedIds += conceptAnswer.getId() + &quot;, &quot;;</span>
+<span class="nc" id="L845">							}</span>
+<span class="nc" id="L846">							allowedIds = allowedIds.substring(0, allowedIds.length() - 2);</span>
+<span class="nc" id="L847">							throw new IllegalArgumentException(&quot;Invalid default value: &quot; + defaultValue</span>
+							        + &quot;. The only allowed answers are: &quot; + allowedIds);
+						}
+<span class="nc" id="L850">						valueWidget.setInitialValue(initialValue);</span>
+<span class="nc" id="L851">					}</span>
+				}
+<span class="nc bnc" id="L853" title="All 2 branches missed.">			} else if (concept.getDatatype().isBoolean()) {</span>
+<span class="nc" id="L854">				String noStr = parameters.get(&quot;noLabel&quot;);</span>
+<span class="nc bnc" id="L855" title="All 2 branches missed.">				if (StringUtils.isEmpty(noStr)) {</span>
+<span class="nc" id="L856">					noStr = context.getTranslator().translate(userLocaleStr, &quot;general.no&quot;);</span>
+				}
+<span class="nc" id="L858">				String yesStr = parameters.get(&quot;yesLabel&quot;);</span>
+<span class="nc bnc" id="L859" title="All 2 branches missed.">				if (StringUtils.isEmpty(yesStr)) {</span>
+<span class="nc" id="L860">					yesStr = context.getTranslator().translate(userLocaleStr, &quot;general.yes&quot;);</span>
+				}
+				
+<span class="nc bnc" id="L863" title="All 2 branches missed.">				if (&quot;checkbox&quot;.equals(parameters.get(&quot;style&quot;))) {</span>
+<span class="nc bnc" id="L864" title="All 2 branches missed.">					valueWidget = createCheckboxWidget(valueLabel, parameters.get(&quot;value&quot;) != null ? parameters.get(&quot;value&quot;) : &quot;true&quot;, parameters.get(&quot;toggle&quot;));</span>
+<span class="nc" id="L865">					valueLabel = &quot;&quot;;</span>
+<span class="nc bnc" id="L866" title="All 2 branches missed.">				} else if (&quot;no_yes&quot;.equals(parameters.get(&quot;style&quot;))) {</span>
+<span class="nc" id="L867">					valueWidget = new RadioButtonsWidget();</span>
+<span class="nc" id="L868">					((RadioButtonsWidget) valueWidget).addOption(new Option(noStr, &quot;false&quot;, false));</span>
+<span class="nc" id="L869">					((RadioButtonsWidget) valueWidget).addOption(new Option(yesStr, &quot;true&quot;, false));</span>
+<span class="nc bnc" id="L870" title="All 2 branches missed.">				} else if (&quot;yes_no&quot;.equals(parameters.get(&quot;style&quot;))) {</span>
+<span class="nc" id="L871">					valueWidget = new RadioButtonsWidget();</span>
+<span class="nc" id="L872">					((RadioButtonsWidget) valueWidget).addOption(new Option(yesStr, &quot;true&quot;, false));</span>
+<span class="nc" id="L873">					((RadioButtonsWidget) valueWidget).addOption(new Option(noStr, &quot;false&quot;, false));</span>
+<span class="nc bnc" id="L874" title="All 2 branches missed.">				} else if (&quot;no_yes_dropdown&quot;.equals(parameters.get(&quot;style&quot;))) {</span>
+<span class="nc" id="L875">					valueWidget = new DropdownWidget();</span>
+<span class="nc" id="L876">					((DropdownWidget) valueWidget).addOption(new Option());</span>
+<span class="nc" id="L877">					((DropdownWidget) valueWidget).addOption(new Option(noStr, &quot;false&quot;, false));</span>
+<span class="nc" id="L878">					((DropdownWidget) valueWidget).addOption(new Option(yesStr, &quot;true&quot;, false));</span>
+<span class="nc bnc" id="L879" title="All 2 branches missed.">				} else if (&quot;yes_no_dropdown&quot;.equals(parameters.get(&quot;style&quot;))) {</span>
+<span class="nc" id="L880">					valueWidget = new DropdownWidget();</span>
+<span class="nc" id="L881">					((DropdownWidget) valueWidget).addOption(new Option());</span>
+<span class="nc" id="L882">					((DropdownWidget) valueWidget).addOption(new Option(yesStr, &quot;true&quot;, false));</span>
+<span class="nc" id="L883">					((DropdownWidget) valueWidget).addOption(new Option(noStr, &quot;false&quot;, false));</span>
+				} else {
+<span class="nc" id="L885">					throw new RuntimeException(&quot;Boolean with style = &quot; + parameters.get(&quot;style&quot;)</span>
+<span class="nc" id="L886">					        + &quot; not yet implemented (concept = &quot; + concept.getConceptId() + &quot;)&quot;);</span>
+				}
+				
+<span class="nc bnc" id="L889" title="All 2 branches missed.">				if (existingObs != null) {</span>
+<span class="nc" id="L890">					valueWidget.setInitialValue(existingObs.getValueAsBoolean());</span>
+<span class="nc bnc" id="L891" title="All 4 branches missed.">				} else if (defaultValue != null &amp;&amp; Mode.ENTER.equals(context.getMode())) {</span>
+<span class="nc" id="L892">					defaultValue = defaultValue.trim();</span>
+					
+					//Check the default value. Do not use Boolean.valueOf as it only tests for 'true'.
+<span class="nc" id="L895">					Boolean initialValue = null;</span>
+<span class="nc bnc" id="L896" title="All 2 branches missed.">					if (defaultValue.equalsIgnoreCase(Boolean.TRUE.toString())) {</span>
+<span class="nc" id="L897">						initialValue = true;</span>
+<span class="nc bnc" id="L898" title="All 2 branches missed.">					} else if (defaultValue.equalsIgnoreCase(Boolean.FALSE.toString())) {</span>
+<span class="nc" id="L899">						initialValue = false;</span>
+<span class="nc bnc" id="L900" title="All 2 branches missed.">					} else if (defaultValue.isEmpty()) {</span>
+<span class="nc" id="L901">						initialValue = null;</span>
+					} else {
+<span class="nc" id="L903">						throw new IllegalArgumentException(&quot;Invalid default value &quot; + defaultValue</span>
+						        + &quot;. Must be 'true', 'false' or ''.&quot;);
+					}
+<span class="nc" id="L906">					valueWidget.setInitialValue(initialValue);</span>
+				}
+				
+				// TODO: in 1.7-compatible version of the module, we can replace the H17 checks
+				// used below with the new isDate, isTime, and isDatetime
+				
+<span class="nc" id="L912">			} else {</span>
+<span class="nc" id="L913">				DateWidget dateWidget = null;</span>
+<span class="nc" id="L914">				TimeWidget timeWidget = null;</span>
+<span class="nc" id="L915">				boolean disableTime = &quot;false&quot;.equalsIgnoreCase(parameters.get(&quot;allowTime&quot;));</span>
+<span class="nc" id="L916">				boolean hideSeconds = &quot;true&quot;.equalsIgnoreCase(parameters.get(&quot;hideSeconds&quot;));</span>
+				
+<span class="nc bnc" id="L918" title="All 6 branches missed.">				if (ConceptDatatype.DATE.equals(concept.getDatatype().getHl7Abbreviation()) || (ConceptDatatype.DATETIME.equals(concept.getDatatype().getHl7Abbreviation()) &amp;&amp; disableTime)) {</span>
+<span class="nc" id="L919">					valueWidget = new DateWidget();</span>
+<span class="nc bnc" id="L920" title="All 2 branches missed.">				} else if (ConceptDatatype.TIME.equals(concept.getDatatype().getHl7Abbreviation())) {</span>
+<span class="nc" id="L921">					valueWidget = new TimeWidget();</span>
+<span class="nc bnc" id="L922" title="All 2 branches missed.">					if(hideSeconds){</span>
+<span class="nc" id="L923">						((TimeWidget) valueWidget).setHideSeconds(true);</span>
+					}
+<span class="nc bnc" id="L925" title="All 2 branches missed.">				} else if (ConceptDatatype.DATETIME.equals(concept.getDatatype().getHl7Abbreviation())) {</span>
+<span class="nc" id="L926">					dateWidget = new DateWidget();</span>
+<span class="nc" id="L927">					timeWidget = new TimeWidget();</span>
+<span class="nc bnc" id="L928" title="All 2 branches missed.">					if(hideSeconds){</span>
+<span class="nc" id="L929">						timeWidget.setHideSeconds(true);</span>
+					}
+<span class="nc" id="L931">					valueWidget = new DateTimeWidget(dateWidget, timeWidget);</span>
+				} else {
+<span class="nc" id="L933">					throw new RuntimeException(&quot;Cannot handle datatype: &quot; + concept.getDatatype().getName()</span>
+<span class="nc" id="L934">					        + &quot; (for concept &quot; + concept.getConceptId() + &quot;)&quot;);</span>
+				}
+				
+<span class="nc bnc" id="L937" title="All 4 branches missed.">				if (defaultValue != null &amp;&amp; parameters.get(&quot;defaultDatetime&quot;) != null) {</span>
+<span class="nc" id="L938">					throw new IllegalArgumentException(&quot;Cannot set defaultDatetime and defaultValue at the same time.&quot;);</span>
+<span class="nc bnc" id="L939" title="All 2 branches missed.">				} else if (defaultValue == null) {</span>
+<span class="nc" id="L940">					defaultValue = parameters.get(&quot;defaultDatetime&quot;);</span>
+				}
+				
+<span class="nc bnc" id="L943" title="All 2 branches missed.">				if (existingObs != null) {</span>
+<span class="nc" id="L944">					valueWidget.setInitialValue(existingObs.getValueDatetime());</span>
+<span class="nc bnc" id="L945" title="All 4 branches missed.">				} else if (defaultValue != null &amp;&amp; Mode.ENTER.equals(context.getMode())) {</span>
+<span class="nc" id="L946">					valueWidget.setInitialValue(HtmlFormEntryUtil</span>
+<span class="nc" id="L947">					        .translateDatetimeParam(defaultValue, defaultDatetimeFormat));</span>
+				}
+				
+<span class="nc bnc" id="L950" title="All 2 branches missed.">				if (dateWidget != null) {</span>
+<span class="nc" id="L951">					context.registerWidget(dateWidget);</span>
+				}
+<span class="nc bnc" id="L953" title="All 2 branches missed.">				if (timeWidget != null) {</span>
+<span class="nc" id="L954">					context.registerWidget(timeWidget);</span>
+				}
+			}
+		}
+<span class="nc" id="L958">		context.registerWidget(valueWidget);</span>
+<span class="nc" id="L959">		context.registerErrorWidget(valueWidget, errorWidget);</span>
+		
+<span class="nc bnc" id="L961" title="All 2 branches missed.">		if (parameters.get(&quot;showUnits&quot;) != null) {</span>
+<span class="nc bnc" id="L962" title="All 2 branches missed.">            if (&quot;true&quot;.equalsIgnoreCase(parameters.get(&quot;showUnits&quot;))) {</span>
+<span class="nc" id="L963">                showUnits = true;</span>
+<span class="nc bnc" id="L964" title="All 2 branches missed.">            } else if (!&quot;false&quot;.equalsIgnoreCase(parameters.get(&quot;showUnits&quot;))) {</span>
+<span class="nc" id="L965">                showUnits = true;</span>
+<span class="nc" id="L966">                unitsCode = parameters.get(&quot;showUnits&quot;);</span>
+            }
+		}
+
+<span class="nc bnc" id="L970" title="All 2 branches missed.">        if (parameters.get(&quot;unitsCssClass&quot;) != null) {</span>
+<span class="nc" id="L971">            unitsCssClass = parameters.get(&quot;unitsCssClass&quot;);</span>
+        }
+
+        // if a date is requested, do that too
+<span class="nc bnc" id="L975" title="All 4 branches missed.">		if (&quot;true&quot;.equals(parameters.get(&quot;showDate&quot;)) || parameters.containsKey(&quot;dateLabel&quot;)) {</span>
+<span class="nc bnc" id="L976" title="All 2 branches missed.">			if (parameters.containsKey(&quot;dateLabel&quot;)){</span>
+<span class="nc" id="L977">                dateLabel = parameters.get(&quot;dateLabel&quot;);</span>
+            }
+<span class="nc" id="L979">			dateWidget = new DateWidget();</span>
+<span class="nc" id="L980">			context.registerWidget(dateWidget);</span>
+<span class="nc" id="L981">			context.registerErrorWidget(dateWidget, errorWidget);</span>
+<span class="nc bnc" id="L982" title="All 2 branches missed.">			if (existingObs != null) {</span>
+<span class="nc" id="L983">				dateWidget.setInitialValue(existingObs.getObsDatetime());</span>
+<span class="nc bnc" id="L984" title="All 2 branches missed.">			} else if (parameters.get(&quot;defaultObsDatetime&quot;) != null) {</span>
+				// Make sure this format continues to match
+				// the &lt;obs&gt; attribute defaultObsDatetime documentation at
+				// https://wiki.openmrs.org/display/docs/HTML+Form+Entry+Module+HTML+Reference#HTMLFormEntryModuleHTMLReference-%3Cobs%3E
+<span class="nc" id="L988">				String supportedDateFormat = &quot;yyyy-MM-dd-HH-mm&quot;;</span>
+<span class="nc" id="L989">				dateWidget.setInitialValue(HtmlFormEntryUtil.translateDatetimeParam(parameters.get(&quot;defaultObsDatetime&quot;),</span>
+				    supportedDateFormat));
+			}
+		}
+		
+		// if an accessionNumber is requested, do that too
+<span class="nc bnc" id="L995" title="All 4 branches missed.">		if (&quot;true&quot;.equals(parameters.get(&quot;showAccessionNumber&quot;)) || parameters.containsKey(&quot;accessionNumberLabel&quot;)) {</span>
+<span class="nc bnc" id="L996" title="All 2 branches missed.">			if (parameters.containsKey(&quot;accessionNumberLabel&quot;)) {</span>
+<span class="nc" id="L997">               accessionNumberLabel = parameters.get(&quot;accessionNumberLabel&quot;);</span>
+            }
+<span class="nc" id="L999">			accessionNumberWidget = new TextFieldWidget();</span>
+<span class="nc" id="L1000">			context.registerWidget(accessionNumberWidget);</span>
+<span class="nc" id="L1001">			context.registerErrorWidget(accessionNumberWidget, errorWidget);</span>
+<span class="nc bnc" id="L1002" title="All 2 branches missed.">			if (existingObs != null) {</span>
+<span class="nc" id="L1003">				accessionNumberWidget.setInitialValue(existingObs.getAccessionNumber());</span>
+			}
+		}
+		
+		// if a comment is requested, do that too
+<span class="nc bnc" id="L1008" title="All 6 branches missed.">		if (&quot;true&quot;.equals(parameters.get(&quot;showCommentField&quot;))  || parameters.containsKey(&quot;commentFieldLabel&quot;) || parameters.containsKey(&quot;commentFieldCode&quot;)) {</span>
+<span class="nc bnc" id="L1009" title="All 2 branches missed.">			if(parameters.containsKey(&quot;commentFieldLabel&quot;)){</span>
+<span class="nc" id="L1010">                commentFieldLabel = parameters.get(&quot;commentFieldLabel&quot;);</span>
+            }
+<span class="nc bnc" id="L1012" title="All 2 branches missed.">			else if (parameters.containsKey(&quot;commentFieldCode&quot;)) {</span>
+<span class="nc" id="L1013">				commentFieldLabel = context.getTranslator().translate(userLocaleStr, parameters.get(&quot;commentFieldCode&quot;));</span>
+			}
+<span class="nc" id="L1015">            commentFieldWidget = new TextFieldWidget();</span>
+<span class="nc" id="L1016">			context.registerWidget(commentFieldWidget);</span>
+<span class="nc" id="L1017">			context.registerErrorWidget(commentFieldWidget, errorWidget);</span>
+<span class="nc bnc" id="L1018" title="All 2 branches missed.">			if (existingObs != null) {</span>
+<span class="nc" id="L1019">				commentFieldWidget.setInitialValue(existingObs.getComment());</span>
+			}
+		}
+
+<span class="nc" id="L1023">		ObsField field = instatiateObsField();</span>
+
+        // add the field to active obsgroup if there is one, other to the active section
+<span class="nc bnc" id="L1026" title="All 4 branches missed.">		if (concept != null &amp;&amp; context.getActiveObsGroup() != null) {</span>
+<span class="nc" id="L1027">			context.addFieldToActiveObsGroup(field);</span>
+		} else {
+<span class="nc" id="L1029">			context.addFieldToActiveSection(field);</span>
+		}
+<span class="nc" id="L1031">	}</span>
+
+	protected ObsField instatiateObsField() {
+<span class="nc" id="L1034">		ObsField field = new ObsField();</span>
+<span class="nc" id="L1035">		field.setName(valueLabel);</span>
+<span class="nc bnc" id="L1036" title="All 2 branches missed.">		if (concept != null) {</span>
+<span class="nc" id="L1037">			field.setQuestion(concept);</span>
+<span class="nc bnc" id="L1038" title="All 4 branches missed.">		} else if (concepts != null &amp;&amp; concepts.size() &gt; 0) { //for concept selects</span>
+<span class="nc bnc" id="L1039" title="All 2 branches missed.">			for (int i = 0; i &lt; concepts.size(); i++) {</span>
+<span class="nc" id="L1040">				ObsFieldAnswer ans = new ObsFieldAnswer();</span>
+<span class="nc" id="L1041">				ans.setConcept(concepts.get(i));</span>
+<span class="nc bnc" id="L1042" title="All 2 branches missed.">				if (i &lt; conceptLabels.size()) {</span>
+<span class="nc" id="L1043">					ans.setDisplayName(conceptLabels.get(i));</span>
+				}
+<span class="nc" id="L1045">				field.getQuestions().add(ans);</span>
+			}
+		}
+<span class="nc bnc" id="L1048" title="All 2 branches missed.">		if (answerConcept != null) {</span>
+<span class="nc" id="L1049">			ObsFieldAnswer ans = new ObsFieldAnswer();</span>
+<span class="nc" id="L1050">			ans.setDisplayName(getAnswerLabel());</span>
+<span class="nc" id="L1051">			ans.setConcept(answerConcept);</span>
+<span class="nc" id="L1052">			field.setAnswers(Arrays.asList(ans));</span>
+<span class="nc bnc" id="L1053" title="All 2 branches missed.">		} else if (conceptAnswers != null) {</span>
+<span class="nc bnc" id="L1054" title="All 2 branches missed.">			for (int i = 0; i &lt; conceptAnswers.size(); i++) {</span>
+<span class="nc" id="L1055">				ObsFieldAnswer ans = new ObsFieldAnswer();</span>
+<span class="nc" id="L1056">				ans.setConcept(conceptAnswers.get(i));</span>
+<span class="nc bnc" id="L1057" title="All 2 branches missed.">				if (i &lt; answerLabels.size()) {</span>
+<span class="nc" id="L1058">					ans.setDisplayName(answerLabels.get(i));</span>
+				}
+<span class="nc" id="L1060">				field.getAnswers().add(ans);</span>
+			}
+		}
+<span class="nc bnc" id="L1063" title="All 8 branches missed.">		if (concept != null &amp;&amp; concept.getDatatype().isBoolean() &amp;&amp; valueWidget != null &amp;&amp; valueWidget instanceof SingleOptionWidget) {</span>
+<span class="nc" id="L1064">			SingleOptionWidget w = (SingleOptionWidget)valueWidget;</span>
+<span class="nc bnc" id="L1065" title="All 2 branches missed.">			for (Option o : w.getOptions()) {</span>
+<span class="nc" id="L1066">				ObsFieldAnswer ans = new ObsFieldAnswer();</span>
+<span class="nc" id="L1067">				Concept answerConcept = null;</span>
+<span class="nc bnc" id="L1068" title="All 2 branches missed.">				if (StringUtils.isNotBlank(o.getValue())) {</span>
+<span class="nc bnc" id="L1069" title="All 2 branches missed.">					if (Boolean.getBoolean(o.getValue())) {</span>
+<span class="nc" id="L1070">						answerConcept = Context.getConceptService().getTrueConcept();</span>
+					}
+					else {
+<span class="nc" id="L1073">						answerConcept = Context.getConceptService().getFalseConcept();</span>
+					}
+				}
+<span class="nc" id="L1076">				ans.setConcept(answerConcept);</span>
+<span class="nc" id="L1077">				ans.setDisplayName(o.getLabel());</span>
+<span class="nc" id="L1078">				field.getAnswers().add(ans);</span>
+<span class="nc" id="L1079">			}</span>
+		}
+
+<span class="nc" id="L1082">		field.setExistingObs(existingObs);</span>
+<span class="nc" id="L1083">		return field;</span>
+	}
+
+	@Override
+	public String generateHtml(FormEntryContext context) {
+<span class="nc" id="L1088">		StringBuilder ret = new StringBuilder();</span>
+<span class="nc bnc" id="L1089" title="All 4 branches missed.">		if (id != null || clazz != null) {</span>
+<span class="nc bnc" id="L1090" title="All 4 branches missed.">			ret.append(&quot;&lt;span &quot; + (id != null ?  &quot;id=\&quot;&quot; + id + &quot;\&quot; &quot; : &quot;&quot;) +</span>
+                    &quot;class=\&quot;obs-field&quot;+ (clazz !=null ? &quot; &quot; + clazz : &quot;&quot;) + &quot;\&quot;&gt;&quot;);
+<span class="nc" id="L1092">			context.registerPropertyAccessorInfo(id + &quot;.value&quot;, context.getFieldNameIfRegistered(valueWidget),</span>
+<span class="nc" id="L1093">			    getFieldFunction(valueWidget), getGetterFunction(valueWidget), getSetterFunction(valueWidget));</span>
+<span class="nc" id="L1094">			context.registerPropertyAccessorInfo(id + &quot;.date&quot;, context.getFieldNameIfRegistered(dateWidget),</span>
+			    &quot;dateFieldGetterFunction&quot;, null, &quot;dateSetterFunction&quot;);
+<span class="nc" id="L1096">			context.registerPropertyAccessorInfo(id + &quot;.error&quot;, context.getFieldNameIfRegistered(errorWidget), null, null,</span>
+			    null);
+<span class="nc" id="L1098">			context.registerPropertyAccessorInfo(id + &quot;.accessionNumber&quot;,</span>
+<span class="nc" id="L1099">			    context.getFieldNameIfRegistered(accessionNumberWidget), null, null, null);</span>
+<span class="nc bnc" id="L1100" title="All 2 branches missed.">			if (commentFieldWidget != null) {</span>
+<span class="nc" id="L1101">				context.registerPropertyAccessorInfo(id + &quot;.value&quot;, context.getFieldNameIfRegistered(commentFieldWidget),</span>
+				    null, null, null);
+			}
+		}
+<span class="nc" id="L1105">		ret.append(valueLabel);</span>
+<span class="nc bnc" id="L1106" title="All 2 branches missed.">		if (!&quot;&quot;.equals(valueLabel))</span>
+<span class="nc" id="L1107">			ret.append(&quot; &quot;);</span>
+<span class="nc" id="L1108">		ret.append(valueWidget.generateHtml(context));</span>
+<span class="nc bnc" id="L1109" title="All 2 branches missed.">		if (showUnits) {</span>
+<span class="nc" id="L1110">			ret.append(&quot;&lt;span class=\&quot;&quot; + unitsCssClass + &quot;\&quot;&gt;&quot;);</span>
+<span class="nc" id="L1111">			ret.append(getUnits(context));</span>
+<span class="nc" id="L1112">            ret.append(&quot;&lt;/span&gt;&quot;);</span>
+		}
+<span class="nc bnc" id="L1114" title="All 2 branches missed.">		if (dateWidget != null) {</span>
+<span class="nc" id="L1115">			ret.append(&quot; &quot;);</span>
+<span class="nc bnc" id="L1116" title="All 2 branches missed.">			if (dateLabel != null) {</span>
+<span class="nc" id="L1117">				ret.append(dateLabel);</span>
+			}
+<span class="nc" id="L1119">			ret.append(dateWidget.generateHtml(context));</span>
+		}
+<span class="nc bnc" id="L1121" title="All 2 branches missed.">		if (accessionNumberWidget != null) {</span>
+<span class="nc" id="L1122">			ret.append(&quot; &quot;);</span>
+<span class="nc bnc" id="L1123" title="All 2 branches missed.">			if (accessionNumberLabel != null) {</span>
+<span class="nc" id="L1124">				ret.append(&quot;&lt;br/&gt;&quot; + accessionNumberLabel);</span>
+			}
+<span class="nc" id="L1126">			ret.append(accessionNumberWidget.generateHtml(context));</span>
+		}
+<span class="nc bnc" id="L1128" title="All 2 branches missed.">		if (commentFieldWidget != null) {</span>
+<span class="nc" id="L1129">			ret.append(&quot; &quot;);</span>
+<span class="nc bnc" id="L1130" title="All 2 branches missed.">            if(commentFieldLabel != null){</span>
+<span class="nc" id="L1131">               ret.append(commentFieldLabel);</span>
+            }else {
+<span class="nc" id="L1133">               ret.append(Context.getMessageSourceService().getMessage(&quot;htmlformentry.comment&quot;)+&quot;:&quot;);</span>
+            }
+<span class="nc" id="L1135">			ret.append(&quot; &quot;);</span>
+<span class="nc" id="L1136">			ret.append(commentFieldWidget.generateHtml(context));</span>
+		}
+
+<span class="nc bnc" id="L1139" title="All 2 branches missed.">		if (context.getMode() != Mode.VIEW) {</span>
+            // if value is required
+<span class="nc bnc" id="L1141" title="All 2 branches missed.">            if (required) {</span>
+<span class="nc" id="L1142">                ret.append(&quot;&lt;span class='required'&gt;*&lt;/span&gt;&quot;);</span>
+            }
+<span class="nc" id="L1144">            ret.append(&quot; &quot;);</span>
+<span class="nc" id="L1145">			ret.append(errorWidget.generateHtml(context));</span>
+		}
+<span class="nc bnc" id="L1147" title="All 4 branches missed.">		if (id != null || clazz != null) {</span>
+<span class="nc" id="L1148">			ret.append(&quot;&lt;/span&gt;&quot;);</span>
+        }
+<span class="nc" id="L1150">		return ret.toString();</span>
+	}
+
+	protected String getUnits(FormEntryContext context) {
+
+<span class="nc bnc" id="L1155" title="All 4 branches missed.">		if (concept == null || !concept.getDatatype().isNumeric()) {</span>
+<span class="nc" id="L1156">			throw new IllegalArgumentException(&quot;Can only show units when the concept is numeric&quot;);</span>
+		}
+
+		String units;
+<span class="nc bnc" id="L1160" title="All 2 branches missed.">		if (concept instanceof ConceptNumeric) {</span>
+<span class="nc" id="L1161">			units = ((ConceptNumeric) concept).getUnits();</span>
+		} else {
+<span class="nc" id="L1163">			ConceptNumeric asConceptNumeric = Context.getConceptService().getConceptNumeric(concept.getConceptId());</span>
+<span class="nc bnc" id="L1164" title="All 2 branches missed.">			if (asConceptNumeric == null) {</span>
+<span class="nc" id="L1165">				throw new IllegalStateException(&quot;Concept &quot; + concept + &quot; (&quot; + concept.getName().getName() + &quot;) has datatype = Numeric, but no row in concept_numeric&quot;);</span>
+			}
+<span class="nc" id="L1167">			units = asConceptNumeric.getUnits();</span>
+		}
+
+<span class="nc bnc" id="L1170" title="All 2 branches missed.">		if (unitsCode != null) {</span>
+<span class="nc" id="L1171">			return context.getTranslator().translate(locale.toString(), unitsCode);</span>
+<span class="nc bnc" id="L1172" title="All 2 branches missed.">		} else if (units != null) {</span>
+<span class="nc" id="L1173">			return units;</span>
+		}
+		else {
+<span class="nc" id="L1176">			return null;</span>
+		}
+	}
+
+	/**
+	 * TODO implement for all non-standard widgets
+	 * 
+	 * @param widget
+	 * @return
+	 */
+	private String getSetterFunction(Widget widget) {
+<span class="nc bnc" id="L1187" title="All 2 branches missed.">		if (widget == null)</span>
+<span class="nc" id="L1188">			return null;</span>
+<span class="nc bnc" id="L1189" title="All 2 branches missed.">		if (widget instanceof CheckboxWidget)</span>
+<span class="nc" id="L1190">			return &quot;checkboxSetterFunction&quot;;</span>
+<span class="nc bnc" id="L1191" title="All 2 branches missed.">		if (widget instanceof DateWidget)</span>
+<span class="nc" id="L1192">			return &quot;dateSetterFunction&quot;;</span>
+<span class="nc" id="L1193">		return null;</span>
+	}
+	
+	/**
+	 * TODO implement for all non-standard widgets
+	 * 
+	 * @param widget
+	 * @return
+	 */
+	private String getGetterFunction(Widget widget) {
+<span class="nc bnc" id="L1203" title="All 2 branches missed.">		if (widget == null)</span>
+<span class="nc" id="L1204">			return null;</span>
+<span class="nc bnc" id="L1205" title="All 2 branches missed.">		if (widget instanceof CheckboxWidget)</span>
+<span class="nc" id="L1206">			return &quot;checkboxGetterFunction&quot;;</span>
+<span class="nc" id="L1207">		return null;</span>
+	}
+	
+	/**
+	 * TODO implement for all non-standard widgets TODO figure out how to return multiple elements,
+	 * e.g. for date+time widget
+	 * 
+	 * @param widget
+	 * @return
+	 */
+	private String getFieldFunction(Widget widget) {
+<span class="nc bnc" id="L1218" title="All 2 branches missed.">		if (widget == null)</span>
+<span class="nc" id="L1219">			return null;</span>
+<span class="nc bnc" id="L1220" title="All 2 branches missed.">		if (widget instanceof DateWidget)</span>
+<span class="nc" id="L1221">			return &quot;dateFieldGetterFunction&quot;;</span>
+<span class="nc" id="L1222">		return null;</span>
+	}
+	
+	@Override
+	public Collection&lt;FormSubmissionError&gt; validateSubmission(FormEntryContext context, HttpServletRequest submission) {
+<span class="nc" id="L1227">		List&lt;FormSubmissionError&gt; ret = new ArrayList&lt;FormSubmissionError&gt;();</span>
+<span class="nc" id="L1228">		Object value = null;</span>
+<span class="nc" id="L1229">		Object date = null;</span>
+		
+		try {
+<span class="nc" id="L1232">			value = valueWidget.getValue(context, submission);</span>
+		}
+<span class="nc" id="L1234">		catch (Exception ex) {</span>
+<span class="nc" id="L1235">			ret.add(new FormSubmissionError(valueWidget, ex.getMessage()));</span>
+<span class="nc" id="L1236">		}</span>
+		
+		try {
+<span class="nc bnc" id="L1239" title="All 2 branches missed.">			if (dateWidget != null)</span>
+<span class="nc" id="L1240">				date = dateWidget.getValue(context, submission);</span>
+		}
+<span class="nc" id="L1242">		catch (Exception ex) {</span>
+<span class="nc" id="L1243">			ret.add(new FormSubmissionError(dateWidget, ex.getMessage()));</span>
+<span class="nc" id="L1244">		}</span>
+		
+<span class="nc bnc" id="L1246" title="All 4 branches missed.">		if (value == null &amp;&amp; date != null)</span>
+<span class="nc" id="L1247">			ret.add(new FormSubmissionError(valueWidget, Context.getMessageSourceService().getMessage(</span>
+			    &quot;htmlformentry.error.dateWithoutValue&quot;)));
+		
+<span class="nc bnc" id="L1250" title="All 4 branches missed.">		if (date != null &amp;&amp; OpenmrsUtil.compare((Date) date, new Date()) &gt; 0)</span>
+<span class="nc" id="L1251">			ret.add(new FormSubmissionError(dateWidget, Context.getMessageSourceService().getMessage(</span>
+			    &quot;htmlformentry.error.cannotBeInFuture&quot;)));
+		
+<span class="nc bnc" id="L1254" title="All 6 branches missed.">		if (value instanceof Date &amp;&amp; !allowFutureDates &amp;&amp; OpenmrsUtil.compare((Date) value, new Date()) &gt; 0) {</span>
+<span class="nc" id="L1255">			ret.add(new FormSubmissionError(valueWidget, Context.getMessageSourceService().getMessage(</span>
+			    &quot;htmlformentry.error.cannotBeInFuture&quot;)));
+		}
+		
+<span class="nc bnc" id="L1259" title="All 2 branches missed.">		if (required) {</span>
+<span class="nc bnc" id="L1260" title="All 2 branches missed.">			if (value == null) {</span>
+<span class="nc" id="L1261">				ret.add(new FormSubmissionError(valueWidget, Context.getMessageSourceService().getMessage(</span>
+				    &quot;htmlformentry.error.required&quot;)));
+<span class="nc bnc" id="L1263" title="All 2 branches missed.">			} else if (value instanceof String) {</span>
+<span class="nc" id="L1264">				String valueStr = (String) value;</span>
+<span class="nc bnc" id="L1265" title="All 2 branches missed.">				if (StringUtils.isEmpty(valueStr)) {</span>
+<span class="nc" id="L1266">					ret.add(new FormSubmissionError(valueWidget, Context.getMessageSourceService().getMessage(</span>
+					    &quot;htmlformentry.error.required&quot;)));
+				}
+			}
+		}
+		
+<span class="nc" id="L1272">		return ret;</span>
+	}
+	
+	@Override
+	public void handleSubmission(FormEntrySession session, HttpServletRequest submission) {
+<span class="nc" id="L1277">		Object value = valueWidget.getValue(session.getContext(), submission);</span>
+<span class="nc bnc" id="L1278" title="All 4 branches missed.">        if (value instanceof String &amp;&amp; ((String) value).startsWith(&quot;Drug:&quot;)) {</span>
+<span class="nc" id="L1279">            String drugId = ((String) value).substring(&quot;Drug:&quot;.length());</span>
+<span class="nc" id="L1280">            value = HtmlFormEntryUtil.convertToType(drugId, Drug.class);</span>
+        }
+<span class="nc bnc" id="L1282" title="All 2 branches missed.">		if (concepts != null) {</span>
+			try {
+<span class="nc bnc" id="L1284" title="All 2 branches missed.">				if (value instanceof Concept)</span>
+<span class="nc" id="L1285">					concept = (Concept) value;</span>
+				else
+<span class="nc" id="L1287">					concept = (Concept) HtmlFormEntryUtil.convertToType(value.toString(), Concept.class);</span>
+			}
+<span class="nc" id="L1289">			catch (Exception ex) {</span>
+<span class="nc" id="L1290">				throw new RuntimeException(&quot;Unable to convert response to a concept!&quot;);</span>
+<span class="nc" id="L1291">			}</span>
+		}
+<span class="nc" id="L1293">		Date obsDatetime = null;</span>
+<span class="nc" id="L1294">		String accessionNumberValue = null;</span>
+<span class="nc bnc" id="L1295" title="All 2 branches missed.">		if (dateWidget != null)</span>
+<span class="nc" id="L1296">			obsDatetime = (Date) dateWidget.getValue(session.getContext(), submission);</span>
+<span class="nc bnc" id="L1297" title="All 2 branches missed.">		if (accessionNumberWidget != null)</span>
+<span class="nc" id="L1298">			accessionNumberValue = (String) accessionNumberWidget.getValue(session.getContext(), submission);</span>
+
+<span class="nc" id="L1300">		String comment = null;</span>
+<span class="nc bnc" id="L1301" title="All 2 branches missed.">		if (commentFieldWidget != null)</span>
+<span class="nc" id="L1302">			comment = commentFieldWidget.getValue(session.getContext(), submission);</span>
+
+        // note that for the remote use case where showCommentField=true and style=location won't work, as &quot;org.openmrs.Location&quot;
+        // will override any user-entered comment
+<span class="nc bnc" id="L1306" title="All 2 branches missed.">        if (isLocationObs) {</span>
+<span class="nc" id="L1307">            comment = &quot;org.openmrs.Location&quot;;</span>
+        }
+
+<span class="nc bnc" id="L1310" title="All 4 branches missed.">		if (existingObsList != null &amp;&amp; session.getContext().getMode() == Mode.EDIT) {</span>
+
+		    // trying to break this up a little bit by factoring specific functionality for specific widgets into separate methods at least
+<span class="nc" id="L1313">            handleDynamicAutocompleteSubmissionInEditMode(session, submission, value, obsDatetime, accessionNumberValue);</span>
+
+<span class="nc bnc" id="L1315" title="All 4 branches missed.">	    } else if (existingObs != null &amp;&amp; session.getContext().getMode() == Mode.EDIT) {</span>
+	    	// For complex obs: if value is to be retained, get the value from existingObs
+<span class="nc bnc" id="L1317" title="All 4 branches missed.">			if (valueWidget instanceof UploadWidget &amp;&amp; value == null) {</span>
+<span class="nc bnc" id="L1318" title="All 2 branches missed.">				if (!((UploadWidget) valueWidget).shouldDelete(session.getContext(), submission)) {</span>
+<span class="nc" id="L1319">					value = new ComplexData(existingObs.getValueComplex(), null);</span>
+				}
+			}
+	    				
+			// call this regardless of whether the new value is null -- the
+			// modifyObs method is smart
+<span class="nc bnc" id="L1325" title="All 2 branches missed.">			if (concepts != null)</span>
+<span class="nc" id="L1326">				session.getSubmissionActions().modifyObs(existingObs, concept, answerConcept, obsDatetime,</span>
+				    accessionNumberValue, comment);
+			else
+<span class="nc" id="L1329">				session.getSubmissionActions().modifyObs(existingObs, concept, value, obsDatetime, accessionNumberValue, comment);</span>
+		} else {
+<span class="nc bnc" id="L1331" title="All 8 branches missed.">			if (concepts != null &amp;&amp; value != null &amp;&amp; !&quot;&quot;.equals(value) &amp;&amp; concept != null) {</span>
+<span class="nc" id="L1332">				session.getSubmissionActions().createObs(concept, answerConcept, obsDatetime, accessionNumberValue, comment);</span>
+<span class="nc bnc" id="L1333" title="All 4 branches missed.">			} else if (value != null &amp;&amp; !&quot;&quot;.equals(value)) {</span>
+<span class="nc bnc" id="L1334" title="All 2 branches missed.">				if (valueWidget instanceof DynamicAutocompleteWidget) {</span>
+
+                    // trying to break this up a little bit by factoring specific functionality for specific widgets into separate methods at least
+<span class="nc" id="L1337">				    handleDynamicAutocompleteSubmissionInEnterMode(session, submission, value, obsDatetime, accessionNumberValue);</span>
+
+                } else {
+<span class="nc" id="L1340">				    session.getSubmissionActions().createObs(concept, value, obsDatetime, accessionNumberValue, comment);</span>
+			    }
+            }
+		}
+<span class="nc" id="L1344">	}</span>
+
+    private void handleDynamicAutocompleteSubmissionInEnterMode(FormEntrySession session, HttpServletRequest submission, Object value, Date obsDatetime, String accessionNumberValue) {
+
+<span class="nc" id="L1348">        List values = (List) value;</span>
+
+        // create an obs for each value
+<span class="nc bnc" id="L1351" title="All 2 branches missed.">        for (Object val : values) {</span>
+<span class="nc" id="L1352">            int conceptId = Integer.valueOf((String) val);</span>
+<span class="nc" id="L1353">            ((DynamicAutocompleteWidget)valueWidget).addInitialValue(Context.getConceptService().getConcept(conceptId));</span>
+<span class="nc" id="L1354">            session.getSubmissionActions().createObs(concept, conceptId, obsDatetime, accessionNumberValue);</span>
+<span class="nc" id="L1355">        }</span>
+
+<span class="nc" id="L1357">    }</span>
+
+    private void handleDynamicAutocompleteSubmissionInEditMode(FormEntrySession session, HttpServletRequest submission, Object value, Date obsDatetime, String accessionNumberValue) {
+
+<span class="nc" id="L1361">        List values = (List) value;</span>
+
+<span class="nc" id="L1363">        List&lt;Concept&gt; newConceptList = new Vector&lt;Concept&gt;();</span>
+<span class="nc" id="L1364">        List&lt;Concept&gt; existingConceptList = ((DynamicAutocompleteWidget) valueWidget).getInitialValueList();</span>
+
+        // get the list of concepts entered on the form
+<span class="nc bnc" id="L1367" title="All 2 branches missed.">        for (Object val : values) {</span>
+<span class="nc bnc" id="L1368" title="All 2 branches missed.">            if (StringUtils.isNotBlank((String) val)) {</span>
+<span class="nc" id="L1369">                int conceptId = Integer.valueOf((String) val);</span>
+<span class="nc" id="L1370">                newConceptList.add(Context.getConceptService().getConcept(conceptId));</span>
+            }
+<span class="nc" id="L1372">        }</span>
+
+        // figure out what obs we need to create and what ones we need to remove
+<span class="nc bnc" id="L1375" title="All 2 branches missed.">        for (Concept c : existingConceptList) {</span>
+<span class="nc bnc" id="L1376" title="All 2 branches missed.">            if (newConceptList.contains(c))</span>
+<span class="nc" id="L1377">                newConceptList.remove(c);</span>
+            else {
+<span class="nc bnc" id="L1379" title="All 2 branches missed.">                for (Obs o : existingObsList) {</span>
+<span class="nc bnc" id="L1380" title="All 2 branches missed.">                    if (o.getValueCoded().equals(c))</span>
+<span class="nc" id="L1381">                        session.getSubmissionActions().modifyObs(o, concept, null, obsDatetime, accessionNumberValue);</span>
+<span class="nc" id="L1382">                }</span>
+            }
+<span class="nc" id="L1384">        }</span>
+<span class="nc bnc" id="L1385" title="All 2 branches missed.">        if (!newConceptList.isEmpty()) {</span>
+<span class="nc bnc" id="L1386" title="All 2 branches missed.">            for (Concept c : newConceptList) {</span>
+<span class="nc" id="L1387">                session.getSubmissionActions().createObs(concept, c, obsDatetime, accessionNumberValue);</span>
+<span class="nc" id="L1388">            }</span>
+        }
+<span class="nc" id="L1390">    }</span>
+
+<span class="nc" id="L1392">	private Comparator&lt;Concept&gt; conceptNameComparator = new Comparator&lt;Concept&gt;() {</span>
+		
+		@Override
+		public int compare(Concept c1, Concept c2) {
+<span class="nc" id="L1396">			String n1 = c1.getName(locale, false).getName();</span>
+<span class="nc" id="L1397">			String n2 = c2.getName(locale, false).getName();</span>
+<span class="nc" id="L1398">			return n1.compareTo(n2);</span>
+		}
+	};
+
+	private CheckboxWidget createCheckboxWidget(String label, String value, String toggleParameter) {
+<span class="nc bnc" id="L1403" title="All 2 branches missed.">		if (toggleParameter != null) {</span>
+<span class="nc" id="L1404">			ToggleWidget toggleWidget = new ToggleWidget(toggleParameter);</span>
+<span class="nc" id="L1405">			return new CheckboxWidget(label, value, toggleWidget.getTargetId(), toggleWidget.isToggleDim());</span>
+		} else {
+<span class="nc" id="L1407">			return new CheckboxWidget(label, value, null);</span>
+		}
+	}
+
+	/**
+	 * Returns the concept associated with this Observation
+	 */
+	public Concept getConcept() {
+<span class="nc" id="L1415">		return concept;</span>
+	}
+	
+	/**
+	 * Returns the concept associated with the answer to this Observation
+	 */
+	public Concept getAnswerConcept() {
+<span class="nc" id="L1422">		return answerConcept;</span>
+	}
+	
+	/**
+	 * Returns the concepts that are potential answers to this Observation
+	 */
+	public List&lt;Concept&gt; getConceptAnswers() {
+<span class="nc" id="L1429">		return conceptAnswers;</span>
+	}
+	
+	/**
+	 * Returns the Numbers that are potential answers for this Observation
+	 */
+	public List&lt;Number&gt; getNumericAnswers() {
+<span class="nc" id="L1436">		return numericAnswers;</span>
+	}
+	
+	/**
+	 * Returns the potential text answers for this Observation
+	 */
+	public List&lt;String&gt; getTextAnswers() {
+<span class="nc" id="L1443">		return textAnswers;</span>
+	}
+	
+	/**
+	 * Returns the labels to use for the answers to this Observation
+	 */
+	public List&lt;String&gt; getAnswerLabels() {
+<span class="nc" id="L1450">		return answerLabels;</span>
+	}
+	
+	/**
+	 * Returns the label to use for the answer to this Observation
+	 */
+	public String getAnswerLabel() {
+<span class="nc" id="L1457">		return answerLabel;</span>
+	}
+	
+	public String getValueLabel() {
+<span class="nc" id="L1461">		return valueLabel;</span>
+	}
+	
+	public Obs getExistingObs() {
+<span class="nc" id="L1465">		return existingObs;</span>
+	}
+
+    public void whenValueThenDisplaySection(Object value, String thenSection) {
+<span class="nc" id="L1469">        whenValueThenDisplaySection.put(value, thenSection);</span>
+<span class="nc" id="L1470">    }</span>
+
+    public Map&lt;Object, String&gt; getWhenValueThenDisplaySection() {
+<span class="nc" id="L1473">        return whenValueThenDisplaySection;</span>
+    }
+
+    public void whenValueThenJavaScript(Object value, String thenJavaScript) {
+<span class="nc" id="L1477">        whenValueThenJavascript.put(value, thenJavaScript);</span>
+<span class="nc" id="L1478">    }</span>
+
+    public Map&lt;Object, String&gt; getWhenValueThenJavascript() {
+<span class="nc" id="L1481">        return whenValueThenJavascript;</span>
+    }
+
+    public void whenValueElseJavaScript(Object value, String elseJavaScript) {
+<span class="nc" id="L1485">        whenValueElseJavascript.put(value, elseJavaScript);</span>
+<span class="nc" id="L1486">    }</span>
+
+    public Map&lt;Object, String&gt; getWhenValueElseJavascript() {
+<span class="nc" id="L1489">        return whenValueElseJavascript;</span>
+    }
+
+    public boolean hasWhenValueThen() {
+<span class="nc bnc" id="L1493" title="All 2 branches missed.">        return whenValueThenDisplaySection.size() &gt; 0</span>
+<span class="nc bnc" id="L1494" title="All 2 branches missed.">                || whenValueThenJavascript.size() &gt; 0</span>
+<span class="nc bnc" id="L1495" title="All 2 branches missed.">                || whenValueElseJavascript.size() &gt; 0;</span>
+    }
+
+    public String getId() {
+<span class="nc" id="L1499">        return id;</span>
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.8.202204050719</span></div></body></html>

@@ -1,0 +1,148 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>AutocompleteWidget.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">HTML Form Entry API</a> &gt; <a href="index.source.html" class="el_package">org.openmrs.module.htmlformentry.widget</a> &gt; <span class="el_source">AutocompleteWidget.java</span></div><h1>AutocompleteWidget.java</h1><pre class="source lang-java linenums">package org.openmrs.module.htmlformentry.widget;
+
+import java.util.Iterator;
+import java.util.List;
+
+import org.openmrs.api.context.Context;
+import org.openmrs.module.htmlformentry.FormEntryContext;
+import org.springframework.web.util.HtmlUtils;
+
+/**
+ *   A single option auto complete widget which provides auto complete suggestions using a
+ *   list of  predefined options
+ */
+
+public class AutocompleteWidget extends  SingleOptionWidget{
+
+    private Option initialOption;
+    private Class optionClass;
+
+<span class="nc" id="L20">    public AutocompleteWidget(Class optionClass) {</span>
+<span class="nc" id="L21">        this.optionClass = optionClass;</span>
+<span class="nc" id="L22">    }</span>
+
+    /**
+     *
+     * @param  context
+     * @return generated html as a string
+     * &lt;strong&gt;Should&lt;/strong&gt; accept options with special characters é,ã,ê,ù etc.
+     * &lt;strong&gt;Should&lt;/strong&gt; accept options with single or double quotes in middle
+     * &lt;strong&gt;Should&lt;/strong&gt; correctly set previous value if initial option is present
+     */
+    @Override
+    public String generateHtml(FormEntryContext context) {
+
+<span class="nc" id="L35">         String optionNames = null;</span>
+<span class="nc" id="L36">         String optionValues = null;</span>
+
+<span class="nc bnc" id="L38" title="All 2 branches missed.">         if (context.getMode() == FormEntryContext.Mode.VIEW) {</span>
+<span class="nc" id="L39">            String toPrint = &quot;&quot;;</span>
+<span class="nc bnc" id="L40" title="All 2 branches missed.">            if (getInitialValue() != null) {</span>
+                // lookup the label for the selected value
+<span class="nc" id="L42">                boolean found = false;</span>
+<span class="nc bnc" id="L43" title="All 2 branches missed.">                for (Option o : getOptions()) {</span>
+<span class="nc bnc" id="L44" title="All 2 branches missed.">                    if (getInitialValue().equals(o.getLabel())) {</span>
+<span class="nc" id="L45">                        toPrint = o.getLabel();</span>
+<span class="nc" id="L46">                        found = true;</span>
+<span class="nc" id="L47">                        break;</span>
+                    }
+<span class="nc" id="L49">                }</span>
+<span class="nc bnc" id="L50" title="All 2 branches missed.">                if(!found){</span>
+<span class="nc" id="L51">                    toPrint = getInitialValue();</span>
+                }
+<span class="nc" id="L53">                return WidgetFactory.displayValue(toPrint);</span>
+            } else {
+<span class="nc" id="L55">                return WidgetFactory.displayDefaultEmptyValue();</span>
+            }
+        }else {
+<span class="nc" id="L58">            StringBuilder sb = new StringBuilder();</span>
+<span class="nc" id="L59">            String id = context.getFieldName(this);</span>
+
+<span class="nc bnc" id="L61" title="All 2 branches missed.">            if(!getOptions().isEmpty()){</span>
+<span class="nc" id="L62">            optionNames = getNamesAsString(getOptions());</span>
+<span class="nc" id="L63">            optionValues = getValuesAsString(getOptions());</span>
+            }
+
+            // set the previously given option into widget, when editing the form
+<span class="nc bnc" id="L67" title="All 2 branches missed.">            if (context.getMode() == FormEntryContext.Mode.EDIT) {</span>
+<span class="nc bnc" id="L68" title="All 2 branches missed.">             for (Option o : getOptions()) {</span>
+<span class="nc bnc" id="L69" title="All 4 branches missed.">                    if (getInitialValue() != null &amp;&amp; getInitialValue().equals(o.getLabel())) {</span>
+<span class="nc" id="L70">                        initialOption = new Option(o.getLabel(),o.getValue(),false);</span>
+                    }
+<span class="nc" id="L72">                }</span>
+            }
+            // set the default option into widget, when entering the form
+
+<span class="nc bnc" id="L76" title="All 2 branches missed.">            else if (context.getMode() == FormEntryContext.Mode.ENTER) {</span>
+<span class="nc bnc" id="L77" title="All 2 branches missed.">               for (Option o : getOptions()) {</span>
+<span class="nc bnc" id="L78" title="All 4 branches missed.">                   if (o.isSelected() &amp;&amp; !o.getValue().equals(&quot;&quot;)) {</span>
+<span class="nc" id="L79">                      initialOption = new Option(o.getLabel(),o.getValue(),false);</span>
+                   }
+<span class="nc" id="L81">               }</span>
+            }
+
+
+<span class="nc bnc" id="L85" title="All 2 branches missed.">            sb.append(&quot;&lt;input type=\&quot;text\&quot; id=\&quot;&quot; + id + &quot;\&quot; value=\&quot;&quot;</span>
+<span class="nc" id="L86">			        + ((initialOption != null) ? HtmlUtils.htmlEscape(initialOption.getLabel()) : &quot;&quot;)</span>
+			        + &quot;\&quot; onblur=\&quot;onBlurAutocomplete(this)\&quot; class=\&quot;optionAutoComplete\&quot;&quot;
+                    + &quot; onfocus=\&quot;setupOptionAutocomplete(this,'&quot; +optionNames +&quot;','&quot;
+                    + optionValues + &quot;')\&quot; onchange=\&quot;setValWhenAutocompleteFieldBlanked(this)\&quot; placeholder=\&quot;&quot;
+<span class="nc" id="L90">			        + Context.getMessageSourceService().getMessage(&quot;htmlformentry.form.value.placeholder&quot;) + &quot;\&quot; /&gt;&quot;);</span>
+
+<span class="nc bnc" id="L92" title="All 2 branches missed.">			sb.append(&quot;\n&lt;input type=\&quot;hidden\&quot; class=\&quot;optionAutoCompleteHidden\&quot; id=\&quot;&quot; + id + &quot;_hid&quot; + &quot;\&quot; name=\&quot;&quot;</span>
+<span class="nc" id="L93">			        + id + &quot;\&quot; value=\&quot;&quot; + ((initialOption != null) ? initialOption.getValue() : &quot;&quot;)</span>
+			        + &quot;\&quot; /&gt;&quot;);
+<span class="nc" id="L95">            return sb.toString();</span>
+        }
+    }
+
+    /**
+     *
+     * @param  options
+     * @return a single string with all the option values appended into it
+     */
+    private String getValuesAsString(List&lt;Option&gt; options) {
+
+<span class="nc" id="L106">       StringBuilder valueSb = new StringBuilder();</span>
+<span class="nc bnc" id="L107" title="All 2 branches missed.">            for (Iterator&lt;Option&gt; it = options.iterator(); it.hasNext();) {</span>
+<span class="nc" id="L108">                valueSb.append(it.next().getValue());</span>
+<span class="nc bnc" id="L109" title="All 2 branches missed.">				if (it.hasNext()){</span>
+<span class="nc" id="L110">                   valueSb.append(&quot;,&quot;);</span>
+                }
+			}
+<span class="nc" id="L113">       return valueSb.toString();</span>
+    }
+
+    /*
+     * @param  options
+     * @return a single string with all the option names appended into it
+     */
+    private String getNamesAsString(List&lt;Option&gt; options) {
+
+<span class="nc" id="L122">            StringBuilder nameSb = new StringBuilder();</span>
+<span class="nc bnc" id="L123" title="All 2 branches missed.">            for (Iterator&lt;Option&gt; it = options.iterator(); it.hasNext();) {</span>
+<span class="nc" id="L124">                String originalOption = it.next().getLabel();</span>
+
+                // this is added to eliminate the errors occur due to having &quot;, ' and \ charaters included in
+                // the option names. When those are met they are replaced with 'escape character+original character'
+<span class="nc" id="L128">                originalOption = originalOption.replace(&quot;\\&quot;, &quot;\\&quot; +&quot;\\&quot; );</span>
+<span class="nc" id="L129">                originalOption = originalOption.replace(&quot;'&quot;, &quot;\\&quot; +&quot;'&quot;);</span>
+<span class="nc" id="L130">                originalOption = originalOption.replace(&quot;\&quot;&quot;, &quot;\\&quot; +&quot;'&quot; );</span>
+
+<span class="nc" id="L132">				nameSb.append(originalOption);</span>
+<span class="nc bnc" id="L133" title="All 2 branches missed.">				if (it.hasNext()){</span>
+<span class="nc" id="L134">                   nameSb.append(&quot;,&quot;);</span>
+                }
+<span class="nc" id="L136">			}</span>
+<span class="nc" id="L137">        return nameSb.toString();</span>
+    }
+
+    public Option getInitialOption() {
+<span class="nc" id="L141">        return initialOption;</span>
+    }
+
+    public Class getOptionClass() {
+<span class="nc" id="L145">        return optionClass;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.8.202204050719</span></div></body></html>

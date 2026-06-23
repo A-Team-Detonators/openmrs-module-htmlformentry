@@ -1,0 +1,163 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>DateWidget.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">HTML Form Entry API</a> &gt; <a href="index.source.html" class="el_package">org.openmrs.module.htmlformentry.widget</a> &gt; <span class="el_source">DateWidget.java</span></div><h1>DateWidget.java</h1><pre class="source lang-java linenums">package org.openmrs.module.htmlformentry.widget;
+
+import org.openmrs.api.context.Context;
+import org.openmrs.module.htmlformentry.FormEntryContext;
+import org.openmrs.module.htmlformentry.FormEntryContext.Mode;
+import org.openmrs.module.htmlformentry.HtmlFormEntryConstants;
+import org.openmrs.module.htmlformentry.HtmlFormEntryUtil;
+import org.springframework.util.StringUtils;
+
+import javax.servlet.http.HttpServletRequest;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.Locale;
+
+/**
+ * A widget that allows the selection of a specific day, month, and year. To handle both
+ * a date and time, see {@see DateTimeWidget}.
+ */
+public class DateWidget implements Widget {
+    
+    private Date initialValue;
+    private String onChangeFunction;
+    private String dateFormat;
+<span class="fc" id="L24">    private boolean hidden = false;</span>
+
+<span class="fc" id="L26">    public DateWidget() { }</span>
+
+    private SimpleDateFormat dateFormat() {
+<span class="pc bpc" id="L29" title="1 of 2 branches missed.">    	String df = dateFormat != null ? dateFormat : Context.getAdministrationService().getGlobalProperty(HtmlFormEntryConstants.GP_DATE_FORMAT); </span>
+<span class="pc bpc" id="L30" title="1 of 2 branches missed.">    	if (StringUtils.hasText(df)) {</span>
+<span class="nc" id="L31">    		return new SimpleDateFormat(df, Context.getLocale());</span>
+    	} else {
+<span class="fc" id="L33">    		return Context.getDateFormat();</span>
+    	}
+    }
+
+    public String getYearsRange()
+    {
+<span class="fc" id="L39">    	 return Context.getAdministrationService().getGlobalProperty(HtmlFormEntryConstants.GP_YEARS_RANGE, &quot;110,20&quot;);</span>
+    }
+    private String jsDateFormat() {
+<span class="fc" id="L42">    	String ret = dateFormat().toPattern();</span>
+<span class="pc bpc" id="L43" title="1 of 2 branches missed.">    	if (ret.contains(&quot;yyyy&quot;))</span>
+<span class="fc" id="L44">    		ret = ret.replaceAll(&quot;yyyy&quot;, &quot;yy&quot;); // jquery uses yy for 4-digit years</span>
+<span class="nc bnc" id="L45" title="All 2 branches missed.">    	else if (ret.contains(&quot;yy&quot;))</span>
+<span class="nc" id="L46">    		ret = ret.replaceAll(&quot;yy&quot;, &quot;y&quot;); // jquery uses y for 2-digit years</span>
+<span class="pc bpc" id="L47" title="1 of 2 branches missed.">    	if (ret.contains(&quot;MMMM&quot;))</span>
+<span class="nc" id="L48">    		ret = ret.replaceAll(&quot;MMMM&quot;, &quot;MM&quot;); // jquery uses MM for long month name </span>
+<span class="pc bpc" id="L49" title="1 of 2 branches missed.">    	else if (ret.contains(&quot;MMM&quot;))</span>
+<span class="nc" id="L50">    		ret = ret.replaceAll(&quot;MMM&quot;, &quot;M&quot;); // jquery uses M for short month name </span>
+<span class="pc bpc" id="L51" title="1 of 2 branches missed.">    	else if (ret.contains(&quot;MM&quot;))</span>
+<span class="fc" id="L52">    		ret = ret.replaceAll(&quot;MM&quot;, &quot;mm&quot;); // jquery uses mm for 2-digit month</span>
+    	else
+<span class="nc" id="L54">    		ret = ret.replaceAll(&quot;M&quot;, &quot;m&quot;); // jquery uses m for month with no leading zero</span>
+<span class="fc" id="L55">    	return ret;</span>
+    }
+    
+    private String getLocaleForJquery() {
+<span class="fc" id="L59">    	Locale loc = Context.getLocale();</span>
+<span class="fc" id="L60">    	String ret = loc.getLanguage();</span>
+<span class="pc bpc" id="L61" title="1 of 2 branches missed.">    	if (StringUtils.hasText(loc.getCountry())) {</span>
+<span class="fc" id="L62">    		ret += &quot;-&quot; + loc.getCountry();</span>
+    	}
+<span class="fc" id="L64">    	return ret;</span>
+    }
+    
+    @Override
+    public String generateHtml(FormEntryContext context) {
+<span class="fc bfc" id="L69" title="All 2 branches covered.">        if (context.getMode() == Mode.VIEW) {</span>
+<span class="fc" id="L70">            String toPrint = &quot;&quot;;</span>
+<span class="pc bpc" id="L71" title="1 of 2 branches missed.">            if (initialValue != null) {</span>
+<span class="fc" id="L72">                toPrint = dateFormat().format(initialValue);</span>
+<span class="fc" id="L73">                return WidgetFactory.displayValue(toPrint);</span>
+            } else {
+<span class="nc" id="L75">                toPrint = &quot;________&quot;;</span>
+<span class="nc" id="L76">                return WidgetFactory.displayEmptyValue(toPrint);</span>
+            }
+        } else {
+<span class="fc" id="L79">            StringBuilder sb = new StringBuilder();</span>
+<span class="fc" id="L80">            String fieldName = context.getFieldName(this);</span>
+<span class="fc bfc" id="L81" title="All 2 branches covered.">            if (!hidden) {</span>
+<span class="fc" id="L82">                sb.append(&quot;&lt;input type=\&quot;text\&quot; size=\&quot;10\&quot; id=\&quot;&quot;).append(fieldName).append(&quot;-display\&quot;/&gt;&quot;);</span>
+            }
+<span class="fc" id="L84">            sb.append(&quot;&lt;input type=\&quot;hidden\&quot; name=\&quot;&quot;).append(fieldName).append(&quot;\&quot; id=\&quot;&quot;).append(fieldName).append(&quot;\&quot;&quot;);</span>
+<span class="fc bfc" id="L85" title="All 2 branches covered.">            if (onChangeFunction != null) {</span>
+<span class="fc" id="L86">                sb.append(&quot; onChange=\&quot;&quot; + onChangeFunction + &quot;\&quot; &quot;);</span>
+            }
+<span class="pc bpc" id="L88" title="1 of 4 branches missed.">            if (hidden &amp;&amp; initialValue != null) {</span>
+                // set the value here, since it won't be set by the ui widget
+<span class="fc" id="L90">                sb.append(&quot; value=\&quot;&quot; + new SimpleDateFormat(&quot;yyyy-MM-dd&quot;).format(initialValue) + &quot;\&quot;&quot;);</span>
+            }
+<span class="fc" id="L92">            sb.append(&quot; /&gt;&quot;);</span>
+
+<span class="fc bfc" id="L94" title="All 2 branches covered.">            if (!hidden) {</span>
+<span class="pc bpc" id="L95" title="1 of 2 branches missed.">                if (&quot;true&quot;.equals(Context.getAdministrationService().getGlobalProperty(HtmlFormEntryConstants.GP_SHOW_DATE_FORMAT))) {</span>
+<span class="nc" id="L96">                    sb.append(&quot; (&quot; + dateFormat().toPattern().toLowerCase() + &quot;)&quot;);</span>
+                }
+
+<span class="fc" id="L99">                sb.append(&quot;&lt;script&gt;setupDatePicker('&quot; + jsDateFormat() + &quot;', '&quot; + getYearsRange() + &quot;','&quot; + getLocaleForJquery() + &quot;', '#&quot; + fieldName + &quot;-display', '#&quot; + fieldName + &quot;'&quot;);</span>
+<span class="fc bfc" id="L100" title="All 2 branches covered.">                if (initialValue != null)</span>
+<span class="fc" id="L101">                    sb.append(&quot;, '&quot; + new SimpleDateFormat(&quot;yyyy-MM-dd&quot;).format(initialValue) + &quot;'&quot;);</span>
+<span class="fc" id="L102">                sb.append(&quot;)&lt;/script&gt;&quot;);</span>
+            }
+<span class="fc" id="L104">            return sb.toString();</span>
+        }
+    }
+
+    @Override
+    public Date getValue(FormEntryContext context, HttpServletRequest request) {
+        try {
+<span class="fc" id="L111">            Date d = (Date) HtmlFormEntryUtil.getParameterAsType(request, context.getFieldName(this), Date.class);</span>
+<span class="fc" id="L112">            return d;</span>
+<span class="nc" id="L113">        } catch (Exception ex) {</span>
+<span class="nc" id="L114">            throw new IllegalArgumentException(&quot;Illegal value&quot;);</span>
+        }
+    }
+
+    @Override
+    public void setInitialValue(Object value) {
+<span class="fc" id="L120">        initialValue = (Date) value;</span>
+<span class="fc" id="L121">    }</span>
+
+    public Object getInitialValue() {
+<span class="nc" id="L124">        return this.initialValue;</span>
+    }
+
+	public void setOnChangeFunction(String onChangeFunction) {
+<span class="fc" id="L128">		this.onChangeFunction = onChangeFunction;</span>
+<span class="fc" id="L129">	}</span>
+	
+	/**
+	 * @param dateFormat the dateFormat to set
+	 */
+	public void setDateFormat(String dateFormat) {
+<span class="fc" id="L135">		this.dateFormat = dateFormat;</span>
+<span class="fc" id="L136">	}</span>
+
+    public void setHidden(boolean hidden) {
+<span class="fc" id="L139">        this.hidden = hidden;</span>
+<span class="fc" id="L140">    }</span>
+
+    public boolean isHidden() {
+<span class="fc" id="L143">        return hidden;</span>
+    }
+
+    public String getOnChangeFunction() {
+<span class="nc" id="L147">        return onChangeFunction;</span>
+    }
+
+    public String getDateFormat() {
+<span class="nc" id="L151">        return dateFormat;</span>
+    }
+
+    public DateWidget clone() {
+<span class="nc" id="L155">	    DateWidget clone = new DateWidget();</span>
+<span class="nc" id="L156">	    clone.setInitialValue(this.getInitialValue());</span>
+<span class="nc" id="L157">	    clone.setOnChangeFunction(this.getOnChangeFunction());</span>
+<span class="nc" id="L158">	    clone.setHidden(this.isHidden());</span>
+<span class="nc" id="L159">	    clone.setDateFormat(this.getDateFormat());</span>
+<span class="nc" id="L160">	    return clone;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.8.202204050719</span></div></body></html>

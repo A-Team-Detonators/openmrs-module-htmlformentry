@@ -1,0 +1,392 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>RelationshipSubmissionElement.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">HTML Form Entry API</a> &gt; <a href="index.source.html" class="el_package">org.openmrs.module.htmlformentry.element</a> &gt; <span class="el_source">RelationshipSubmissionElement.java</span></div><h1>RelationshipSubmissionElement.java</h1><pre class="source lang-java linenums">package org.openmrs.module.htmlformentry.element;
+
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+import javax.servlet.http.HttpServletRequest;
+
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+import org.openmrs.Person;
+import org.openmrs.PersonAttribute;
+import org.openmrs.Relationship;
+import org.openmrs.RelationshipType;
+import org.openmrs.api.context.Context;
+import org.openmrs.module.htmlformentry.FormEntryContext;
+import org.openmrs.module.htmlformentry.FormEntryContext.Mode;
+import org.openmrs.module.htmlformentry.FormEntrySession;
+import org.openmrs.module.htmlformentry.FormSubmissionError;
+import org.openmrs.module.htmlformentry.HtmlFormEntryService;
+import org.openmrs.module.htmlformentry.action.FormSubmissionControllerAction;
+import org.openmrs.module.htmlformentry.widget.ErrorWidget;
+import org.openmrs.module.htmlformentry.widget.PersonSearchWidget;
+import org.openmrs.module.htmlformentry.widget.PersonStubWidget;
+import org.openmrs.module.htmlformentry.widget.RelationshipWidget;
+
+/**
+ * Holds the widgets used to represent a relationship, and serves as both the HtmlGeneratorElement
+ * and the FormSubmissionControllerAction for the relationship.
+ */
+public class RelationshipSubmissionElement implements HtmlGeneratorElement,
+        FormSubmissionControllerAction {
+
+<span class="nc" id="L37">    protected final Log log = LogFactory.getLog(RelationshipSubmissionElement.class);</span>
+
+    private String id;
+<span class="nc" id="L40">    private static String FIELD_TYPE = &quot;type&quot;;</span>
+<span class="nc" id="L41">    private static String FIELD_WHO_AM_I = &quot;whoAmI&quot;;</span>
+<span class="nc" id="L42">    private static String FIELD_REQUIRED = &quot;required&quot;;</span>
+<span class="nc" id="L43">    private static String FIELD_REPLACE_CURRENT = &quot;changeExistingRelationship&quot;;</span>
+<span class="nc" id="L44">    private static String FIELD_ATTRIBUTE = &quot;requireAttributes&quot;;</span>
+<span class="nc" id="L45">    private static String FIELD_PROGRAMS = &quot;programIds&quot;;</span>
+<span class="nc" id="L46">    private static String FIELD_DISPLAY = &quot;display&quot;;</span>
+<span class="nc" id="L47">    private static String FIELD_LABEL_TEXT = &quot;labelText&quot;;</span>
+
+<span class="nc" id="L49">    private static String DISPLAY_SEARCH = &quot;search&quot;;</span>
+<span class="nc" id="L50">    private static String DISPLAY_DROPDOWN = &quot;dropDown&quot;;</span>
+
+<span class="nc" id="L52">    private PersonSearchWidget personWidget = null;</span>
+<span class="nc" id="L53">    private PersonStubWidget personStubWidget = null;</span>
+    private ErrorWidget personErrorWidget;
+    private RelationshipWidget relationshipWidget;
+
+    private String personAttributes;
+    private String personPrograms;
+    private String display;
+<span class="nc" id="L60">    private String labelText = null;</span>
+
+
+<span class="nc" id="L63">    private List&lt;RelationshipType&gt; relationshipsToCreate = new ArrayList&lt;RelationshipType&gt;();</span>
+<span class="nc" id="L64">    private List&lt;String&gt; roleInRelationship = new ArrayList&lt;String&gt;();</span>
+<span class="nc" id="L65">    private List&lt;Boolean&gt; replaceExisting = new ArrayList&lt;Boolean&gt;();</span>
+
+<span class="nc" id="L67">    private boolean required = false;</span>
+
+<span class="nc" id="L69">    public RelationshipSubmissionElement(FormEntryContext context, Map&lt;String, String&gt; parameters) {</span>
+<span class="nc" id="L70">        String relationshipsToBeCreated = parameters.get(FIELD_TYPE);</span>
+<span class="nc" id="L71">        String whoAmI = parameters.get(FIELD_WHO_AM_I);</span>
+<span class="nc" id="L72">        String replaceCurrent = parameters.get(FIELD_REPLACE_CURRENT);</span>
+
+<span class="nc bnc" id="L74" title="All 6 branches missed.">        if (relationshipsToBeCreated == null || whoAmI == null || replaceCurrent == null){</span>
+<span class="nc" id="L75">            throw new RuntimeException(&quot;You must include type, whoAmI and changeExistingRelationship&quot; +</span>
+                    &quot; fields in a relationship tag, all three fields are required&quot;);
+        }
+
+<span class="nc" id="L79">        relationshipWidget = new RelationshipWidget();</span>
+
+<span class="nc bnc" id="L81" title="All 2 branches missed.">        if (relationshipsToBeCreated != null) {</span>
+<span class="nc" id="L82">            String[] relationships = relationshipsToBeCreated.split(&quot;,&quot;);</span>
+
+<span class="nc bnc" id="L84" title="All 2 branches missed.">            for (String rel : relationships) {</span>
+<span class="nc" id="L85">                RelationshipType r = Context.getPersonService().getRelationshipTypeByUuid(rel);</span>
+<span class="nc bnc" id="L86" title="All 2 branches missed.">                if (r == null) {</span>
+                    try {
+<span class="nc" id="L88">                        r = Context.getPersonService().getRelationshipType(Integer.valueOf(rel));</span>
+<span class="nc" id="L89">                    } catch (Exception ex) {</span>
+<span class="nc" id="L90">                    }</span>
+                }
+<span class="nc bnc" id="L92" title="All 2 branches missed.">                if (r == null)</span>
+<span class="nc" id="L93">                    throw new IllegalArgumentException(&quot;Relationship tag type parameter item &quot; + rel + &quot; is invalid.&quot;);</span>
+<span class="nc" id="L94">                relationshipsToCreate.add(r);</span>
+            }
+<span class="nc" id="L96">            relationshipWidget.setRelationshipsToCreate(relationshipsToCreate);</span>
+        }
+
+<span class="nc bnc" id="L99" title="All 2 branches missed.">        if (whoAmI != null) {</span>
+<span class="nc" id="L100">            String[] who = whoAmI.split(&quot;,&quot;);</span>
+<span class="nc bnc" id="L101" title="All 2 branches missed.">            for (String side : who) {</span>
+<span class="nc" id="L102">                roleInRelationship.add(side);</span>
+            }
+
+<span class="nc" id="L105">            relationshipWidget.setRoleInRelationship(roleInRelationship);</span>
+        }
+
+<span class="nc bnc" id="L108" title="All 2 branches missed.">        if (replaceCurrent != null) {</span>
+<span class="nc" id="L109">            String[] replace = replaceCurrent.split(&quot;,&quot;);</span>
+<span class="nc bnc" id="L110" title="All 2 branches missed.">            for (String rep : replace) {</span>
+<span class="nc bnc" id="L111" title="All 4 branches missed.">                if (rep != null &amp;&amp; rep.toLowerCase().equals(&quot;true&quot;)) {</span>
+<span class="nc" id="L112">                    replaceExisting.add(true);</span>
+                } else {
+<span class="nc" id="L114">                    replaceExisting.add(false);</span>
+                }
+            }
+        }
+
+<span class="nc" id="L119">        String requiredStr = parameters.get(FIELD_REQUIRED);</span>
+<span class="nc bnc" id="L120" title="All 4 branches missed.">        if (requiredStr != null &amp;&amp; requiredStr.toLowerCase().equals(&quot;true&quot;)) {</span>
+<span class="nc" id="L121">            required = true;</span>
+        }
+
+<span class="nc" id="L124">        personAttributes = parameters.get(FIELD_ATTRIBUTE);</span>
+<span class="nc" id="L125">        personPrograms = parameters.get(FIELD_PROGRAMS);</span>
+
+<span class="nc" id="L127">        display = parameters.get(FIELD_DISPLAY);</span>
+        //set default for display to search box
+<span class="nc bnc" id="L129" title="All 4 branches missed.">        if (display == null || display.trim().length() == 0) {</span>
+<span class="nc" id="L130">            display = DISPLAY_SEARCH;</span>
+        }
+
+<span class="nc bnc" id="L133" title="All 2 branches missed.">        if (DISPLAY_SEARCH.equals(display)) {</span>
+<span class="nc" id="L134">            personWidget = new PersonSearchWidget();</span>
+<span class="nc" id="L135">            personWidget.setSearchProgram(personPrograms);</span>
+<span class="nc" id="L136">            context.registerWidget(personWidget);</span>
+        }
+<span class="nc bnc" id="L138" title="All 2 branches missed.">        if (DISPLAY_DROPDOWN.equals(display)) {</span>
+<span class="nc" id="L139">            personStubWidget = new PersonStubWidget();</span>
+<span class="nc" id="L140">            context.registerWidget(personStubWidget);</span>
+        }
+<span class="nc" id="L142">        personErrorWidget = new ErrorWidget();</span>
+
+<span class="nc" id="L144">        labelText = parameters.get(FIELD_LABEL_TEXT);</span>
+
+<span class="nc" id="L146">        context.registerWidget(relationshipWidget);</span>
+<span class="nc" id="L147">        context.registerErrorWidget(personWidget, personErrorWidget);</span>
+
+        // set the id, if it has been specified
+<span class="nc bnc" id="L150" title="All 2 branches missed.">        if (parameters.get(&quot;id&quot;) != null) {</span>
+<span class="nc" id="L151">            id = (String) parameters.get(&quot;id&quot;);</span>
+        }
+<span class="nc" id="L153">    }</span>
+
+
+    /**
+     * &lt;strong&gt;Should&lt;/strong&gt; return HTML snippet
+     * @see org.openmrs.module.htmlformentry.element.HtmlGeneratorElement#generateHtml(org.openmrs.module.htmlformentry.FormEntryContext)
+     */
+    @Override
+    public String generateHtml(FormEntryContext context) {
+
+<span class="nc" id="L163">        StringBuilder ret = new StringBuilder();</span>
+
+        // if an id has been specified, wrap the whole relationship element in a span tag so that we access property values via javascript
+<span class="nc bnc" id="L166" title="All 2 branches missed.">        if (id != null) {</span>
+<span class="nc" id="L167">            ret.append(&quot;&lt;span id='&quot; + id + &quot;'&gt;&quot;);</span>
+        }
+
+<span class="nc bnc" id="L170" title="All 4 branches missed.">        if (labelText != null &amp;&amp; labelText.length() &gt; 0) {</span>
+<span class="nc" id="L171">            ret.append(labelText);</span>
+<span class="nc" id="L172">            ret.append(&quot;&lt;br /&gt;&quot;);</span>
+        }
+
+
+        //this check is needed or else the code falls over when generating preview for editing form
+        //TODO: probably need a new mode for previewing to better deal with this sort of stuff.
+<span class="nc bnc" id="L178" title="All 4 branches missed.">        if (context.getExistingPatient() != null &amp;&amp; context.getExistingPatient().getId() != null) {</span>
+<span class="nc" id="L179">            List&lt;String&gt; searchAttributes = new ArrayList&lt;String&gt;();</span>
+<span class="nc" id="L180">            List&lt;String&gt; attributeValues = new ArrayList&lt;String&gt;();</span>
+            //now deal with the attribute stuff as we may have parameter based stuff and may need to retrieve from the patient
+<span class="nc bnc" id="L182" title="All 2 branches missed.">            if (personAttributes != null) {</span>
+<span class="nc" id="L183">                String[] allAttributes = personAttributes.split(&quot;,&quot;);</span>
+<span class="nc bnc" id="L184" title="All 2 branches missed.">                for (String attr : allAttributes) {</span>
+<span class="nc" id="L185">                    String[] split = attr.split(&quot;:&quot;);</span>
+<span class="nc" id="L186">                    searchAttributes.add(split[0]);</span>
+
+<span class="nc bnc" id="L188" title="All 2 branches missed.">                    if (split.length &gt; 1) {</span>
+                        //need to find out the value from the current patient
+<span class="nc bnc" id="L190" title="All 2 branches missed.">                        if (split[1].indexOf(&quot;${currentPatientAttribute(&quot;) == 0) {</span>
+                            // we want to pull out whatever is within the quotes
+<span class="nc" id="L192">                            Pattern withinQuotes = Pattern.compile(&quot;[\&quot;\'](.*)[\&quot;\']&quot;);</span>
+<span class="nc" id="L193">                            Matcher matcher = withinQuotes.matcher(split[1]);</span>
+<span class="nc" id="L194">                            matcher.find();</span>
+<span class="nc" id="L195">                            String patientAttr = matcher.group(1);</span>
+
+<span class="nc" id="L197">                            PersonAttribute pa = context.getExistingPatient().getAttribute(patientAttr);</span>
+<span class="nc bnc" id="L198" title="All 2 branches missed.">                            if (pa != null) {</span>
+<span class="nc" id="L199">                                attributeValues.add(pa.getValue());</span>
+                            } else {
+<span class="nc" id="L201">                                attributeValues.add(null);</span>
+                            }
+<span class="nc" id="L203">                        }</span>
+                        // add the value to the attribute list
+                        else {
+<span class="nc" id="L206">                            attributeValues.add(split[1]);</span>
+                        }
+                    } else {
+                        //adding a null so that all attributes have a value
+<span class="nc" id="L210">                        attributeValues.add(null);</span>
+
+                    }
+                }
+<span class="nc bnc" id="L214" title="All 2 branches missed.">                if (personWidget != null) {</span>
+<span class="nc" id="L215">                    StringBuilder sAttributes = new StringBuilder();</span>
+<span class="nc" id="L216">                    StringBuilder sValues = new StringBuilder();</span>
+<span class="nc bnc" id="L217" title="All 2 branches missed.">                    for (String s : searchAttributes) {</span>
+<span class="nc bnc" id="L218" title="All 2 branches missed.">                        if (sAttributes.length() &gt; 0) {</span>
+<span class="nc" id="L219">                            sAttributes.append(&quot;,&quot;);</span>
+                        }
+<span class="nc" id="L221">                        sAttributes.append(s);</span>
+<span class="nc" id="L222">                    }</span>
+<span class="nc bnc" id="L223" title="All 2 branches missed.">                    for (String s : attributeValues) {</span>
+<span class="nc bnc" id="L224" title="All 2 branches missed.">                        if (sValues.length() &gt; 0) {</span>
+<span class="nc" id="L225">                            sValues.append(&quot;,&quot;);</span>
+                        }
+<span class="nc bnc" id="L227" title="All 2 branches missed.">                        if (s == null) {</span>
+                            //adding a bogus value as all attributes should
+<span class="nc" id="L229">                            sValues.append(&quot;null&quot;);</span>
+                        } else {
+<span class="nc" id="L231">                            sValues.append(s);</span>
+                        }
+<span class="nc" id="L233">                    }</span>
+
+<span class="nc" id="L235">                    personWidget.setSearchAttribute(sAttributes.toString());</span>
+<span class="nc" id="L236">                    personWidget.setAttributeValue(sValues.toString());</span>
+                }
+
+            }
+<span class="nc bnc" id="L240" title="All 4 branches missed.">            if (personStubWidget != null &amp;&amp; context.getMode() != Mode.VIEW) {</span>
+<span class="nc" id="L241">                List&lt;String&gt; progIds = new ArrayList&lt;String&gt;();</span>
+<span class="nc bnc" id="L242" title="All 2 branches missed.">                if (personPrograms != null) {</span>
+<span class="nc" id="L243">                    String[] programIds = personPrograms.split(&quot;,&quot;);</span>
+
+<span class="nc bnc" id="L245" title="All 2 branches missed.">                    for (String progId : programIds) {</span>
+<span class="nc" id="L246">                        progIds.add(progId);</span>
+                    }
+                }
+
+<span class="nc" id="L250">                List&lt;Person&gt; personsToExclude = new ArrayList&lt;Person&gt;();</span>
+                // exclude the exisiting patient from any results
+<span class="nc" id="L252">                personsToExclude.add(context.getExistingPatient());</span>
+<span class="nc" id="L253">                personStubWidget.setOptions(Context.getService(HtmlFormEntryService.class).getPeopleAsPersonStubs(searchAttributes, attributeValues, progIds, personsToExclude));</span>
+            }
+
+<span class="nc bnc" id="L256" title="All 2 branches missed.">            if (relationshipWidget != null) {</span>
+<span class="nc bnc" id="L257" title="All 2 branches missed.">                if (id != null)</span>
+<span class="nc" id="L258">                    relationshipWidget.setParentId(id);</span>
+<span class="nc" id="L259">                ret.append(relationshipWidget.generateHtml(context));</span>
+
+            }
+
+        }
+
+<span class="nc bnc" id="L265" title="All 2 branches missed.">        if (context.getMode() != Mode.VIEW) {</span>
+
+<span class="nc" id="L267">            ret.append(&quot;&lt;br /&gt;&lt;strong&gt;&quot;);</span>
+<span class="nc" id="L268">            ret.append(Context.getMessageSourceService().getMessage(&quot;htmlformentry.newRelationshipsLabel&quot;));</span>
+<span class="nc" id="L269">            ret.append(&quot;&lt;/strong&gt;&quot;);</span>
+
+<span class="nc bnc" id="L271" title="All 2 branches missed.">            if (personWidget != null) {</span>
+<span class="nc" id="L272">                ret.append(personWidget.generateHtml(context) + &quot; &quot;);</span>
+<span class="nc" id="L273">                context.registerPropertyAccessorInfo(id + &quot;.&quot; + &quot;newRelationship&quot; + &quot;.value&quot;, context.getFieldNameIfRegistered(personWidget), null, &quot;newRelationshipFieldGetterFunction&quot;, null);</span>
+
+            }
+<span class="nc bnc" id="L276" title="All 2 branches missed.">            if (personStubWidget != null) {</span>
+<span class="nc" id="L277">                ret.append(personStubWidget.generateHtml(context) + &quot; &quot;);</span>
+            }
+<span class="nc" id="L279">            ret.append(personErrorWidget.generateHtml(context));</span>
+        }
+        // close out the span if we have an id tag
+<span class="nc bnc" id="L282" title="All 2 branches missed.">        if (id != null) {</span>
+<span class="nc" id="L283">            ret.append(&quot;&lt;/span&gt;&quot;);</span>
+        }
+<span class="nc" id="L285">        return ret.toString();</span>
+    }
+
+    /**
+     * handleSubmission saves a drug order if in ENTER or EDIT-mode
+     *
+     * @see org.openmrs.module.htmlformentry.action.FormSubmissionControllerAction#handleSubmission(org.openmrs.module.htmlformentry.FormEntrySession, javax.servlet.http.HttpServletRequest)
+     */
+    @Override
+    public void handleSubmission(FormEntrySession session, HttpServletRequest submission) {
+<span class="nc" id="L295">        Person relatedPerson = null;</span>
+
+<span class="nc bnc" id="L297" title="All 4 branches missed.">        if (personWidget != null &amp;&amp; personWidget.getValue(session.getContext(), submission) != null) {</span>
+<span class="nc" id="L298">            relatedPerson = ((Person) personWidget.getValue(session.getContext(), submission));</span>
+        }
+<span class="nc bnc" id="L300" title="All 4 branches missed.">        if (personStubWidget != null &amp;&amp; personStubWidget.getValue(session.getContext(), submission) != null) {</span>
+<span class="nc" id="L301">            relatedPerson = ((Person) personStubWidget.getValue(session.getContext(), submission));</span>
+        }
+
+<span class="nc bnc" id="L304" title="All 2 branches missed.">        if (relatedPerson != null) {</span>
+<span class="nc" id="L305">            List&lt;Relationship&gt; existingRelationships = Context.getPersonService().getRelationshipsByPerson(session.getSubmissionActions().getCurrentPerson());</span>
+            //want to check to see if relationship already exists
+<span class="nc bnc" id="L307" title="All 2 branches missed.">            for (int i = 0; i &lt; relationshipsToCreate.size(); i++) {</span>
+<span class="nc" id="L308">                RelationshipType r = relationshipsToCreate.get(i);</span>
+<span class="nc" id="L309">                String side = roleInRelationship.get(i);</span>
+<span class="nc" id="L310">                boolean replace = replaceExisting.get(i);</span>
+<span class="nc bnc" id="L311" title="All 2 branches missed.">                if (r != null) {</span>
+                    //firstCheckToSeeIfWeNeedToCreate
+<span class="nc" id="L313">                    boolean create = true;</span>
+
+<span class="nc bnc" id="L315" title="All 2 branches missed.">                    for (Relationship er : existingRelationships) {</span>
+
+<span class="nc bnc" id="L317" title="All 2 branches missed.">                        if (er.getRelationshipType().getId().equals(r.getId())) {</span>
+                            //now check the person is correct
+<span class="nc bnc" id="L319" title="All 2 branches missed.">                            if (side.equals(&quot;A&quot;)) {</span>
+                                //Relationship already exists
+<span class="nc bnc" id="L321" title="All 2 branches missed.">                                if (er.getPersonB().equals(relatedPerson)) {</span>
+<span class="nc" id="L322">                                    create = false;</span>
+                                }
+                                //now check if we should be replacing the existing relationship
+<span class="nc bnc" id="L325" title="All 4 branches missed.">                                else if (er.getPersonA().equals(session.getSubmissionActions().getCurrentPerson()) &amp;&amp; replace) {</span>
+<span class="nc" id="L326">                                    session.getSubmissionActions().getRelationshipsToVoid().add(er);</span>
+                                }
+                            }
+<span class="nc bnc" id="L329" title="All 2 branches missed.">                            if (side.equals(&quot;B&quot;)) {</span>
+                                //Relationship already exists
+<span class="nc bnc" id="L331" title="All 2 branches missed.">                                if (er.getPersonA().equals(relatedPerson)) {</span>
+<span class="nc" id="L332">                                    create = false;</span>
+                                }
+                                //now check if we should be replacing the existing relationship
+<span class="nc bnc" id="L335" title="All 4 branches missed.">                                else if (er.getPersonB().equals(session.getSubmissionActions().getCurrentPerson()) &amp;&amp; replace) {</span>
+<span class="nc" id="L336">                                    session.getSubmissionActions().getRelationshipsToVoid().add(er);</span>
+                                }
+                            }
+                        }
+<span class="nc" id="L340">                    }</span>
+<span class="nc bnc" id="L341" title="All 2 branches missed.">                    if (create) {</span>
+<span class="nc" id="L342">                        Relationship rel = new Relationship();</span>
+<span class="nc bnc" id="L343" title="All 2 branches missed.">                        if (side.equals(&quot;A&quot;)) {</span>
+<span class="nc" id="L344">                            rel.setPersonA(session.getSubmissionActions().getCurrentPerson());</span>
+<span class="nc" id="L345">                            rel.setPersonB(relatedPerson);</span>
+                        }
+<span class="nc bnc" id="L347" title="All 2 branches missed.">                        if (side.equals(&quot;B&quot;)) {</span>
+<span class="nc" id="L348">                            rel.setPersonB(session.getSubmissionActions().getCurrentPerson());</span>
+<span class="nc" id="L349">                            rel.setPersonA(relatedPerson);</span>
+                        }
+<span class="nc" id="L351">                        rel.setRelationshipType(r);</span>
+
+<span class="nc" id="L353">                        Context.getPersonService().saveRelationship(rel);</span>
+                        //session.getSubmissionActions().getRelationshipsToCreate().add(rel);
+                    }
+                }
+            }
+
+        }
+<span class="nc" id="L360">    }</span>
+
+    /**
+     * &lt;strong&gt;Should&lt;/strong&gt; return validation errors if value is not filled in and required
+     * @see org.openmrs.module.htmlformentry.action.FormSubmissionControllerAction#validateSubmission(org.openmrs.module.htmlformentry.FormEntryContext, javax.servlet.http.HttpServletRequest)
+     */
+    @Override
+    public Collection&lt;FormSubmissionError&gt; validateSubmission(FormEntryContext context, HttpServletRequest submission) {
+
+<span class="nc" id="L369">        List&lt;FormSubmissionError&gt; ret = new ArrayList&lt;FormSubmissionError&gt;();</span>
+
+        try {
+<span class="nc bnc" id="L372" title="All 2 branches missed.">            if (personWidget != null) {</span>
+<span class="nc bnc" id="L373" title="All 8 branches missed.">                if (required &amp;&amp; !relationshipWidget.isAllRelationshipsFullfilled() &amp;&amp; (personWidget.getValue(context, submission) == null || personWidget.getValue(context, submission).toString().trim().length() == 0)) {</span>
+<span class="nc" id="L374">                    throw new Exception(&quot;htmlformentry.error.required&quot;);</span>
+                }
+            }
+<span class="nc bnc" id="L377" title="All 2 branches missed.">            if (personStubWidget != null) {</span>
+<span class="nc bnc" id="L378" title="All 8 branches missed.">                if (required &amp;&amp; !relationshipWidget.isAllRelationshipsFullfilled() &amp;&amp; (personStubWidget.getValue(context, submission) == null || personStubWidget.getValue(context, submission).toString().trim().length() == 0)) {</span>
+<span class="nc" id="L379">                    throw new Exception(&quot;htmlformentry.error.required&quot;);</span>
+                }
+            }
+<span class="nc" id="L382">        } catch (Exception ex) {</span>
+<span class="nc" id="L383">            ret.add(new FormSubmissionError(context</span>
+<span class="nc" id="L384">                    .getFieldName(personErrorWidget), Context</span>
+<span class="nc" id="L385">                    .getMessageSourceService().getMessage(ex.getMessage())));</span>
+<span class="nc" id="L386">        }</span>
+
+<span class="nc" id="L388">        return ret;</span>
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.8.202204050719</span></div></body></html>
