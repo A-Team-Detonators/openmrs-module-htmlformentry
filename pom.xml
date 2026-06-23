@@ -192,7 +192,7 @@
 	<!-- default property values, required for eclipse build path configuration -->
 	<properties>
 		<openMRSVersion>1.9.9</openMRSVersion>
-		<openMRSBuildVersion>1.9.9</openMRSBuildVersion>
+		<openMRSBuildVersion>2.7.9</openMRSBuildVersion>
 		<openMRSMinorVersion>1.9</openMRSMinorVersion>
         <jacksonVersion>1.5.0</jacksonVersion>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
